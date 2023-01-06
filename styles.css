@@ -1,8 +1,97 @@
-/*
+table {
+  border-collapse: collapse;
+}
 
-This CSS file will be included with your plugin, and
-available in the app when your plugin is enabled.
+table,
+td {
+  border: 1px solid var(--background-modifier-border);
+}
 
-If your plugin does not need CSS, delete this file.
+td {
+  padding: 4px 8px;
+}
 
-*/
+input {
+  background: none;
+  border: none;
+}
+
+.navigation {
+  height: 100%; /* Full-height: remove this if you want "auto" height */
+  width: 150px; /* Set the width of the sidebar */
+  position: fixed; /* Fixed Sidebar (stay in place on scroll) */
+  z-index: 1; /* Stay on top */
+  top: 0; /* Stay at the top */
+  left: 0;
+  text-align: left;
+  padding-left: 1mm;
+  display: block;
+  overflow-y: auto;
+}
+
+.navigation span:hover {
+  color: #f15500;
+}
+
+.showFeed span {
+  text-decoration: none;
+  display: block;
+  padding-left: 2mm;
+}
+
+.content {
+  margin-left: 150px; /* Same as the width of the sidebar */
+  padding: 0px 5px;
+}
+
+.navigation .manage {
+  text-decoration: none;
+  color: #818181;
+  display: block;
+}
+
+.feedTable table,tr,td {
+  border: none;
+  border-spacing: 0;
+  padding-right: 5px;
+  padding-left: 0;
+}
+
+.itemActions td {
+  border: none;
+  border-spacing: 5px;
+  padding-right: 10px;
+  padding-left: 10px;
+}
+
+.feedTitle a {
+  text-decoration: none;
+}
+
+.oneFeedItem a {
+  text-decoration: none;
+}
+
+.refreshFeed:hover {
+  color: #f15500;
+}
+
+.noteThis:hover {
+  color: #f15500;
+}
+
+.markAsRead:hover {
+  color: #f15500;
+}
+
+.deleteItem:hover {
+  color: #f15500;
+}
+
+.unreadCount {
+  font-size: 60%;
+}
+
+.totalCount {
+  font-size: 60%;
+}

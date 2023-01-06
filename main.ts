@@ -1,86 +1,276 @@
-import { App, Editor, MarkdownView, Modal, Notice, Plugin, PluginSettingTab, Setting } from 'obsidian';
+import { App, Editor, MarkdownView, Menu, Modal, Notice, addIcon, Plugin, PluginSettingTab, Setting } from 'obsidian';
+import { FRView, VIEW_TYPE_FEEDS_READER } from "./view";
+import { getFeedItems, RssFeedContent, RssFeedItem, nowdatetime } from "./getFeed"
+import { Global } from "./globals"
 
 // Remember to rename these classes and interfaces!
 
-interface MyPluginSettings {
+interface FeedsReaderSettings {
 	mySetting: string;
 }
 
-const DEFAULT_SETTINGS: MyPluginSettings = {
+const DEFAULT_SETTINGS: FeedsReaderSettings = {
 	mySetting: 'default'
 }
 
-export default class MyPlugin extends Plugin {
-	settings: MyPluginSettings;
+export default class FeedsReader extends Plugin {
+	settings: FeedsReaderSettings;
+
 
 	async onload() {
 		await this.loadSettings();
 
+    this.registerView(
+      VIEW_TYPE_FEEDS_READER,
+      (leaf) => new FRView(leaf)
+    );
+
 		// This creates an icon in the left ribbon.
-		const ribbonIconEl = this.addRibbonIcon('dice', 'Sample Plugin', (evt: MouseEvent) => {
+    //addIcon("circle", `<rect x="120" width="100" height="100" rx="15" fill="currentColor" />`);
+    addIcon("circle", `<circle cx="50" cy="50" r="50" fill="currentColor" /> <circle cx="50" cy="50" r="30" fill="cyan" /> <circle cx="50" cy="50" r="10" fill="green" />`);
+		const ribbonIconEl = this.addRibbonIcon('circle', 'Feeds reader', async (evt: MouseEvent) => {
 			// Called when the user clicks the icon.
-			new Notice('This is a notice!');
+      await this.loadFeedsStoredData();
+      this.activateView();
+
+      // const menu = new Menu(this.app);
+      // menu.addItem((item) =>
+      //   item
+      //     .setTitle("Copy")
+      //     .setIcon("documents")
+      //     .onClick(() => {
+      //       new Notice("Copied");
+      //     })
+      // );
+      // menu.addItem((item) =>
+      //   item
+      //     .setTitle("Paste")
+      //     .setIcon("paste")
+      //     .onClick(() => {
+      //       new Notice("Pasted");
+      //     })
+      // );
+      // menu.showAtMouseEvent(evt);
 		});
 		// Perform additional things with the ribbon
 		ribbonIconEl.addClass('my-plugin-ribbon-class');
 
-		// This adds a status bar item to the bottom of the app. Does not work on mobile apps.
-		const statusBarItemEl = this.addStatusBarItem();
-		statusBarItemEl.setText('Status Bar Text');
-
-		// This adds a simple command that can be triggered anywhere
-		this.addCommand({
-			id: 'open-sample-modal-simple',
-			name: 'Open sample modal (simple)',
-			callback: () => {
-				new SampleModal(this.app).open();
-			}
-		});
-		// This adds an editor command that can perform some operation on the current editor instance
-		this.addCommand({
-			id: 'sample-editor-command',
-			name: 'Sample editor command',
-			editorCallback: (editor: Editor, view: MarkdownView) => {
-				console.log(editor.getSelection());
-				editor.replaceSelection('Sample Editor Command');
-			}
-		});
-		// This adds a complex command that can check whether the current state of the app allows execution of the command
-		this.addCommand({
-			id: 'open-sample-modal-complex',
-			name: 'Open sample modal (complex)',
-			checkCallback: (checking: boolean) => {
-				// Conditions to check
-				const markdownView = this.app.workspace.getActiveViewOfType(MarkdownView);
-				if (markdownView) {
-					// If checking is true, we're simply "checking" if the command can be run.
-					// If checking is false, then we want to actually perform the operation.
-					if (!checking) {
-						new SampleModal(this.app).open();
-					}
-
-					// This command will only show up in Command Palette when the check function returns true
-					return true;
-				}
-			}
-		});
-
-		// This adds a settings tab so the user can configure various aspects of the plugin
-		this.addSettingTab(new SampleSettingTab(this.app, this));
-
 		// If the plugin hooks up any global DOM events (on parts of the app that doesn't belong to this plugin)
 		// Using this function will automatically remove the event listener when this plugin is disabled.
-		this.registerDomEvent(document, 'click', (evt: MouseEvent) => {
-			console.log('click', evt);
+		this.registerDomEvent(document, 'click', async (evt: MouseEvent) => {
+      if (evt.target.className === 'refreshFeed') {
+        console.log('Fetch', evt.target.id);
+        getFeedItems(evt.target.id).then((res) => {
+          if (res === undefined) {
+            return;
+          }
+          this.mergeStoreWithNewData(res, evt.target.id);
+          this.saveFeedsData();
+        });
+      }
+      if (evt.target.className === 'showFeed') {
+        Global.currentFeed = evt.target.id;
+        const feed_content = document.getElementById('feed_content');
+        feed_content.empty();
+
+        const feedTitle = feed_content.createEl('h1');
+        feedTitle.className = 'feedTitle';
+
+        if (!Global.feedsStore.hasOwnProperty(Global.currentFeed)) {
+          return;
+        }
+        var fd = Global.feedsStore[Global.currentFeed];
+        feedTitle.createEl('a',
+          {text: fd.title.replace(/(<([^>]+)>)/gi, ""), href: fd.link});
+        if (fd.pubDate != '') {
+          feed_content.createEl('div', {text: fd.pubDate});
+        }
+        var elUnreadCount = document.getElementById('unreadCount' + Global.currentFeed);
+        var elTotalCount = document.getElementById('totalCount' + Global.currentFeed);
+        var nUnread = 0;
+        fd.items.forEach((item, idx) => {
+          if ((!Global.showAll) && (item.read || (item.deleted != ''))) {
+            return;
+          }
+          nUnread += 1;
+          const itemEl = feed_content.createEl('div');
+          itemEl.className = 'oneFeedItem';
+          itemEl.id = item.link;
+          itemEl.createEl('hr');
+          itemEl.createEl('h2').createEl('a',
+            {text: item.title.replace(/(<([^>]+)>)/gi, ""), href: item.link}); 
+          let tr = itemEl.createEl('table').createEl('tr');
+          tr.className = 'itemActions';
+          var t_read = "\u2713";
+          if (item.read) {
+            t_read = 'U';
+          }
+          const toggleRead = tr.createEl('td').createEl('div', {text: t_read});
+          toggleRead.className = 'toggleRead';
+          toggleRead.id = 'toggleRead' + idx;
+          var t_delete = "\u2718";
+          if (item.deleted != '') {
+            t_delete = 'U';
+          }
+          const toggleDelete = tr.createEl('td').createEl('div', {text: t_delete});
+          toggleDelete.className = 'toggleDelete';
+          toggleDelete.id = 'toggleDelete' + idx;
+          const noteThis = tr.createEl('td').createEl('div', {text: "Save"});
+          noteThis.className = 'noteThis';
+          noteThis.id = 'noteThis' + idx;
+          itemEl.createEl('div').innerHTML = item.creator;
+          itemEl.createEl('div').innerHTML = item.content.replace(/<img[^>]*>/g,"");
+          });
+        elTotalCount.innerText = fd.items.length;
+        elUnreadCount.innerText = nUnread;
+      }
+      if (evt.target.className === 'noteThis') {
+        if (! await this.app.vault.exists(Global.feeds_reader_dir)) {
+          await this.app.vault.createFolder(Global.feeds_reader_dir);
+        }
+
+        var idx = this.getNumFromId(evt.target.id, 'noteThis');
+        const the_item = Global.feedsStore[Global.currentFeed].items[idx];
+        const fname: string = this.str2filename(the_item.title) + '.md';
+        const fpath: string = Global.feeds_reader_dir + '/' + fname;
+        if (! await this.app.vault.exists(fpath)) {
+          await this.app.vault.create(fpath,
+            '---\n' +
+            'title: ' + the_item.title.replace(/(<([^>]+)>)/gi, "").trim() + '\n' +
+            'link: ' + the_item.link + '\n' +
+            'content: ' + the_item.content.replace(/(<([^>]+)>)/gi, "").replace(/\n/g, ' ').trim() +
+            '\n---');
+        }
+      }
+      //
+      if (evt.target.className === 'toggleRead') {
+        var idx = this.getNumFromId(evt.target.id, 'toggleRead');
+        Global.itemIdx = idx;
+        Global.feedsStoreChange = true;
+        var el = document.getElementById(evt.target.id);
+        if (el.innerText === '\u2713') {
+          Global.feedsStore[Global.currentFeed].items[idx].read = true;
+          el.innerText = 'U';
+          Global.hideThisItem = true;
+        } else {
+          Global.feedsStore[Global.currentFeed].items[idx].read = false;
+          el.innerText = '\u2713';
+          Global.hideThisItem = false;
+        }
+      }
+      if (evt.target.className === 'toggleDelete') {
+        var idx = this.getNumFromId(evt.target.id, 'toggleDelete');
+        Global.itemIdx = idx;
+        Global.feedsStoreChange = true;
+        var el = document.getElementById(evt.target.id);
+        if (el.innerText === '\u2718') {
+          Global.feedsStore[Global.currentFeed].items[idx].deleted = nowdatetime();
+          el.innerText = 'U';
+          Global.hideThisItem = true;
+        } else {
+          Global.feedsStore[Global.currentFeed].items[idx].deleted = '';
+          el.innerText = '\u2718';
+          Global.hideThisItem = false;
+        }
+      }
+      if ((evt.target.className === 'toggleRead') ||
+          (evt.target.className === 'toggleDelete')) {
+        if ((!Global.showAll) && Global.hideThisItem) {
+          document.getElementById(
+            Global.feedsStore[Global.currentFeed].items[Global.itemIdx].link ).style.display = 'none';
+        }
+      }
+      //
+      if (evt.target.id === 'showAll') {
+        let toggle = document.getElementById('showAll');
+        if (toggle.innerText == 'A') {
+          toggle.innerText = 'N';
+          Global.showAll = false;
+        } else {
+          toggle.innerText = 'A';
+          Global.showAll = true;
+        }
+      }
+      if (evt.target.id === 'saveData') {
+        this.saveFeedsData();
+      }
+      if (evt.target.id === 'toggleNavi') {
+        let toggle = document.getElementById('toggleNavi');
+        if (toggle.innerText == '>') {
+          toggle.innerText = '\u2228';
+          document.getElementById('naviBar').style.width = '1em';
+          document.getElementById('contentBox').style['margin-left'] = '1em';
+        } else {
+          toggle.innerText = '>';
+          document.getElementById('naviBar').style.width = '140px';
+          document.getElementById('contentBox').style['margin-left'] = '140px';
+        }
+      }
 		});
 
-		// When registering intervals, this function will automatically clear the interval when the plugin is disabled.
-		this.registerInterval(window.setInterval(() => console.log('setInterval'), 5 * 60 * 1000));
+		this.registerInterval(window.setInterval(() => this.saveFeedsData(), 5 * 60 * 1000));
 	}
 
 	onunload() {
-
+    this.saveFeedsData();
+    this.app.workspace.detachLeavesOfType(VIEW_TYPE_FEEDS_READER);
 	}
+
+  str2filename(s: string) {
+    var illegalRe = /[\/\?<>\\:\*\|"]/g;
+    var controlRe = /[\x00-\x1f\x80-\x9f]/g;
+    var reservedRe = /^\.+$/;
+    var windowsReservedRe = /^(con|prn|aux|nul|com[0-9]|lpt[0-9])(\..*)?$/i;
+    var windowsTrailingRe = /[\. ]+$/;
+    var replacement = '_';
+    return s.replace(illegalRe, replacement)
+            .replace(controlRe, replacement)
+            .replace(reservedRe, replacement)
+            .replace(windowsReservedRe, replacement)
+            .replace(windowsTrailingRe, replacement);
+  }
+
+  async saveFeedsData () {
+    if (!Global.feedsStoreChange) {
+      return;
+    }
+    if (! await this.app.vault.exists(Global.feeds_reader_dir)) {
+      await this.app.vault.createFolder(Global.feeds_reader_dir);
+    }
+    var fpath: string = Global.feeds_reader_dir + '/' + Global.feeds_data_fname;
+    if (! await this.app.vault.exists(fpath)) {
+      await this.app.vault.create(fpath, JSON.stringify(Global.feedsStore));
+    } else {
+      await this.app.vault.adapter.write(fpath, JSON.stringify(Global.feedsStore));
+    }
+    Global.feedsStoreChange = false;
+  }
+
+  async activateView() {
+
+    const leaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_FEEDS_READER);
+    let leaf: WorkspaceLeaf | null = null;
+
+    if (leaves?.length > 0) {
+        leaf = leaves[0];
+    }
+    if (!leaf) {
+        leaf = this.app.workspace.activeLeaf;
+    }
+
+    if (!leaf) {
+        leaf = this.app.workspace.getLeaf();
+    }
+
+    await leaf.setViewState({
+        type: VIEW_TYPE_FEEDS_READER,
+        active: true
+    });
+
+    this.app.workspace.revealLeaf(
+      this.app.workspace.getLeavesOfType(VIEW_TYPE_FEEDS_READER)[0]
+    );
+  }
 
 	async loadSettings() {
 		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
@@ -89,6 +279,57 @@ export default class MyPlugin extends Plugin {
 	async saveSettings() {
 		await this.saveData(this.settings);
 	}
+
+	async loadFeedsStoredData() {
+    Global.feeds_reader_dir = 'feeds-reader';
+    Global.feeds_data_fname = 'feeds-data.json';
+    Global.subscriptions_fname = 'subscriptions.json';
+    Global.showAll = false;
+    Global.currentFeed = '';
+    if (! await this.app.vault.exists(Global.feeds_reader_dir)) {
+      await this.app.vault.createFolder(Global.feeds_reader_dir);
+    }
+    var fpath_feedList = Global.feeds_reader_dir+'/'+Global.subscriptions_fname;
+    if (! await this.app.vault.exists(fpath_feedList)) {
+      Global.feedList = [];
+    } else {
+      Global.feedList = JSON.parse(await
+        this.app.vault.adapter.read(fpath_feedList));
+    }
+    var fpath = Global.feeds_reader_dir+'/'+Global.feeds_data_fname;
+    if (! await this.app.vault.exists(fpath)) {
+      Global.feedsStore = {};
+    } else {
+      Global.feedsStore = JSON.parse(await
+        this.app.vault.adapter.read(fpath));
+    }
+  }
+
+  getNumFromId(idstr, pref) {
+    var n = pref.length;
+    return parseInt(idstr.substr(n));
+  }
+
+  mergeStoreWithNewData(newdata: RssFeedContent, key: string) {
+    if (!Global.feedsStore.hasOwnProperty(key)) {
+      Global.feedsStore[key] = newdata;
+      Global.feedsStoreChange = true;
+      return;
+    }
+    Global.feedsStore[key].title = newdata.title;
+    Global.feedsStore[key].subtitle = newdata.subtitle;
+    Global.feedsStore[key].description = newdata.description;
+    Global.feedsStore[key].pubDate = newdata.pubDate;
+    newdata.items.forEach((it) => {
+      for (let i=0; i<Global.feedsStore[key].items.length; i++) {
+        if (Global.feedsStore[key].items[i].link === it.link) {
+          return;
+        }
+      }
+      Global.feedsStore[key].items.unshift(it);
+      Global.feedsStoreChange = true;
+    });
+  }
 }
 
 class SampleModal extends Modal {
@@ -108,9 +349,9 @@ class SampleModal extends Modal {
 }
 
 class SampleSettingTab extends PluginSettingTab {
-	plugin: MyPlugin;
+	plugin: FeedsReader;
 
-	constructor(app: App, plugin: MyPlugin) {
+	constructor(app: App, plugin: FeedsReader) {
 		super(app, plugin);
 		this.plugin = plugin;
 	}
