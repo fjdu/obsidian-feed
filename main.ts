@@ -1,5 +1,5 @@
 import { App, Editor, MarkdownView, Menu, Modal, Notice, addIcon, Plugin, PluginSettingTab, Setting } from 'obsidian';
-import { FRView, VIEW_TYPE_FEEDS_READER } from "./view";
+import { FRView, VIEW_TYPE_FEEDS_READER, createFeedBar } from "./view";
 import { getFeedItems, RssFeedContent, RssFeedItem, nowdatetime } from "./getFeed"
 import { Global } from "./globals"
 
@@ -30,7 +30,6 @@ export default class FeedsReader extends Plugin {
     addIcon("circle", `<circle cx="50" cy="50" r="50" fill="currentColor" /> <circle cx="50" cy="50" r="30" fill="cyan" /> <circle cx="50" cy="50" r="10" fill="green" />`);
 		const ribbonIconEl = this.addRibbonIcon('circle', 'Feeds reader', async (evt: MouseEvent) => {
 			// Called when the user clicks the icon.
-      await this.loadFeedsStoredData();
       this.activateView();
 
       // const menu = new Menu(this.app);
@@ -59,13 +58,12 @@ export default class FeedsReader extends Plugin {
 		// Using this function will automatically remove the event listener when this plugin is disabled.
 		this.registerDomEvent(document, 'click', async (evt: MouseEvent) => {
       if (evt.target.className === 'refreshFeed') {
-        console.log('Fetch', evt.target.id);
-        getFeedItems(evt.target.id).then((res) => {
+        getFeedItems(evt.target.id).then(async (res) => {
           if (res === undefined) {
             return;
           }
           this.mergeStoreWithNewData(res, evt.target.id);
-          this.saveFeedsData();
+          await saveFeedsData();
         });
       }
       if (evt.target.className === 'showFeed') {
@@ -80,8 +78,9 @@ export default class FeedsReader extends Plugin {
           return;
         }
         var fd = Global.feedsStore[Global.currentFeed];
-        feedTitle.createEl('a',
-          {text: fd.title.replace(/(<([^>]+)>)/gi, ""), href: fd.link});
+        // feedTitle.createEl('a',
+        //  {text: fd.title.replace(/(<([^>]+)>)/gi, ""), href: fd.link});
+        feedTitle.createEl('a', {href: fd.link}).innerHTML = fd.title;
         if (fd.pubDate != '') {
           feed_content.createEl('div', {text: fd.pubDate});
         }
@@ -89,7 +88,7 @@ export default class FeedsReader extends Plugin {
         var elTotalCount = document.getElementById('totalCount' + Global.currentFeed);
         var nUnread = 0;
         fd.items.forEach((item, idx) => {
-          if ((!Global.showAll) && (item.read || (item.deleted != ''))) {
+          if ((!Global.showAll) && ((item.read != '') || (item.deleted != ''))) {
             return;
           }
           nUnread += 1;
@@ -101,23 +100,26 @@ export default class FeedsReader extends Plugin {
             {text: item.title.replace(/(<([^>]+)>)/gi, ""), href: item.link}); 
           let tr = itemEl.createEl('table').createEl('tr');
           tr.className = 'itemActions';
-          var t_read = "\u2713";
-          if (item.read) {
-            t_read = 'U';
+          var t_read = "Read";
+          if (item.read != '') {
+            t_read = 'Unread';
           }
           const toggleRead = tr.createEl('td').createEl('div', {text: t_read});
           toggleRead.className = 'toggleRead';
           toggleRead.id = 'toggleRead' + idx;
-          var t_delete = "\u2718";
+          const noteThis = tr.createEl('td').createEl('div', {text: "Save"});
+          noteThis.className = 'noteThis';
+          noteThis.id = 'noteThis' + idx;
+          var t_delete = "Delete";
           if (item.deleted != '') {
-            t_delete = 'U';
+            t_delete = 'Undelete';
           }
           const toggleDelete = tr.createEl('td').createEl('div', {text: t_delete});
           toggleDelete.className = 'toggleDelete';
           toggleDelete.id = 'toggleDelete' + idx;
-          const noteThis = tr.createEl('td').createEl('div', {text: "Save"});
-          noteThis.className = 'noteThis';
-          noteThis.id = 'noteThis' + idx;
+          if (item.pubDate != "") {
+            tr.createEl('td').createEl('div', {text: item.pubDate});
+          }
           itemEl.createEl('div').innerHTML = item.creator;
           itemEl.createEl('div').innerHTML = item.content.replace(/<img[^>]*>/g,"");
           });
@@ -131,15 +133,17 @@ export default class FeedsReader extends Plugin {
 
         var idx = this.getNumFromId(evt.target.id, 'noteThis');
         const the_item = Global.feedsStore[Global.currentFeed].items[idx];
-        const fname: string = this.str2filename(the_item.title) + '.md';
+        const fname: string = str2filename(the_item.title) + '.md';
         const fpath: string = Global.feeds_reader_dir + '/' + fname;
         if (! await this.app.vault.exists(fpath)) {
           await this.app.vault.create(fpath,
-            '---\n' +
-            'title: ' + the_item.title.replace(/(<([^>]+)>)/gi, "").trim() + '\n' +
-            'link: ' + the_item.link + '\n' +
-            'content: ' + the_item.content.replace(/(<([^>]+)>)/gi, "").replace(/\n/g, ' ').trim() +
-            '\n---');
+            '<a href="' + the_item.link + '">' +
+            the_item.title.trim() + '</a>\n> ' +
+            unEscape(the_item.content).replace(/(<([^>]+)>)/gi, "").replace(/\n/g, ' ').trim() +
+            '\n<small>' + the_item.creator + '</small>');
+          new Notice(fpath + " saved.", 1000);
+        } else {
+          new Notice(fpath + " already exists.", 1000);
         }
       }
       //
@@ -148,13 +152,13 @@ export default class FeedsReader extends Plugin {
         Global.itemIdx = idx;
         Global.feedsStoreChange = true;
         var el = document.getElementById(evt.target.id);
-        if (el.innerText === '\u2713') {
-          Global.feedsStore[Global.currentFeed].items[idx].read = true;
-          el.innerText = 'U';
+        if (el.innerText === 'Read') {
+          Global.feedsStore[Global.currentFeed].items[idx].read = nowdatetime();
+          el.innerText = 'Unread';
           Global.hideThisItem = true;
         } else {
-          Global.feedsStore[Global.currentFeed].items[idx].read = false;
-          el.innerText = '\u2713';
+          Global.feedsStore[Global.currentFeed].items[idx].read = '';
+          el.innerText = 'Read';
           Global.hideThisItem = false;
         }
       }
@@ -163,13 +167,13 @@ export default class FeedsReader extends Plugin {
         Global.itemIdx = idx;
         Global.feedsStoreChange = true;
         var el = document.getElementById(evt.target.id);
-        if (el.innerText === '\u2718') {
+        if (el.innerText === 'Delete') {
           Global.feedsStore[Global.currentFeed].items[idx].deleted = nowdatetime();
-          el.innerText = 'U';
+          el.innerText = 'Undelete';
           Global.hideThisItem = true;
         } else {
           Global.feedsStore[Global.currentFeed].items[idx].deleted = '';
-          el.innerText = '\u2718';
+          el.innerText = 'Delete';
           Global.hideThisItem = false;
         }
       }
@@ -183,71 +187,43 @@ export default class FeedsReader extends Plugin {
       //
       if (evt.target.id === 'showAll') {
         let toggle = document.getElementById('showAll');
-        if (toggle.innerText == 'A') {
-          toggle.innerText = 'N';
+        if (toggle.innerText == 'All') {
+          toggle.innerText = 'New';
           Global.showAll = false;
         } else {
-          toggle.innerText = 'A';
+          toggle.innerText = 'All';
           Global.showAll = true;
         }
       }
       if (evt.target.id === 'saveData') {
-        this.saveFeedsData();
+        await saveFeedsData();
       }
       if (evt.target.id === 'toggleNavi') {
         let toggle = document.getElementById('toggleNavi');
         if (toggle.innerText == '>') {
           toggle.innerText = '\u2228';
-          document.getElementById('naviBar').style.width = '1em';
-          document.getElementById('contentBox').style['margin-left'] = '1em';
+          document.getElementById('naviBar').style.width = '0px';
+          document.getElementById('contentBox').style['margin-left'] = '0px';
         } else {
           toggle.innerText = '>';
-          document.getElementById('naviBar').style.width = '140px';
-          document.getElementById('contentBox').style['margin-left'] = '140px';
+          document.getElementById('naviBar').style.width = '160px';
+          document.getElementById('contentBox').style['margin-left'] = '160px';
         }
+      }
+      if (evt.target.id === 'addFeed') {
+        new AddFeedModal(this.app).open();
       }
 		});
 
-		this.registerInterval(window.setInterval(() => this.saveFeedsData(), 5 * 60 * 1000));
+		this.registerInterval(window.setInterval(async () => await saveFeedsData(), 5 * 60 * 1000));
 	}
 
-	onunload() {
-    this.saveFeedsData();
+	async onunload() {
+    await saveFeedsData();
     this.app.workspace.detachLeavesOfType(VIEW_TYPE_FEEDS_READER);
 	}
 
-  str2filename(s: string) {
-    var illegalRe = /[\/\?<>\\:\*\|"]/g;
-    var controlRe = /[\x00-\x1f\x80-\x9f]/g;
-    var reservedRe = /^\.+$/;
-    var windowsReservedRe = /^(con|prn|aux|nul|com[0-9]|lpt[0-9])(\..*)?$/i;
-    var windowsTrailingRe = /[\. ]+$/;
-    var replacement = '_';
-    return s.replace(illegalRe, replacement)
-            .replace(controlRe, replacement)
-            .replace(reservedRe, replacement)
-            .replace(windowsReservedRe, replacement)
-            .replace(windowsTrailingRe, replacement);
-  }
-
-  async saveFeedsData () {
-    if (!Global.feedsStoreChange) {
-      return;
-    }
-    if (! await this.app.vault.exists(Global.feeds_reader_dir)) {
-      await this.app.vault.createFolder(Global.feeds_reader_dir);
-    }
-    var fpath: string = Global.feeds_reader_dir + '/' + Global.feeds_data_fname;
-    if (! await this.app.vault.exists(fpath)) {
-      await this.app.vault.create(fpath, JSON.stringify(Global.feedsStore));
-    } else {
-      await this.app.vault.adapter.write(fpath, JSON.stringify(Global.feedsStore));
-    }
-    Global.feedsStoreChange = false;
-  }
-
   async activateView() {
-
     const leaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_FEEDS_READER);
     let leaf: WorkspaceLeaf | null = null;
 
@@ -273,37 +249,18 @@ export default class FeedsReader extends Plugin {
   }
 
 	async loadSettings() {
+    Global.feeds_reader_dir = 'feeds-reader';
+    Global.feeds_data_fname = 'feeds-data.json';
+    Global.subscriptions_fname = 'subscriptions.json';
+    Global.showAll = false;
+    Global.currentFeed = '';
+
 		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
 	}
 
 	async saveSettings() {
 		await this.saveData(this.settings);
 	}
-
-	async loadFeedsStoredData() {
-    Global.feeds_reader_dir = 'feeds-reader';
-    Global.feeds_data_fname = 'feeds-data.json';
-    Global.subscriptions_fname = 'subscriptions.json';
-    Global.showAll = false;
-    Global.currentFeed = '';
-    if (! await this.app.vault.exists(Global.feeds_reader_dir)) {
-      await this.app.vault.createFolder(Global.feeds_reader_dir);
-    }
-    var fpath_feedList = Global.feeds_reader_dir+'/'+Global.subscriptions_fname;
-    if (! await this.app.vault.exists(fpath_feedList)) {
-      Global.feedList = [];
-    } else {
-      Global.feedList = JSON.parse(await
-        this.app.vault.adapter.read(fpath_feedList));
-    }
-    var fpath = Global.feeds_reader_dir+'/'+Global.feeds_data_fname;
-    if (! await this.app.vault.exists(fpath)) {
-      Global.feedsStore = {};
-    } else {
-      Global.feedsStore = JSON.parse(await
-        this.app.vault.adapter.read(fpath));
-    }
-  }
 
   getNumFromId(idstr, pref) {
     var n = pref.length;
@@ -332,15 +289,65 @@ export default class FeedsReader extends Plugin {
   }
 }
 
-class SampleModal extends Modal {
+class AddFeedModal extends Modal {
 	constructor(app: App) {
 		super(app);
 	}
 
 	onOpen() {
 		const {contentEl} = this;
-		contentEl.setText('Woah!');
+    contentEl.setText("Add feed");
+    const form = contentEl.createEl('table');
+    form.className = "addFeedForm";
+    var tr = form.createEl('tr');
+    tr.createEl('td', {text: "Name"});
+    tr.createEl('td').createEl('input').id = 'newFeedName';
+    tr = form.createEl('tr');
+    tr.createEl('td', {text: "URL"});
+    tr.createEl('td').createEl('input').id = 'newFeedUrl';
+    tr = form.createEl('tr');
+    tr.createEl('td', {text: "Folder"});
+    tr.createEl('td').createEl('input').id = 'newFeedFolder';
+    tr = form.createEl('tr');
+    var saveButton = tr.createEl('td').createEl('button', {text: "Save"});
+    saveButton.id = 'saveNewFeed';
+    saveButton.addEventListener("click", async () => {
+      var newFeedName = document.getElementById('newFeedName').value;
+      var newFeedUrl = document.getElementById('newFeedUrl').value;
+      var newFeedFolder = document.getElementById('newFeedFolder').value;
+      if ((newFeedName == "") || (newFeedUrl == "")) {
+        new Notice("Feed name and url must not be empty.", 1000);
+        return;
+      }
+      for (var i=0; i<Global.feedList.length; i++) {
+        if (Global.feedList[i].feedUrl == newFeedUrl) {
+          new Notice("Feed url already included.", 1000);
+          return;
+        }
+      }
+      Global.feedList.push({
+        name: newFeedName,
+        feedUrl: newFeedUrl,
+        folder: newFeedFolder,
+        unread: 0,
+        updated: 0
+      });
+      await this.saveSubscriptions();
+      await createFeedBar();
+    });
 	}
+
+	async saveSubscriptions() {
+    if (! await this.app.vault.exists(Global.feeds_reader_dir)) {
+      await this.app.vault.createFolder(Global.feeds_reader_dir);
+    }
+    var fpath_feedList = Global.feeds_reader_dir+'/'+Global.subscriptions_fname;
+    if (! await this.app.vault.exists(fpath_feedList)) {
+        await this.app.vault.create(fpath_feedList, JSON.stringify(Global.feedList));
+    } else {
+        await this.app.vault.adapter.write(fpath_feedList, JSON.stringify(Global.feedList));
+    }
+  }
 
 	onClose() {
 		const {contentEl} = this;
@@ -375,4 +382,67 @@ class SampleSettingTab extends PluginSettingTab {
 					await this.plugin.saveSettings();
 				}));
 	}
+}
+
+export async function saveFeedsData () {
+  if (!Global.feedsStoreChange) {
+    return;
+  }
+  if (! await this.app.vault.exists(Global.feeds_reader_dir)) {
+    await this.app.vault.createFolder(Global.feeds_reader_dir);
+  }
+  var fpath: string = Global.feeds_reader_dir + '/' + Global.feeds_data_fname;
+  if (! await this.app.vault.exists(fpath)) {
+    await this.app.vault.create(fpath, JSON.stringify(Global.feedsStore));
+  } else {
+    await this.app.vault.adapter.write(fpath, JSON.stringify(Global.feedsStore));
+  }
+  Global.feedsStoreChange = false;
+}
+
+export async function loadSubscriptions() {
+  var fpath_feedList = Global.feeds_reader_dir+'/'+Global.subscriptions_fname;
+  if (! await this.app.vault.exists(fpath_feedList)) {
+    Global.feedList = [];
+  } else {
+    Global.feedList = JSON.parse(await
+      this.app.vault.adapter.read(fpath_feedList));
+  }
+}
+
+export async function loadFeedsStoredData() {
+  if (! await this.app.vault.exists(Global.feeds_reader_dir)) {
+    await this.app.vault.createFolder(Global.feeds_reader_dir);
+  }
+  var fpath = Global.feeds_reader_dir+'/'+Global.feeds_data_fname;
+  if (! await this.app.vault.exists(fpath)) {
+    Global.feedsStore = {};
+  } else {
+    Global.feedsStore = JSON.parse(await
+      this.app.vault.adapter.read(fpath));
+  }
+}
+
+function str2filename(s: string) {
+  var illegalRe = /[\/\?<>\\:\*\|"]/g;
+  var controlRe = /[\x00-\x1f\x80-\x9f]/g;
+  var reservedRe = /^\.+$/;
+  var windowsReservedRe = /^(con|prn|aux|nul|com[0-9]|lpt[0-9])(\..*)?$/i;
+  var windowsTrailingRe = /[\. ]+$/;
+  var replacement = '_';
+  return s.replace(illegalRe, replacement)
+          .replace(controlRe, replacement)
+          .replace(reservedRe, replacement)
+          .replace(windowsReservedRe, replacement)
+          .replace(windowsTrailingRe, replacement)
+          .replace(/[\[\]]/g, '');
+}
+
+function unEscape(htmlStr) {
+    htmlStr = htmlStr.replace(/&lt;/g , "<");	 
+    htmlStr = htmlStr.replace(/&gt;/g , ">");     
+    htmlStr = htmlStr.replace(/&quot;/g , "\"");  
+    htmlStr = htmlStr.replace(/&#39;/g , "\'");   
+    htmlStr = htmlStr.replace(/&amp;/g , "&");
+    return htmlStr;
 }

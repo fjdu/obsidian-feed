@@ -1,9 +1,4 @@
-table {
-  border-collapse: collapse;
-}
-
-table,
-td {
+table, td {
   border: 1px solid var(--background-modifier-border);
 }
 
@@ -11,22 +6,23 @@ td {
   padding: 4px 8px;
 }
 
-input {
-  background: none;
-  border: none;
-}
-
 .navigation {
-  height: 100%; /* Full-height: remove this if you want "auto" height */
-  width: 150px; /* Set the width of the sidebar */
+  height: 90%; /* Full-height: remove this if you want "auto" height */
+  width: 160px; /* Set the width of the sidebar */
   position: fixed; /* Fixed Sidebar (stay in place on scroll) */
   z-index: 1; /* Stay on top */
-  top: 0; /* Stay at the top */
+  top: 3.5em; /* Stay at the top */
   left: 0;
   text-align: left;
   padding-left: 1mm;
   display: block;
   overflow-y: auto;
+}
+
+@media only screen and (max-width: 480px) {
+  .navigation {
+    height: 80%;
+  }
 }
 
 .navigation span:hover {
@@ -39,8 +35,15 @@ input {
   padding-left: 2mm;
 }
 
+.toggleNavi {
+  position:absolute;
+  top: 2em;
+  left: 1mm;
+  z-index: 2;
+}
+
 .content {
-  margin-left: 150px; /* Same as the width of the sidebar */
+  margin-left: 160px; /* Same as the width of the sidebar */
   padding: 0px 5px;
 }
 
@@ -53,7 +56,7 @@ input {
 .feedTable table,tr,td {
   border: none;
   border-spacing: 0;
-  padding-right: 5px;
+  padding-right: 3px;
   padding-left: 0;
 }
 
@@ -62,6 +65,10 @@ input {
   border-spacing: 5px;
   padding-right: 10px;
   padding-left: 10px;
+}
+
+.feedFolder {
+  font-weight: bold;
 }
 
 .feedTitle a {
@@ -80,18 +87,28 @@ input {
   color: #f15500;
 }
 
-.markAsRead:hover {
+.toggleRead:hover {
   color: #f15500;
 }
 
-.deleteItem:hover {
+.toggleDelete:hover {
   color: #f15500;
 }
 
 .unreadCount {
-  font-size: 60%;
+  font-size: 40%;
+  font-weight: bold;
 }
 
 .totalCount {
-  font-size: 60%;
+  font-size: 40%;
+  font-weight: bold;
+}
+
+.addFeedForm {
+  width: 90%;
+}
+
+input[type=text] {
+  width: 90%;
 }

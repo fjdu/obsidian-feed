@@ -29,7 +29,7 @@ export interface RssFeedItem {
     creator: string,
     pubDate: string,
     folder: string,
-    read: boolean,
+    read: string
     deleted: string,
     downloaded: string,
     tags: string[]
@@ -207,7 +207,7 @@ export async function getFeedItems(feedUrl: string): Promise<RssFeedContent> {
     rawItems.forEach((rawItem) => {
         const item = buildItem(rawItem);
         if (item.title !== undefined && item.title.length !== 0) {
-            item.read = false;
+            item.read = '';
             item.deleted = '';
             item.downloaded = now_str;
 
