@@ -6,7 +6,7 @@ This plugin is built for my own use.  At present it may still have an "unpolishe
 - The top-left `>` is for toggling the navigation bar.
 - `New` is for toggling displaying only new items or all items (i.e. whether to display those marked as "read" or "deleted").
 - `Save` is for saving the feed data, so that your reading progress would not be accidentally lost.
-- `Add` is for adding new feed subscriptions.
+- `Add` is for adding new feed subscriptions.  The first time you use this plugin, you will need to add subscriptions with this `Add`.
 - All the subscribed sources are listed under their respective folders.
 - The number of unread and total items are displayed after the feed name.  The are not displayed unless the feed name is clicked on.
 - To retrieve new items, click the "refresh" button.  Wait a few seconds (depending on the internet speed), then click on the feed name again, and new items (if any) will be displayed.
