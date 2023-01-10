@@ -140,7 +140,7 @@ export default class FeedsReader extends Plugin {
             '<a href="' + the_item.link + '">' +
             the_item.title.trim() + '</a>\n> ' +
             unEscape(the_item.content).replace(/(<([^>]+)>)/gi, "").replace(/\n/g, ' ').trim() +
-            '\n<small>' + the_item.creator + '</small>');
+            '\n<small>' + the_item.creator.trim() + '</small>\n');
           new Notice(fpath + " saved.", 1000);
         } else {
           new Notice(fpath + " already exists.", 1000);
@@ -439,10 +439,10 @@ function str2filename(s: string) {
 }
 
 function unEscape(htmlStr) {
-    htmlStr = htmlStr.replace(/&lt;/g , "<");	 
-    htmlStr = htmlStr.replace(/&gt;/g , ">");     
-    htmlStr = htmlStr.replace(/&quot;/g , "\"");  
-    htmlStr = htmlStr.replace(/&#39;/g , "\'");   
-    htmlStr = htmlStr.replace(/&amp;/g , "&");
-    return htmlStr;
+    return htmlStr.replace(/&lt;/g , "<")
+                  .replace(/&gt;/g , ">")
+                  .replace(/&quot;/g , "\"")
+                  .replace(/&#39;/g , "\'")
+                  .replace(/&amp;/g , "&")
+                  .replace(/&nbsp;/g , " ");
 }
