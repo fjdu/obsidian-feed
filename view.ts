@@ -43,8 +43,8 @@ export class FRView extends ItemView {
     saveData.id = 'saveData';
     const add = manage.createEl('div').createEl('span', {text: "Add"});
     add.id = 'addFeed';
-    // const edit = manage.createEl('div').createEl('span', {text: "Edit"});
-    // edit.id = 'editFeed';
+    const manageFeeds = manage.createEl('div').createEl('span', {text: "Manage"});
+    manageFeeds.id = 'manageFeeds';
     manage.createEl('hr');
 
     Global.feedList.sort((n1,n2) => {

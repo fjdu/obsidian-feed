@@ -133,7 +133,16 @@ export default class FeedsReader extends Plugin {
 
         var idx = this.getNumFromId(evt.target.id, 'noteThis');
         const the_item = Global.feedsStore[Global.currentFeed].items[idx];
-        const fname: string = str2filename(the_item.title) + '.md';
+        var dt_str: string = '';
+        if (the_item.pubDate != '') {
+          dt_str = the_item.pubDate;
+        } else if (Global.feedsStore[Global.currentFeed].pubDate != '') {
+          dt_str = Global.feedsStore[Global.currentFeed].pubDate;
+        } else {
+          dt_str = nowdatetime();
+        }
+        dt_str = dt_str.substr(0, 10) + '-';
+        const fname: string = dt_str + str2filename(the_item.title) + '.md';
         const fpath: string = Global.feeds_reader_dir + '/' + fname;
         if (! await this.app.vault.exists(fpath)) {
           await this.app.vault.create(fpath,
@@ -213,9 +222,12 @@ export default class FeedsReader extends Plugin {
       if (evt.target.id === 'addFeed') {
         new AddFeedModal(this.app).open();
       }
+      if (evt.target.id === 'manageFeeds') {
+        new ManageFeedsModal(this.app).open();
+      }
 		});
 
-		this.registerInterval(window.setInterval(async () => await saveFeedsData(), 5 * 60 * 1000));
+		// this.registerInterval(window.setInterval(async () => await saveFeedsData(), 5 * 60 * 1000));
 	}
 
 	async onunload() {
@@ -296,7 +308,7 @@ class AddFeedModal extends Modal {
 
 	onOpen() {
 		const {contentEl} = this;
-    contentEl.setText("Add feed");
+    this.titleEl.innerText = "Add feed";
     const form = contentEl.createEl('table');
     form.className = "addFeedForm";
     var tr = form.createEl('tr');
@@ -310,7 +322,6 @@ class AddFeedModal extends Modal {
     tr.createEl('td').createEl('input').id = 'newFeedFolder';
     tr = form.createEl('tr');
     var saveButton = tr.createEl('td').createEl('button', {text: "Save"});
-    saveButton.id = 'saveNewFeed';
     saveButton.addEventListener("click", async () => {
       var newFeedName = document.getElementById('newFeedName').value;
       var newFeedUrl = document.getElementById('newFeedUrl').value;
@@ -354,6 +365,69 @@ class AddFeedModal extends Modal {
 		contentEl.empty();
 	}
 }
+
+
+class ManageFeedsModal extends Modal {
+	constructor(app: App) {
+		super(app);
+	}
+
+	onOpen() {
+		const {contentEl} = this;
+    this.titleEl.innerText = "Manage feeds";
+    contentEl.setText('Caution: all the actions take effect immediately and cannot be undone!');
+    const form = contentEl.createEl('table');
+    form.className = "manageFeedsForm";
+    var tr = form.createEl('thead').createEl('tr');
+    tr.createEl('th', {text: "Name"});
+    tr.createEl('th', {text: "URL"});
+    tr.createEl('th', {text: "Folder"});
+    tr.createEl('th', {text: "Total"});
+    tr.createEl('th', {text: "Read"});
+    tr.createEl('th', {text: "Deleted"});
+    tr.createEl('th', {text: "Actions"});
+    var tbody = form.createEl('tbody');
+    for (var i=0; i<Global.feedList.length; i++) {
+      var tr = tbody.createEl('tr');
+      tr.createEl('td', {text: Global.feedList[i].name});
+      tr.createEl('td', {text: Global.feedList[i].feedUrl});
+      tr.createEl('td', {text: Global.feedList[i].folder});
+      var stats = getFeedStats(Global.feedList[i].feedUrl);
+      tr.createEl('td', {text: stats.total.toString()});
+      tr.createEl('td', {text: stats.read.toString()});
+      tr.createEl('td', {text: stats.deleted.toString()});
+      var actions = tr.createEl('td');
+      var btMarkAllRead = actions.createEl('button', {text: 'Mark all as read'});
+      var btPurgeDeleted = actions.createEl('button', {text: 'Purge deleted'});
+      var btPurgeAll = actions.createEl('button', {text: 'Purge all'});
+      btMarkAllRead.setAttribute('val', Global.feedList[i].feedUrl);
+      btPurgeDeleted.setAttribute('val', Global.feedList[i].feedUrl);
+      btPurgeAll.setAttribute('val', Global.feedList[i].feedUrl);
+      btMarkAllRead.addEventListener('click', (evt) => markAllRead(evt.target.getAttribute('val')));
+      btPurgeDeleted.addEventListener('click', (evt) => purgeDeleted(evt.target.getAttribute('val')));
+      btPurgeAll.addEventListener('click', (evt) => purgeAll(evt.target.getAttribute('val')));
+    }
+	}
+
+	async saveSubscriptions() {
+    if (! await this.app.vault.exists(Global.feeds_reader_dir)) {
+      await this.app.vault.createFolder(Global.feeds_reader_dir);
+    }
+    var fpath_feedList = Global.feeds_reader_dir+'/'+Global.subscriptions_fname;
+    if (! await this.app.vault.exists(fpath_feedList)) {
+        await this.app.vault.create(fpath_feedList, JSON.stringify(Global.feedList));
+    } else {
+        await this.app.vault.adapter.write(fpath_feedList, JSON.stringify(Global.feedList));
+    }
+  }
+
+	onClose() {
+		const {contentEl} = this;
+		contentEl.empty();
+	}
+}
+
+
 
 class SampleSettingTab extends PluginSettingTab {
 	plugin: FeedsReader;
@@ -445,4 +519,41 @@ function unEscape(htmlStr) {
                   .replace(/&#39;/g , "\'")
                   .replace(/&amp;/g , "&")
                   .replace(/&nbsp;/g , " ");
+}
+
+function getFeedStats(feedUrl: string) {
+  if (!Global.feedsStore.hasOwnProperty(feedUrl)) {
+    return {total: 0, read: 0, deleted: 0};
+  }
+  var fd = Global.feedsStore[feedUrl];
+  var nRead = 0, nDeleted = 0, nTotal = fd.items.length;
+  for (var i=0; i<nTotal; i++) {
+    if (fd.items[i].read != '') {
+      nRead += 1;
+    }
+    if (fd.items[i].deleted != '') {
+      nDeleted += 1;
+    }
+  }
+  return {total: nTotal, read: nRead, deleted: nDeleted};
+}
+
+function markAllRead(feedUrl: string) {
+  var nowStr = nowdatetime();
+  for (var i=0; i<Global.feedsStore[feedUrl].items.length; i++) {
+    if (Global.feedsStore[feedUrl].items[i].read === "") {
+      Global.feedsStore[feedUrl].items[i].read = nowStr;
+    }
+  }
+  Global.feedsStoreChange = true;
+}
+
+function purgeDeleted(feedUrl: string) {
+  Global.feedsStore[feedUrl].items = Global.feedsStore[feedUrl].items.filter(item => item.deleted === "");
+  Global.feedsStoreChange = true;
+}
+
+function purgeAll(feedUrl: string) {
+  Global.feedsStore[feedUrl].items.length = 0;
+  Global.feedsStoreChange = true;
 }

@@ -11,7 +11,7 @@ td {
   width: 160px; /* Set the width of the sidebar */
   position: fixed; /* Fixed Sidebar (stay in place on scroll) */
   z-index: 1; /* Stay on top */
-  top: 3.5em; /* Stay at the top */
+  top: 3.9em; /* Stay at the top */
   left: 0;
   text-align: left;
   padding-left: 1mm;
@@ -37,8 +37,8 @@ td {
 
 .toggleNavi {
   position:absolute;
-  top: 2em;
-  left: 1mm;
+  top: 2.5em;
+  left: 1.5mm;
   z-index: 2;
 }
 
@@ -58,6 +58,14 @@ td {
   border-spacing: 0;
   padding-right: 3px;
   padding-left: 0;
+}
+
+.manageFeedsForm table {
+  border-bottom: 1px solid #ddd;
+}
+
+.manageFeedsForm th,td {
+  border-bottom: 1px solid #ddd;
 }
 
 .itemActions td {
