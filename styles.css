@@ -7,15 +7,22 @@ td {
 }
 
 .navigation {
-  height: 90%; /* Full-height: remove this if you want "auto" height */
+  height: 92%; /* Full-height: remove this if you want "auto" height */
   width: 160px; /* Set the width of the sidebar */
   position: fixed; /* Fixed Sidebar (stay in place on scroll) */
   z-index: 1; /* Stay on top */
-  top: 3.9em; /* Stay at the top */
+  top: 4.2em; /* Stay at the top */
   left: 0;
   text-align: left;
   padding-left: 1mm;
   display: block;
+  overflow-y: auto;
+  padding-bottom: 2em;
+}
+
+.content {
+  margin-left: 160px; /* Same as the width of the sidebar */
+  padding: 0px 5px 2em 0px;
   overflow-y: auto;
 }
 
@@ -23,6 +30,11 @@ td {
   .navigation {
     height: 80%;
   }
+}
+
+hr.divider {
+  margin: 0em;
+  border-width: 2px;
 }
 
 .navigation span:hover {
@@ -37,14 +49,15 @@ td {
 
 .toggleNavi {
   position:absolute;
-  top: 2.5em;
+  top: 2.3em;
   left: 1.5mm;
   z-index: 2;
+  font-size: large;
+  font-weight: bold;
 }
 
-.content {
-  margin-left: 160px; /* Same as the width of the sidebar */
-  padding: 0px 5px;
+.toggleNavi:hover {
+  color: #f15500;
 }
 
 .navigation .manage {
@@ -53,7 +66,7 @@ td {
   display: block;
 }
 
-.feedTable table,tr,td {
+.feedTableDiv table,tr,td {
   border: none;
   border-spacing: 0;
   padding-right: 3px;
@@ -79,6 +92,10 @@ td {
   font-weight: bold;
 }
 
+.navigation .feedFolder:hover {
+  color: #7f7f7f;
+}
+
 .feedTitle a {
   text-decoration: none;
 }
@@ -91,6 +108,18 @@ td {
   color: #f15500;
 }
 
+.toggleRead {
+  font-size: large;
+}
+
+.noteThis {
+  font-size: large;
+}
+
+.toggleDelete {
+  font-size: large;
+}
+
 .noteThis:hover {
   color: #f15500;
 }
@@ -101,6 +130,18 @@ td {
 
 .toggleDelete:hover {
   color: #f15500;
+}
+
+.showItemContent {
+  font-size: large;
+}
+
+.showItemContent:hover {
+  color: #f15500;
+}
+
+.itemCreator {
+  font-size: xx-small;
 }
 
 .unreadCount {

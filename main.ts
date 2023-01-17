@@ -6,16 +6,21 @@ import { Global } from "./globals"
 // Remember to rename these classes and interfaces!
 
 interface FeedsReaderSettings {
-	mySetting: string;
+	feeds_reader_dir: string;
+	feeds_data_fname: string;
+	subscriptions_fname: string;
+	showAll: boolean;
 }
 
 const DEFAULT_SETTINGS: FeedsReaderSettings = {
-	mySetting: 'default'
+	feeds_reader_dir: 'feeds-reader',
+  subscriptions_fname: 'subscriptions.json',
+  feeds_data_fname: 'feeds-data.json',
+  showAll: false
 }
 
 export default class FeedsReader extends Plugin {
 	settings: FeedsReaderSettings;
-
 
 	async onload() {
 		await this.loadSettings();
@@ -54,15 +59,30 @@ export default class FeedsReader extends Plugin {
 		// Perform additional things with the ribbon
 		ribbonIconEl.addClass('my-plugin-ribbon-class');
 
+    // this.addSettingTab(new SampleSettingTab(this.app, this));
+
 		// If the plugin hooks up any global DOM events (on parts of the app that doesn't belong to this plugin)
 		// Using this function will automatically remove the event listener when this plugin is disabled.
 		this.registerDomEvent(document, 'click', async (evt: MouseEvent) => {
+      if (evt.target.id === 'updateAll') {
+        Global.feedList.forEach(async (f) => {
+          getFeedItems(f.feedUrl).then(async (res) => {
+            if (res === undefined) {
+              return;
+            }
+            var nNew = this.mergeStoreWithNewData(res, f.feedUrl);
+            new Notice(nNew + " new items for " + f.name, 2000);
+            await saveFeedsData();
+          });
+        });
+      }
       if (evt.target.className === 'refreshFeed') {
         getFeedItems(evt.target.id).then(async (res) => {
           if (res === undefined) {
             return;
           }
-          this.mergeStoreWithNewData(res, evt.target.id);
+          var nNew = this.mergeStoreWithNewData(res, evt.target.id);
+          new Notice(nNew + " new items for " + f.name, 2000);
           await saveFeedsData();
         });
       }
@@ -84,19 +104,19 @@ export default class FeedsReader extends Plugin {
         if (fd.pubDate != '') {
           feed_content.createEl('div', {text: fd.pubDate});
         }
-        var elUnreadCount = document.getElementById('unreadCount' + Global.currentFeed);
-        var elTotalCount = document.getElementById('totalCount' + Global.currentFeed);
+        Global.elUnreadCount = document.getElementById('unreadCount' + Global.currentFeed);
+        Global.elTotalCount = document.getElementById('totalCount' + Global.currentFeed);
+        Global.elSepUnreadTotal = document.getElementById('sepUnreadTotal' + Global.currentFeed);
         var nUnread = 0;
         fd.items.forEach((item, idx) => {
           if ((!Global.showAll) && ((item.read != '') || (item.deleted != ''))) {
             return;
           }
-          nUnread += 1;
           const itemEl = feed_content.createEl('div');
           itemEl.className = 'oneFeedItem';
           itemEl.id = item.link;
           itemEl.createEl('hr');
-          itemEl.createEl('h2').createEl('a',
+          itemEl.createEl('h4').createEl('a',
             {text: item.title.replace(/(<([^>]+)>)/gi, ""), href: item.link}); 
           let tr = itemEl.createEl('table').createEl('tr');
           tr.className = 'itemActions';
@@ -114,17 +134,48 @@ export default class FeedsReader extends Plugin {
           if (item.deleted != '') {
             t_delete = 'Undelete';
           }
+          if ((item.read === '') && (item.deleted === '')) {
+            nUnread += 1;
+          }
           const toggleDelete = tr.createEl('td').createEl('div', {text: t_delete});
           toggleDelete.className = 'toggleDelete';
           toggleDelete.id = 'toggleDelete' + idx;
           if (item.pubDate != "") {
             tr.createEl('td').createEl('div', {text: item.pubDate});
+          } else {
+            tr.createEl('td').createEl('div', {text: item.downloaded});
           }
-          itemEl.createEl('div').innerHTML = item.creator;
-          itemEl.createEl('div').innerHTML = item.content.replace(/<img[^>]*>/g,"");
+          const elCreator = itemEl.createEl('div');
+          elCreator.className = 'itemCreator';
+          elCreator.innerHTML = item.creator;
+          if (!Global.titleOnly) {
+            // itemEl.createEl('div').innerHTML = item.content;
+            // itemEl.createEl('div').innerHTML = item.content.replace(/<img[^>]*>/g,"");
+            itemEl.createEl('div').innerHTML = item.content.replace(/<img src="\/\//g,"<img src=\"https://");
+          } else {
+            const showItemContent = itemEl.createEl('div', {text: '>>> >>>'});
+            showItemContent.className = 'showItemContent';
+            showItemContent.setAttribute('_link', item.link);
+            showItemContent.setAttribute('_idx', idx);
+          }
           });
-        elTotalCount.innerText = fd.items.length;
-        elUnreadCount.innerText = nUnread;
+        Global.elTotalCount.innerText = fd.items.length;
+        Global.elUnreadCount.innerText = nUnread;
+        Global.elSepUnreadTotal.innerText = '/';
+      }
+      if (evt.target.className === 'showItemContent') {
+        var idx = evt.target.getAttribute('_idx');
+        if (evt.target.innerText === '>>> >>>') {
+          var elID = evt.target.getAttribute('_link');
+          var item = Global.feedsStore[Global.currentFeed].items[idx];
+          var elContent = document.getElementById(elID).createEl('div');
+          elContent.innerHTML = item.content.replace(/<img src="\/\//g,"<img src=\"https://");
+          elContent.id = 'toggleContent' + idx;
+          evt.target.innerText = '<<< <<<';
+        } else {
+          document.getElementById('toggleContent' + idx).remove();
+          evt.target.innerText = '>>> >>>';
+        }
       }
       if (evt.target.className === 'noteThis') {
         if (! await this.app.vault.exists(Global.feeds_reader_dir)) {
@@ -146,10 +197,17 @@ export default class FeedsReader extends Plugin {
         const fpath: string = Global.feeds_reader_dir + '/' + fname;
         if (! await this.app.vault.exists(fpath)) {
           await this.app.vault.create(fpath,
-            '<a href="' + the_item.link + '">' +
-            the_item.title.trim() + '</a>\n> ' +
-            unEscape(the_item.content).replace(/(<([^>]+)>)/gi, "").replace(/\n/g, ' ').trim() +
-            '\n<small>' + the_item.creator.trim() + '</small>\n');
+            '\n> [!abstract]+ [' +
+            the_item.title.trim().replace(/(<([^>]+)>)/gi, " ").replace(/\n/g, " ") +
+            '](' + the_item.link + ')\n> ' +
+            unEscape(handle_tags(handle_a_tag(handle_img_tag(the_item.content.replace(/\n/g, ' '))))
+            .replace(/ +/g, ' ')
+            .replace(/\s+$/g, '').replace(/^\s+/g, '')) +
+            // handle_a_tag(handle_img_tag(unEscape(
+            //   the_item.content.replace(/\n/g, ' '))))
+            // .replace(/(<([^>]+)>)/gi, " ")
+            // .trim() +
+            '\n<small>' + the_item.creator.trim() + '</small>');
           new Notice(fpath + " saved.", 1000);
         } else {
           new Notice(fpath + " already exists.", 1000);
@@ -165,10 +223,16 @@ export default class FeedsReader extends Plugin {
           Global.feedsStore[Global.currentFeed].items[idx].read = nowdatetime();
           el.innerText = 'Unread';
           Global.hideThisItem = true;
+          if (Global.feedsStore[Global.currentFeed].items[idx].deleted === '') {
+            Global.elUnreadCount.innerText = parseInt(Global.elUnreadCount.innerText) - 1;
+          }
         } else {
           Global.feedsStore[Global.currentFeed].items[idx].read = '';
           el.innerText = 'Read';
           Global.hideThisItem = false;
+          if (Global.feedsStore[Global.currentFeed].items[idx].deleted === '') {
+            Global.elUnreadCount.innerText = parseInt(Global.elUnreadCount.innerText) + 1;
+          }
         }
       }
       if (evt.target.className === 'toggleDelete') {
@@ -180,10 +244,16 @@ export default class FeedsReader extends Plugin {
           Global.feedsStore[Global.currentFeed].items[idx].deleted = nowdatetime();
           el.innerText = 'Undelete';
           Global.hideThisItem = true;
+          if (Global.feedsStore[Global.currentFeed].items[idx].read === '') {
+            Global.elUnreadCount.innerText = parseInt(Global.elUnreadCount.innerText) - 1;
+          }
         } else {
           Global.feedsStore[Global.currentFeed].items[idx].deleted = '';
           el.innerText = 'Delete';
           Global.hideThisItem = false;
+          if (Global.feedsStore[Global.currentFeed].items[idx].read === '') {
+            Global.elUnreadCount.innerText = parseInt(Global.elUnreadCount.innerText) + 1;
+          }
         }
       }
       if ((evt.target.className === 'toggleRead') ||
@@ -196,26 +266,38 @@ export default class FeedsReader extends Plugin {
       //
       if (evt.target.id === 'showAll') {
         let toggle = document.getElementById('showAll');
-        if (toggle.innerText == 'All') {
-          toggle.innerText = 'New';
+        if (toggle.innerText == 'Show all') {
+          toggle.innerText = 'Unread only';
           Global.showAll = false;
         } else {
-          toggle.innerText = 'All';
+          toggle.innerText = 'Show all';
           Global.showAll = true;
         }
       }
-      if (evt.target.id === 'saveData') {
+      if (evt.target.id === 'titleOnly') {
+        let toggle = document.getElementById('titleOnly');
+        if (toggle.innerText == 'Title only') {
+          toggle.innerText = 'Show content';
+          Global.titleOnly = false;
+        } else {
+          toggle.innerText = 'Title only';
+          Global.titleOnly = true;
+        }
+      }
+      if (evt.target.id === 'saveFeedsData') {
         await saveFeedsData();
       }
       if (evt.target.id === 'toggleNavi') {
         let toggle = document.getElementById('toggleNavi');
         if (toggle.innerText == '>') {
-          toggle.innerText = '\u2228';
-          document.getElementById('naviBar').style.width = '0px';
-          document.getElementById('contentBox').style['margin-left'] = '0px';
+          toggle.innerText = '<';
+          // document.getElementById('naviBar').style.width = '1mm';
+          document.getElementById('naviBar').style.display = 'none';
+          document.getElementById('contentBox').style['margin-left'] = '0mm';
         } else {
           toggle.innerText = '>';
-          document.getElementById('naviBar').style.width = '160px';
+          // document.getElementById('naviBar').style.width = '160px';
+          document.getElementById('naviBar').style.display = 'block';
           document.getElementById('contentBox').style['margin-left'] = '160px';
         }
       }
@@ -265,6 +347,7 @@ export default class FeedsReader extends Plugin {
     Global.feeds_data_fname = 'feeds-data.json';
     Global.subscriptions_fname = 'subscriptions.json';
     Global.showAll = false;
+    Global.titleOnly = true;
     Global.currentFeed = '';
 
 		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
@@ -283,21 +366,28 @@ export default class FeedsReader extends Plugin {
     if (!Global.feedsStore.hasOwnProperty(key)) {
       Global.feedsStore[key] = newdata;
       Global.feedsStoreChange = true;
-      return;
+      return newdata.items.length;
     }
     Global.feedsStore[key].title = newdata.title;
     Global.feedsStore[key].subtitle = newdata.subtitle;
     Global.feedsStore[key].description = newdata.description;
     Global.feedsStore[key].pubDate = newdata.pubDate;
-    newdata.items.forEach((it) => {
+    var nNew = 0;
+    for (var j=0; j<newdata.items.length; j++) {
+      var found = false;
       for (let i=0; i<Global.feedsStore[key].items.length; i++) {
-        if (Global.feedsStore[key].items[i].link === it.link) {
-          return;
+        if (Global.feedsStore[key].items[i].link === newdata.items[j].link) {
+          found = true;
+          break;
         }
       }
-      Global.feedsStore[key].items.unshift(it);
-      Global.feedsStoreChange = true;
-    });
+      if (!found) {
+        nNew += 1;
+        Global.feedsStore[key].items.unshift(newdata.items[j]);
+        Global.feedsStoreChange = true;
+      }
+    }
+    return nNew;
   }
 }
 
@@ -389,9 +479,9 @@ class ManageFeedsModal extends Modal {
     var tbody = form.createEl('tbody');
     for (var i=0; i<Global.feedList.length; i++) {
       var tr = tbody.createEl('tr');
-      tr.createEl('td', {text: Global.feedList[i].name});
-      tr.createEl('td', {text: Global.feedList[i].feedUrl});
-      tr.createEl('td', {text: Global.feedList[i].folder});
+      tr.createEl('td').createEl('input', {value: Global.feedList[i].name});
+      tr.createEl('td').createEl('input', {value: Global.feedList[i].feedUrl});
+      tr.createEl('td').createEl('input', {value: Global.feedList[i].folder});
       var stats = getFeedStats(Global.feedList[i].feedUrl);
       tr.createEl('td', {text: stats.total.toString()});
       tr.createEl('td', {text: stats.read.toString()});
@@ -400,12 +490,18 @@ class ManageFeedsModal extends Modal {
       var btMarkAllRead = actions.createEl('button', {text: 'Mark all as read'});
       var btPurgeDeleted = actions.createEl('button', {text: 'Purge deleted'});
       var btPurgeAll = actions.createEl('button', {text: 'Purge all'});
+      var btDeduplicate = actions.createEl('button', {text: 'Deduplicate'});
       btMarkAllRead.setAttribute('val', Global.feedList[i].feedUrl);
       btPurgeDeleted.setAttribute('val', Global.feedList[i].feedUrl);
       btPurgeAll.setAttribute('val', Global.feedList[i].feedUrl);
+      btDeduplicate.setAttribute('val', Global.feedList[i].feedUrl);
+      btDeduplicate.setAttribute('fdName', Global.feedList[i].name);
       btMarkAllRead.addEventListener('click', (evt) => markAllRead(evt.target.getAttribute('val')));
       btPurgeDeleted.addEventListener('click', (evt) => purgeDeleted(evt.target.getAttribute('val')));
       btPurgeAll.addEventListener('click', (evt) => purgeAll(evt.target.getAttribute('val')));
+      btDeduplicate.addEventListener('click', (evt) => {
+        var nRemoved = deduplicate(evt.target.getAttribute('val'));
+        new Notice(nRemoved + " removed for " + evt.target.getAttribute('fdName'), 2000);});
     }
 	}
 
@@ -442,19 +538,46 @@ class SampleSettingTab extends PluginSettingTab {
 
 		containerEl.empty();
 
-		containerEl.createEl('h2', {text: 'Settings for my awesome plugin.'});
+		containerEl.createEl('h2', {text: 'Settings for RSS Feed Reader.'});
 
 		new Setting(containerEl)
-			.setName('Setting #1')
-			.setDesc('It\'s a secret')
+			.setName('Folder name')
+			.setDesc('This is the folder in the vault where to save the feeds data.')
 			.addText(text => text
-				.setPlaceholder('Enter your secret')
-				.setValue(this.plugin.settings.mySetting)
+				.setPlaceholder('feeds-reader')
+				.setValue(this.plugin.settings.feeds_reader_dir)
 				.onChange(async (value) => {
-					console.log('Secret: ' + value);
-					this.plugin.settings.mySetting = value;
+					this.plugin.settings.feeds_reader_dir = value;
 					await this.plugin.saveSettings();
 				}));
+		new Setting(containerEl)
+			.setName('Subscription file name')
+			.setDesc('This is the file name for the subscriptions.')
+			.addText(text => text
+				.setPlaceholder('subscriptions.json')
+				.setValue(this.plugin.settings.subscriptions_fname)
+				.onChange(async (value) => {
+					this.plugin.settings.subscriptions_fname = value;
+					await this.plugin.saveSettings();
+				}));
+		new Setting(containerEl)
+			.setName('Feeds data file name')
+			.setDesc('This is the file name for the feeds items.')
+			.addText(text => text
+				.setPlaceholder('feeds-data.json')
+				.setValue(this.plugin.settings.feeds_data_fname)
+				.onChange(async (value) => {
+					this.plugin.settings.feeds_data_fname = value;
+					await this.plugin.saveSettings();
+				}));
+		new Setting(containerEl)
+			.setName('Show all by default')
+			.setDesc('Show all items or only unread items.')
+			.addToggle(cb => cb
+        .setValue(this.plugin.settings.showAll)
+        .onChange(async (val) => {
+        this.plugin.settings.showAll = val;
+        await this.plugin.saveSettings();}));
 	}
 }
 
@@ -479,7 +602,7 @@ export async function loadSubscriptions() {
   if (! await this.app.vault.exists(fpath_feedList)) {
     Global.feedList = [];
   } else {
-    Global.feedList = JSON.parse(await
+    Global.feedList = await JSON.parse(await
       this.app.vault.adapter.read(fpath_feedList));
   }
 }
@@ -509,7 +632,9 @@ function str2filename(s: string) {
           .replace(reservedRe, replacement)
           .replace(windowsReservedRe, replacement)
           .replace(windowsTrailingRe, replacement)
-          .replace(/[\[\]]/g, '');
+          .replace(/[\[\]]/g, '')
+          .replace(/_\s+/g, ' ')
+          .replace(/_*\s*$/g, '');
 }
 
 function unEscape(htmlStr) {
@@ -521,12 +646,12 @@ function unEscape(htmlStr) {
                   .replace(/&nbsp;/g , " ");
 }
 
-function getFeedStats(feedUrl: string) {
+export function getFeedStats(feedUrl: string) {
   if (!Global.feedsStore.hasOwnProperty(feedUrl)) {
     return {total: 0, read: 0, deleted: 0};
   }
   var fd = Global.feedsStore[feedUrl];
-  var nRead = 0, nDeleted = 0, nTotal = fd.items.length;
+  var nRead = 0, nDeleted = 0, nUnread = 0, nTotal = fd.items.length;
   for (var i=0; i<nTotal; i++) {
     if (fd.items[i].read != '') {
       nRead += 1;
@@ -534,8 +659,11 @@ function getFeedStats(feedUrl: string) {
     if (fd.items[i].deleted != '') {
       nDeleted += 1;
     }
+    if ((fd.items[i].read === '') && (fd.items[i].deleted === '')) {
+      nUnread += 1;
+    }
   }
-  return {total: nTotal, read: nRead, deleted: nDeleted};
+  return {total: nTotal, read: nRead, deleted: nDeleted, unread: nUnread};
 }
 
 function markAllRead(feedUrl: string) {
@@ -556,4 +684,37 @@ function purgeDeleted(feedUrl: string) {
 function purgeAll(feedUrl: string) {
   Global.feedsStore[feedUrl].items.length = 0;
   Global.feedsStoreChange = true;
+}
+
+function deduplicate(feedUrl: string) {
+  var n = Global.feedsStore[feedUrl].items.length;
+  const delete_mark = 'DELETE-NOW';
+  for (var i=0; i<n; i++) {
+    for (var j=0; j<i; j++) {
+      if (Global.feedsStore[feedUrl].items[i].link === Global.feedsStore[feedUrl].items[j].link) {
+        Global.feedsStore[feedUrl].items[j].deleted = delete_mark;
+      }
+    }
+  }
+  const nBefore = Global.feedsStore[feedUrl].items.length;
+  Global.feedsStore[feedUrl].items = Global.feedsStore[feedUrl].items.filter(item => item.deleted != delete_mark);
+  const nAfter = Global.feedsStore[feedUrl].items.length;
+  if (nBefore > nAfter) {
+    Global.feedsStoreChange = true;
+  }
+  return nBefore - nAfter;
+}
+
+function handle_img_tag(s: string) {
+  return s.replace(/<img src="\/\//g, "<img src=\"https://");
+}
+
+function handle_a_tag(s: string) {
+  return s.replace(/<a href="\/\//g, "<a href=\"https://");
+}
+
+function handle_tags(s: string) {
+  return s.replace(/<p>/g, ' ').replace(/<\/p>(\s*\S)/g, '\n>\n> $1').replace(/<\/p>/g, ' ')
+          .replace(/<div>/g, ' ').replace(/<\/div>/g, ' ')
+          .replace(/<span>/g, ' ').replace(/<\/span>/g, ' ');
 }

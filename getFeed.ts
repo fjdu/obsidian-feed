@@ -180,7 +180,10 @@ function getAllItems(doc: Document): Element[] {
 }
 
 async function requestFeed(feedUrl: string) : Promise<string> {
-    return await request({url: feedUrl});
+    return await request({url: feedUrl, method: "GET", cache: 'no-store',
+                          contentType: "application/text+xml",
+                          credentials: 'include'
+                         });
 }
 
 export function nowdatetime(): string {

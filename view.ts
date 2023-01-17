@@ -1,6 +1,6 @@
 import { ItemView, WorkspaceLeaf } from "obsidian";
 import { Global } from "./globals"
-import { saveFeedsData, loadSubscriptions, loadFeedsStoredData } from "./main"
+import { saveFeedsData, loadSubscriptions, loadFeedsStoredData, getFeedStats } from "./main"
 
 export const VIEW_TYPE_FEEDS_READER = "feeds-reader-view";
 
@@ -37,11 +37,15 @@ export class FRView extends ItemView {
 
     const manage = navigation.createEl('div');
     manage.className = 'manage';
-    const showAll = manage.createEl('div').createEl('span', {text: "New"});
+    const showAll = manage.createEl('div').createEl('span', {text: "Unread only"});
     showAll.id = 'showAll';
-    const saveData = manage.createEl('div').createEl('span', {text: "Save"});
-    saveData.id = 'saveData';
-    const add = manage.createEl('div').createEl('span', {text: "Add"});
+    const titleOnly = manage.createEl('div').createEl('span', {text: "Title only"});
+    titleOnly.id = 'titleOnly';
+    const saveFeedsData = manage.createEl('div').createEl('span', {text: "Save data"});
+    saveFeedsData.id = 'saveFeedsData';
+    const updateAll = manage.createEl('div').createEl('span', {text: "Update all"});
+    updateAll.id = 'updateAll';
+    const add = manage.createEl('div').createEl('span', {text: "Add feed"});
     add.id = 'addFeed';
     const manageFeeds = manage.createEl('div').createEl('span', {text: "Manage"});
     manageFeeds.id = 'manageFeeds';
@@ -54,10 +58,13 @@ export class FRView extends ItemView {
     });
 
     const feedTableDiv = navigation.createEl('div');
-    feedTableDiv.className = 'feedTable';
+    feedTableDiv.className = 'feedTableDiv';
     const feedTable = feedTableDiv.createEl('table');
     feedTable.id = 'feedTable';
-    await createFeedBar();
+    feedTable.className = 'feedTable';
+    waitForElm('.feedTable').then(async (elm) => {
+      await createFeedBar();
+    });
 
     const feed_content = content.createEl('div');
     feed_content.id = 'feed_content';
@@ -74,7 +81,7 @@ export async function createFeedBar() {
   var feedTable = document.getElementById('feedTable');
   feedTable.empty();
   var thisFolder = "";
-  Global.feedList.forEach((item, idx) => {
+  Global.feedList.forEach(async (item, idx) => {
     if (item.folder != thisFolder) {
       thisFolder = item.folder;
       if (thisFolder != "") {
@@ -86,11 +93,16 @@ export async function createFeedBar() {
     showFeed.className = 'showFeed';
     showFeed.id = item.feedUrl;
 
-    const unreadCount = tr.createEl('td').createEl('span', {text: ''});
+    var stats = getFeedStats(item.feedUrl);
+
+    const elUnreadTotal = tr.createEl('td');
+    const unreadCount = elUnreadTotal.createEl('span', {text: stats.unread.toString()});
     unreadCount.className = 'unreadCount';
     unreadCount.id = 'unreadCount' + item.feedUrl;
-
-    const totalCount = tr.createEl('td').createEl('span', {text: ''});
+    var elSep = elUnreadTotal.createEl('span', {text: '/'});
+    elSep.className = 'unreadCount';
+    elSep.id = 'sepUnreadTotal'+item.feedUrl;
+    const totalCount = elUnreadTotal.createEl('span', {text: stats.total.toString()});
     totalCount.className = 'totalCount';
     totalCount.id = 'totalCount' + item.feedUrl;
 
@@ -100,3 +112,22 @@ export async function createFeedBar() {
   });
 }
 
+function waitForElm(selector) {
+    return new Promise(resolve => {
+        if (document.querySelector(selector)) {
+            return resolve(document.querySelector(selector));
+        }
+
+        const observer = new MutationObserver(mutations => {
+            if (document.querySelector(selector)) {
+                resolve(document.querySelector(selector));
+                observer.disconnect();
+            }
+        });
+
+        observer.observe(document.body, {
+            childList: true,
+            subtree: true
+        });
+    });
+}

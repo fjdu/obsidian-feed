@@ -1,9 +1,11 @@
 export namespace Global {
   var showAll: boolean;
-  var currentFeed: string;
+  var titleOnly: boolean;
   var feeds_reader_dir: string;
   var feeds_data_fname: string;
   var subscriptions_fname: string;
+  var currentFeed: string;
+  var elUnreadCount, elTotalCount, elSepUnreadTotal;
   var feedList: {name: string, feedUrl: string, unread: number, updated: number, folder: string} [];
   var feedsStore: {[id: string]: RssFeedContent;};
   var feedsStoreChange: boolean;

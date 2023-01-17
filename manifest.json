@@ -3,7 +3,7 @@
 	"name": "Feeds Reader",
 	"version": "1.0.0",
 	"minAppVersion": "0.15.0",
-	"description": "This is an Obsidian plugin for reading RSS feeds.",
+	"description": "Read RSS feeds within Obsidian.",
 	"author": "fjdu",
 	"authorUrl": "https://fjdu.github.io",
 	"fundingUrl": "https://www.buymeacoffee.com/fjdu",
