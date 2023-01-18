@@ -116,8 +116,9 @@ export default class FeedsReader extends Plugin {
           itemEl.className = 'oneFeedItem';
           itemEl.id = item.link;
           itemEl.createEl('hr');
-          itemEl.createEl('h4').createEl('a',
-            {text: item.title.replace(/(<([^>]+)>)/gi, ""), href: item.link}); 
+          itemEl.createEl('div')
+          .createEl('a', {text: item.title.replace(/(<([^>]+)>)/gi, ""), href: item.link})
+          .className = 'itemTitle';
           let tr = itemEl.createEl('table').createEl('tr');
           tr.className = 'itemActions';
           var t_read = "Read";
