@@ -379,7 +379,7 @@ export default class FeedsReader extends Plugin {
     Global.feedsStore[key].description = newdata.description;
     Global.feedsStore[key].pubDate = newdata.pubDate;
     var nNew = 0;
-    for (var j=0; j<newdata.items.length; j++) {
+    for (var j=newdata.items.length-1; j>=0; j--) {
       var found = false;
       for (let i=0; i<Global.feedsStore[key].items.length; i++) {
         if (Global.feedsStore[key].items[i].link === newdata.items[j].link) {
