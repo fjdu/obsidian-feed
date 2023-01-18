@@ -71,7 +71,9 @@ export default class FeedsReader extends Plugin {
               return;
             }
             var nNew = this.mergeStoreWithNewData(res, f.feedUrl);
-            new Notice(nNew + " new items for " + f.name, 2000);
+            if (nNew > 0) {
+              new Notice(nNew + " new items for " + f.name, 3000);
+            }
             await saveFeedsData();
           });
         });
@@ -82,7 +84,9 @@ export default class FeedsReader extends Plugin {
             return;
           }
           var nNew = this.mergeStoreWithNewData(res, evt.target.id);
-          new Notice(nNew + " new items for " + f.name, 2000);
+          if (nNew > 0) {
+            new Notice(nNew + " new items for " + f.name, 3000);
+          }
           await saveFeedsData();
         });
       }
@@ -287,6 +291,7 @@ export default class FeedsReader extends Plugin {
       }
       if (evt.target.id === 'saveFeedsData') {
         await saveFeedsData();
+        new Notice("Feeds data saved.", 1000);
       }
       if (evt.target.id === 'toggleNavi') {
         let toggle = document.getElementById('toggleNavi');
