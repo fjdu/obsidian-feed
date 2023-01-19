@@ -43,7 +43,7 @@ hr.divider {
   padding-left: 2mm;
 }
 
-.toggleNavi {
+.toggleNaviContainer {
   position:absolute;
   top: 2.3em;
   left: 1.5mm;
@@ -52,8 +52,13 @@ hr.divider {
   font-weight: bold;
 }
 
-.toggleNavi:hover {
+.toggleNaviContainer:hover {
   color: #f15500;
+}
+
+.toggleNaviAux {
+  font-size: medium;
+  padding-left: 2mm;
 }
 
 .navigation .manage {

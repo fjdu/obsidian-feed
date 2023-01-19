@@ -289,20 +289,27 @@ export default class FeedsReader extends Plugin {
           Global.titleOnly = true;
         }
       }
-      if (evt.target.id === 'saveFeedsData') {
+      if ((evt.target.id === 'saveFeedsData') || (evt.target.id === 'save_data_toggling')) {
         await saveFeedsData();
         new Notice("Feeds data saved.", 1000);
       }
-      if (evt.target.id === 'toggleNavi') {
+      if ((evt.target.id === 'toggleNavi') && (Global.currentFeed != '')) {
         let toggle = document.getElementById('toggleNavi');
         if (toggle.innerText == '>') {
           toggle.innerText = '<';
-          // document.getElementById('naviBar').style.width = '1mm';
+          var toggleNaviAux = document.getElementById('toggleNaviAux');
+          Global.elUnreadCount = toggleNaviAux.createEl('span', {text: Global.elUnreadCount.innerText});
+          var save_data_toggling = toggleNaviAux.createEl('span', {text: 'Save data'});
+          save_data_toggling.id = 'save_data_toggling';
+          save_data_toggling.className = 'toggleNaviAux';
           document.getElementById('naviBar').style.display = 'none';
           document.getElementById('contentBox').style['margin-left'] = '0mm';
         } else {
           toggle.innerText = '>';
-          // document.getElementById('naviBar').style.width = '160px';
+          var s = Global.elUnreadCount.innerText;
+          Global.elUnreadCount = document.getElementById('unreadCount' + Global.currentFeed);
+          Global.elUnreadCount.innerText = s;
+          document.getElementById('toggleNaviAux').empty();
           document.getElementById('naviBar').style.display = 'block';
           document.getElementById('contentBox').style['margin-left'] = '160px';
         }
@@ -440,6 +447,7 @@ class AddFeedModal extends Modal {
         updated: 0
       });
       await this.saveSubscriptions();
+      sort_feed_list();
       await createFeedBar();
     });
 	}
@@ -611,6 +619,7 @@ export async function loadSubscriptions() {
     Global.feedList = await JSON.parse(await
       this.app.vault.adapter.read(fpath_feedList));
   }
+  sort_feed_list();
 }
 
 export async function loadFeedsStoredData() {
@@ -723,4 +732,12 @@ function handle_tags(s: string) {
   return s.replace(/<p>/g, ' ').replace(/<\/p>(\s*\S)/g, '\n>\n> $1').replace(/<\/p>/g, ' ')
           .replace(/<div>/g, ' ').replace(/<\/div>/g, ' ')
           .replace(/<span>/g, ' ').replace(/<\/span>/g, ' ');
+}
+
+function sort_feed_list() {
+  Global.feedList.sort((n1,n2) => {
+    if (n1.folder > n2.folder) {return 1;}
+    if (n1.folder < n2.folder) {return -1;}
+    return 0;
+  });
 }

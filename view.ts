@@ -24,9 +24,13 @@ export class FRView extends ItemView {
     const container = this.containerEl.children[1];
     container.empty();
 
-    const toggleNavi = container.createEl('div', {text: ">"});
+    const toggleNaviContainer = container.createEl('div');
+    toggleNaviContainer.className = 'toggleNaviContainer';
+    const toggleNavi = toggleNaviContainer.createEl('span', {text: ">"});
     toggleNavi.id = 'toggleNavi';
-    toggleNavi.className = 'toggleNavi';
+    const toggleNaviAux = toggleNaviContainer.createEl('span');
+    toggleNaviAux.id = 'toggleNaviAux';
+    toggleNaviAux.className = 'toggleNaviAux';
 
     const navigation = container.createEl("div", {class: 'navigation'});
     const content = container.createEl("div", {class: "content"});
@@ -51,12 +55,6 @@ export class FRView extends ItemView {
     manageFeeds.id = 'manageFeeds';
     manage.createEl('hr');
 
-    Global.feedList.sort((n1,n2) => {
-      if (n1.folder > n2.folder) {return 1;}
-      if (n1.folder < n2.folder) {return -1;}
-      return 0;
-    });
-
     const feedTableDiv = navigation.createEl('div');
     feedTableDiv.className = 'feedTableDiv';
     const feedTable = feedTableDiv.createEl('table');
@@ -79,7 +77,7 @@ export class FRView extends ItemView {
 
 export async function createFeedBar() {
   var feedTable = document.getElementById('feedTable');
-  feedTable.empty();
+  await feedTable.empty();
   var thisFolder = "";
   Global.feedList.forEach(async (item, idx) => {
     if (item.folder != thisFolder) {
