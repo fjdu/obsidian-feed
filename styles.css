@@ -52,13 +52,21 @@ hr.divider {
   font-weight: bold;
 }
 
-.toggleNaviContainer:hover {
+.toggleNavi {
+  padding-right: 2mm;
+}
+
+.toggleNavi:hover {
   color: #f15500;
 }
 
-.toggleNaviAux {
+.toggleNaviAux .save_data_toggling {
   font-size: medium;
   padding-left: 2mm;
+}
+
+.save_data_toggling:hover {
+  color: #f15500;
 }
 
 .navigation .manage {

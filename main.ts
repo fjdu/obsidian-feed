@@ -92,81 +92,9 @@ export default class FeedsReader extends Plugin {
       }
       if (evt.target.className === 'showFeed') {
         Global.currentFeed = evt.target.id;
-        const feed_content = document.getElementById('feed_content');
-        feed_content.empty();
-
-        const feedTitle = feed_content.createEl('h1');
-        feedTitle.className = 'feedTitle';
-
-        if (!Global.feedsStore.hasOwnProperty(Global.currentFeed)) {
-          return;
+        if (Global.currentFeed != '') {
+          show_feed();
         }
-        var fd = Global.feedsStore[Global.currentFeed];
-        // feedTitle.createEl('a',
-        //  {text: fd.title.replace(/(<([^>]+)>)/gi, ""), href: fd.link});
-        feedTitle.createEl('a', {href: fd.link}).innerHTML = fd.title;
-        if (fd.pubDate != '') {
-          feed_content.createEl('div', {text: fd.pubDate});
-        }
-        Global.elUnreadCount = document.getElementById('unreadCount' + Global.currentFeed);
-        Global.elTotalCount = document.getElementById('totalCount' + Global.currentFeed);
-        Global.elSepUnreadTotal = document.getElementById('sepUnreadTotal' + Global.currentFeed);
-        var nUnread = 0;
-        fd.items.forEach((item, idx) => {
-          if ((!Global.showAll) && ((item.read != '') || (item.deleted != ''))) {
-            return;
-          }
-          const itemEl = feed_content.createEl('div');
-          itemEl.className = 'oneFeedItem';
-          itemEl.id = item.link;
-          itemEl.createEl('hr');
-          itemEl.createEl('div')
-          .createEl('a', {text: item.title.replace(/(<([^>]+)>)/gi, ""), href: item.link})
-          .className = 'itemTitle';
-          let tr = itemEl.createEl('table').createEl('tr');
-          tr.className = 'itemActions';
-          var t_read = "Read";
-          if (item.read != '') {
-            t_read = 'Unread';
-          }
-          const toggleRead = tr.createEl('td').createEl('div', {text: t_read});
-          toggleRead.className = 'toggleRead';
-          toggleRead.id = 'toggleRead' + idx;
-          const noteThis = tr.createEl('td').createEl('div', {text: "Save"});
-          noteThis.className = 'noteThis';
-          noteThis.id = 'noteThis' + idx;
-          var t_delete = "Delete";
-          if (item.deleted != '') {
-            t_delete = 'Undelete';
-          }
-          if ((item.read === '') && (item.deleted === '')) {
-            nUnread += 1;
-          }
-          const toggleDelete = tr.createEl('td').createEl('div', {text: t_delete});
-          toggleDelete.className = 'toggleDelete';
-          toggleDelete.id = 'toggleDelete' + idx;
-          if (item.pubDate != "") {
-            tr.createEl('td').createEl('div', {text: item.pubDate});
-          } else {
-            tr.createEl('td').createEl('div', {text: item.downloaded});
-          }
-          const elCreator = itemEl.createEl('div');
-          elCreator.className = 'itemCreator';
-          elCreator.innerHTML = item.creator;
-          if (!Global.titleOnly) {
-            // itemEl.createEl('div').innerHTML = item.content;
-            // itemEl.createEl('div').innerHTML = item.content.replace(/<img[^>]*>/g,"");
-            itemEl.createEl('div').innerHTML = item.content.replace(/<img src="\/\//g,"<img src=\"https://");
-          } else {
-            const showItemContent = itemEl.createEl('div', {text: '>>> >>>'});
-            showItemContent.className = 'showItemContent';
-            showItemContent.setAttribute('_link', item.link);
-            showItemContent.setAttribute('_idx', idx);
-          }
-          });
-        Global.elTotalCount.innerText = fd.items.length;
-        Global.elUnreadCount.innerText = nUnread;
-        Global.elSepUnreadTotal.innerText = '/';
       }
       if (evt.target.className === 'showItemContent') {
         var idx = evt.target.getAttribute('_idx');
@@ -299,9 +227,9 @@ export default class FeedsReader extends Plugin {
           toggle.innerText = '<';
           var toggleNaviAux = document.getElementById('toggleNaviAux');
           Global.elUnreadCount = toggleNaviAux.createEl('span', {text: Global.elUnreadCount.innerText});
-          var save_data_toggling = toggleNaviAux.createEl('span', {text: 'Save data'});
+          var save_data_toggling = toggleNaviAux.createEl('span', {text: 'Save'});
           save_data_toggling.id = 'save_data_toggling';
-          save_data_toggling.className = 'toggleNaviAux';
+          save_data_toggling.className = 'save_data_toggling';
           document.getElementById('naviBar').style.display = 'none';
           document.getElementById('contentBox').style['margin-left'] = '0mm';
         } else {
@@ -353,6 +281,10 @@ export default class FeedsReader extends Plugin {
     this.app.workspace.revealLeaf(
       this.app.workspace.getLeavesOfType(VIEW_TYPE_FEEDS_READER)[0]
     );
+
+    if (Global.currentFeed != '') {
+      show_feed();
+    }
   }
 
 	async loadSettings() {
@@ -740,4 +672,78 @@ function sort_feed_list() {
     if (n1.folder < n2.folder) {return -1;}
     return 0;
   });
+}
+
+async function show_feed() {
+   const feed_content = document.getElementById('feed_content');
+   feed_content.empty();
+
+   const feedTitle = feed_content.createEl('h1');
+   feedTitle.className = 'feedTitle';
+
+   if (!Global.feedsStore.hasOwnProperty(Global.currentFeed)) {
+     return;
+   }
+   var fd = Global.feedsStore[Global.currentFeed];
+   feedTitle.createEl('a', {href: fd.link}).innerHTML = fd.title;
+   if (fd.pubDate != '') {
+     feed_content.createEl('div', {text: fd.pubDate});
+   }
+   Global.elUnreadCount = document.getElementById('unreadCount' + Global.currentFeed);
+   Global.elTotalCount = document.getElementById('totalCount' + Global.currentFeed);
+   Global.elSepUnreadTotal = document.getElementById('sepUnreadTotal' + Global.currentFeed);
+   var nUnread = 0;
+   fd.items.forEach((item, idx) => {
+     if ((!Global.showAll) && ((item.read != '') || (item.deleted != ''))) {
+       return;
+     }
+     const itemEl = feed_content.createEl('div');
+     itemEl.className = 'oneFeedItem';
+     itemEl.id = item.link;
+     itemEl.createEl('hr');
+     itemEl.createEl('div')
+     .createEl('a', {text: item.title.replace(/(<([^>]+)>)/gi, ""), href: item.link})
+     .className = 'itemTitle';
+     let tr = itemEl.createEl('table').createEl('tr');
+     tr.className = 'itemActions';
+     var t_read = "Read";
+     if (item.read != '') {
+       t_read = 'Unread';
+     }
+     const toggleRead = tr.createEl('td').createEl('div', {text: t_read});
+     toggleRead.className = 'toggleRead';
+     toggleRead.id = 'toggleRead' + idx;
+     const noteThis = tr.createEl('td').createEl('div', {text: "Save"});
+     noteThis.className = 'noteThis';
+     noteThis.id = 'noteThis' + idx;
+     var t_delete = "Delete";
+     if (item.deleted != '') {
+       t_delete = 'Undelete';
+     }
+     if ((item.read === '') && (item.deleted === '')) {
+       nUnread += 1;
+     }
+     const toggleDelete = tr.createEl('td').createEl('div', {text: t_delete});
+     toggleDelete.className = 'toggleDelete';
+     toggleDelete.id = 'toggleDelete' + idx;
+     if (item.pubDate != "") {
+       tr.createEl('td').createEl('div', {text: item.pubDate});
+     } else {
+       tr.createEl('td').createEl('div', {text: item.downloaded});
+     }
+     const elCreator = itemEl.createEl('div');
+     elCreator.className = 'itemCreator';
+     elCreator.innerHTML = item.creator;
+     if (!Global.titleOnly) {
+       itemEl.createEl('div').innerHTML = item.content.replace(/<img src="\/\//g,"<img src=\"https://");
+     } else {
+       const showItemContent = itemEl.createEl('div', {text: '>>> >>>'});
+       showItemContent.className = 'showItemContent';
+       showItemContent.setAttribute('_link', item.link);
+       showItemContent.setAttribute('_idx', idx);
+     }
+     });
+   Global.elTotalCount.innerText = fd.items.length;
+   Global.elUnreadCount.innerText = nUnread;
+   Global.elSepUnreadTotal.innerText = '/';
 }

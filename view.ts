@@ -28,6 +28,7 @@ export class FRView extends ItemView {
     toggleNaviContainer.className = 'toggleNaviContainer';
     const toggleNavi = toggleNaviContainer.createEl('span', {text: ">"});
     toggleNavi.id = 'toggleNavi';
+    toggleNavi.className = 'toggleNavi';
     const toggleNaviAux = toggleNaviContainer.createEl('span');
     toggleNaviAux.id = 'toggleNaviAux';
     toggleNaviAux.className = 'toggleNaviAux';
