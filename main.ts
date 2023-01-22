@@ -92,6 +92,14 @@ export default class FeedsReader extends Plugin {
       }
       if (evt.target.className === 'showFeed') {
         Global.currentFeed = evt.target.id;
+        Global.currentFeedName = '';
+        for (var i=0; i<Global.feedList.length; i++) {
+          if (Global.feedList[i].feedUrl === Global.currentFeed) {
+            Global.currentFeedName = Global.feedList[i].name;
+            console.log(Global.currentFeedName);
+            break;
+          }
+        }
         if (Global.currentFeed != '') {
           show_feed();
         }
@@ -126,7 +134,13 @@ export default class FeedsReader extends Plugin {
           dt_str = nowdatetime();
         }
         dt_str = dt_str.substr(0, 10) + '-';
-        const fname: string = dt_str + str2filename(the_item.title) + '.md';
+        const fname: string = dt_str + 
+                              str2filename(
+                              (Global.currentFeedName === ''? '' :
+                               Global.currentFeedName + '-') +
+                              the_item.title.trim()
+                              .replace(/(<([^>]+)>)/g, " ")
+                              .replace(/[:\*]+/g, '')) + '.md';
         const fpath: string = Global.feeds_reader_dir + '/' + fname;
         if (! await this.app.vault.exists(fpath)) {
           await this.app.vault.create(fpath,
@@ -294,6 +308,7 @@ export default class FeedsReader extends Plugin {
     Global.showAll = false;
     Global.titleOnly = true;
     Global.currentFeed = '';
+    Global.currentFeedName = '';
 
 		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
 	}

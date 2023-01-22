@@ -5,6 +5,7 @@ export namespace Global {
   var feeds_data_fname: string;
   var subscriptions_fname: string;
   var currentFeed: string;
+  var currentFeedName: string;
   var elUnreadCount, elTotalCount, elSepUnreadTotal;
   var feedList: {name: string, feedUrl: string, unread: number, updated: number, folder: string} [];
   var feedsStore: {[id: string]: RssFeedContent;};
