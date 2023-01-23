@@ -137,7 +137,7 @@ export default class FeedsReader extends Plugin {
         const fname: string = dt_str + 
                               str2filename(
                               (Global.currentFeedName === ''? '' :
-                               Global.currentFeedName + '-') +
+                               Global.currentFeedName.replace(/(\s+)/g, '-') + '-') +
                               the_item.title.trim()
                               .replace(/(<([^>]+)>)/g, " ")
                               .replace(/[:\*]+/g, '')) + '.md';
