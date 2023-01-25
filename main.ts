@@ -132,7 +132,7 @@ export default class FeedsReader extends Plugin {
         } else {
           dt_str = nowdatetime();
         }
-        dt_str = dt_str.substr(0, 10) + '-';
+        dt_str = dt_str.substring(0, 10) + '-';
         const fname: string = dt_str + 
                               str2filename(
                               (Global.currentFeedName === ''? '' :
@@ -325,7 +325,7 @@ export default class FeedsReader extends Plugin {
 
   getNumFromId(idstr, pref) {
     var n = pref.length;
-    return parseInt(idstr.substr(n));
+    return parseInt(idstr.substring(n));
   }
 
   mergeStoreWithNewData(newdata: RssFeedContent, key: string) {
