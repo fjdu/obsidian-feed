@@ -108,10 +108,11 @@ export async function createFeedBar() {
     const refreshFeed = tr.createEl('td', {text: '\u21BB'});
     refreshFeed.className = 'refreshFeed';
     refreshFeed.id = item.feedUrl;
+    refreshFeed.setAttribute('fdName', item.name);
   });
 }
 
-function waitForElm(selector) {
+export function waitForElm(selector) {
     return new Promise(resolve => {
         if (document.querySelector(selector)) {
             return resolve(document.querySelector(selector));

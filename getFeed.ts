@@ -1,4 +1,4 @@
-import {request} from "obsidian";
+import {request, Notice} from "obsidian";
 
 /**
  * parser for .rss files, build from scratch
@@ -197,7 +197,7 @@ export async function getFeedItems(feedUrl: string): Promise<RssFeedContent> {
         const rawData = await requestFeed(feedUrl);
         data = new window.DOMParser().parseFromString(rawData, "text/xml");
     } catch (e) {
-        console.error(e);
+        new Notice('Fail to fetch ' + feedUrl, 3000);
         return Promise.resolve(undefined);
     }
 

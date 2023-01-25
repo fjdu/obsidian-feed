@@ -3,6 +3,7 @@ export namespace Global {
   var titleOnly: boolean;
   var feeds_reader_dir: string;
   var feeds_data_fname: string;
+  var feeds_store_base: string;
   var subscriptions_fname: string;
   var currentFeed: string;
   var currentFeedName: string;
@@ -12,4 +13,6 @@ export namespace Global {
   var feedsStoreChange: boolean;
   var hideThisItem: boolean;
   var itemIdx: number;
+  var nMergeLookback: number;
+  var lenStrPerFile: number;
 }

@@ -1,5 +1,5 @@
 import { App, Editor, MarkdownView, Menu, Modal, Notice, addIcon, Plugin, PluginSettingTab, Setting } from 'obsidian';
-import { FRView, VIEW_TYPE_FEEDS_READER, createFeedBar } from "./view";
+import { FRView, VIEW_TYPE_FEEDS_READER, createFeedBar, waitForElm } from "./view";
 import { getFeedItems, RssFeedContent, RssFeedItem, nowdatetime } from "./getFeed"
 import { Global } from "./globals"
 
@@ -85,7 +85,7 @@ export default class FeedsReader extends Plugin {
           }
           var nNew = this.mergeStoreWithNewData(res, evt.target.id);
           if (nNew > 0) {
-            new Notice(nNew + " new items for " + f.name, 3000);
+            new Notice(nNew + " new items for " + evt.target.getAttribute('fdName'), 3000);
           }
           await saveFeedsData();
         });
@@ -96,7 +96,6 @@ export default class FeedsReader extends Plugin {
         for (var i=0; i<Global.feedList.length; i++) {
           if (Global.feedList[i].feedUrl === Global.currentFeed) {
             Global.currentFeedName = Global.feedList[i].name;
-            console.log(Global.currentFeedName);
             break;
           }
         }
@@ -140,7 +139,7 @@ export default class FeedsReader extends Plugin {
                                Global.currentFeedName.replace(/(\s+)/g, '-') + '-') +
                               the_item.title.trim()
                               .replace(/(<([^>]+)>)/g, " ")
-                              .replace(/[:\*]+/g, '')) + '.md';
+                              .replace(/[:!?@#\*\^\$]+/g, '')) + '.md';
         const fpath: string = Global.feeds_reader_dir + '/' + fname;
         if (! await this.app.vault.exists(fpath)) {
           await this.app.vault.create(fpath,
@@ -232,8 +231,12 @@ export default class FeedsReader extends Plugin {
         }
       }
       if ((evt.target.id === 'saveFeedsData') || (evt.target.id === 'save_data_toggling')) {
-        await saveFeedsData();
-        new Notice("Feeds data saved.", 1000);
+        var nSaved = await saveFeedsData();
+        if (nSaved > 0) {
+          new Notice("Data saved: " + nSaved.toString() + 'file(s) updated.', 1000);
+        } else {
+          new Notice("No need to save.", 1000);
+        }
       }
       if ((evt.target.id === 'toggleNavi') && (Global.currentFeed != '')) {
         let toggle = document.getElementById('toggleNavi');
@@ -304,11 +307,14 @@ export default class FeedsReader extends Plugin {
 	async loadSettings() {
     Global.feeds_reader_dir = 'feeds-reader';
     Global.feeds_data_fname = 'feeds-data.json';
+    Global.feeds_store_base = 'feeds-store';
     Global.subscriptions_fname = 'subscriptions.json';
     Global.showAll = false;
     Global.titleOnly = true;
     Global.currentFeed = '';
     Global.currentFeedName = '';
+    Global.nMergeLookback = 1000;
+    Global.lenStrPerFile = 1024 * 1024;
 
 		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
 	}
@@ -333,9 +339,10 @@ export default class FeedsReader extends Plugin {
     Global.feedsStore[key].description = newdata.description;
     Global.feedsStore[key].pubDate = newdata.pubDate;
     var nNew = 0;
+    var nLookback = Math.min(Global.nMergeLookback, Global.feedsStore[key].items.length);
     for (var j=newdata.items.length-1; j>=0; j--) {
       var found = false;
-      for (let i=0; i<Global.feedsStore[key].items.length; i++) {
+      for (let i=0; i<nLookback; i++) {
         if (Global.feedsStore[key].items[i].link === newdata.items[j].link) {
           found = true;
           break;
@@ -382,7 +389,11 @@ class AddFeedModal extends Modal {
       }
       for (var i=0; i<Global.feedList.length; i++) {
         if (Global.feedList[i].feedUrl == newFeedUrl) {
-          new Notice("Feed url already included.", 1000);
+          new Notice("Not added: url already included.", 1000);
+          return;
+        }
+        if (Global.feedList[i].name == newFeedName) {
+          new Notice("Not added: name already used.", 1000);
           return;
         }
       }
@@ -393,23 +404,11 @@ class AddFeedModal extends Modal {
         unread: 0,
         updated: 0
       });
-      await this.saveSubscriptions();
+      await saveSubscriptions();
       sort_feed_list();
       await createFeedBar();
     });
 	}
-
-	async saveSubscriptions() {
-    if (! await this.app.vault.exists(Global.feeds_reader_dir)) {
-      await this.app.vault.createFolder(Global.feeds_reader_dir);
-    }
-    var fpath_feedList = Global.feeds_reader_dir+'/'+Global.subscriptions_fname;
-    if (! await this.app.vault.exists(fpath_feedList)) {
-        await this.app.vault.create(fpath_feedList, JSON.stringify(Global.feedList));
-    } else {
-        await this.app.vault.adapter.write(fpath_feedList, JSON.stringify(Global.feedList));
-    }
-  }
 
 	onClose() {
 		const {contentEl} = this;
@@ -466,24 +465,11 @@ class ManageFeedsModal extends Modal {
     }
 	}
 
-	async saveSubscriptions() {
-    if (! await this.app.vault.exists(Global.feeds_reader_dir)) {
-      await this.app.vault.createFolder(Global.feeds_reader_dir);
-    }
-    var fpath_feedList = Global.feeds_reader_dir+'/'+Global.subscriptions_fname;
-    if (! await this.app.vault.exists(fpath_feedList)) {
-        await this.app.vault.create(fpath_feedList, JSON.stringify(Global.feedList));
-    } else {
-        await this.app.vault.adapter.write(fpath_feedList, JSON.stringify(Global.feedList));
-    }
-  }
-
 	onClose() {
 		const {contentEl} = this;
 		contentEl.empty();
 	}
 }
-
 
 
 class SampleSettingTab extends PluginSettingTab {
@@ -543,42 +529,48 @@ class SampleSettingTab extends PluginSettingTab {
 }
 
 export async function saveFeedsData () {
+  var nSaved = 0;
   if (!Global.feedsStoreChange) {
-    return;
+    return nSaved;
   }
-  if (! await this.app.vault.exists(Global.feeds_reader_dir)) {
-    await this.app.vault.createFolder(Global.feeds_reader_dir);
+  for (var i=0; i<Global.feedList.length; i++) {
+    key = Global.feedList[i].feedUrl;
+    nSaved += (await saveStringSplitted(JSON.stringify(Global.feedsStore[key], null, 1),
+                Global.feeds_reader_dir + '/' + Global.feeds_store_base,
+                Global.feedList[i].name,
+                Global.lenStrPerFile, 0));
   }
-  var fpath: string = Global.feeds_reader_dir + '/' + Global.feeds_data_fname;
-  if (! await this.app.vault.exists(fpath)) {
-    await this.app.vault.create(fpath, JSON.stringify(Global.feedsStore));
-  } else {
-    await this.app.vault.adapter.write(fpath, JSON.stringify(Global.feedsStore));
-  }
+  // if (! await this.app.vault.exists(Global.feeds_reader_dir)) {
+  //   await this.app.vault.createFolder(Global.feeds_reader_dir);
+  // }
+  // var fpath: string = Global.feeds_reader_dir + '/' + Global.feeds_data_fname;
+  // if (! await this.app.vault.exists(fpath)) {
+  //   await this.app.vault.create(fpath, JSON.stringify(Global.feedsStore, null, 1));
+  // } else {
+  //   await this.app.vault.adapter.write(fpath, JSON.stringify(Global.feedsStore, null, 1));
+  // }
   Global.feedsStoreChange = false;
-}
-
-export async function loadSubscriptions() {
-  var fpath_feedList = Global.feeds_reader_dir+'/'+Global.subscriptions_fname;
-  if (! await this.app.vault.exists(fpath_feedList)) {
-    Global.feedList = [];
-  } else {
-    Global.feedList = await JSON.parse(await
-      this.app.vault.adapter.read(fpath_feedList));
-  }
-  sort_feed_list();
+  return nSaved;
 }
 
 export async function loadFeedsStoredData() {
-  if (! await this.app.vault.exists(Global.feeds_reader_dir)) {
-    await this.app.vault.createFolder(Global.feeds_reader_dir);
+  var noSplitFile = true;
+  Global.feedsStore = {};
+  for (var i=0; i<Global.feedList.length; i++) {
+    var res = await loadStringSplitted(Global.feeds_reader_dir + '/' + Global.feeds_store_base, Global.feedList[i].name);
+    if (res.length > 0) {
+      Global.feedsStore[Global.feedList[i].feedUrl] = JSON.parse(res);
+      noSplitFile = false;
+    }
   }
-  var fpath = Global.feeds_reader_dir+'/'+Global.feeds_data_fname;
-  if (! await this.app.vault.exists(fpath)) {
-    Global.feedsStore = {};
-  } else {
-    Global.feedsStore = JSON.parse(await
-      this.app.vault.adapter.read(fpath));
+  if (noSplitFile) {
+    if (! await this.app.vault.exists(Global.feeds_reader_dir)) {
+      await this.app.vault.createFolder(Global.feeds_reader_dir);
+    }
+    var fpath = Global.feeds_reader_dir+'/'+Global.feeds_data_fname;
+    if (await this.app.vault.exists(fpath)) {
+      Global.feedsStore = JSON.parse(await this.app.vault.adapter.read(fpath));
+    }
   }
 }
 
@@ -610,7 +602,7 @@ function unEscape(htmlStr) {
 
 export function getFeedStats(feedUrl: string) {
   if (!Global.feedsStore.hasOwnProperty(feedUrl)) {
-    return {total: 0, read: 0, deleted: 0};
+    return {total: 0, read: 0, deleted: 0, unread: 0};
   }
   var fd = Global.feedsStore[feedUrl];
   var nRead = 0, nDeleted = 0, nUnread = 0, nTotal = fd.items.length;
@@ -668,16 +660,20 @@ function deduplicate(feedUrl: string) {
 }
 
 function handle_img_tag(s: string) {
-  return s.replace(/<img src="\/\//g, "<img src=\"https://");
+    // return s.replace(/<img src="\/\/([^>]+>)/g, "\n<img src=\"https://$1\n");
+  return s.replace(/<img src="\/\//g, "<img src=\"https://")
+          .replace(/<img src="([^"]+)"[^>]+>/g, "\n![]($1)\n");
 }
 
 function handle_a_tag(s: string) {
-  return s.replace(/<a href="\/\//g, "<a href=\"https://");
+  return s.replace(/<a href="\/\//g, "<a href=\"https://")
+          .replace(/<a href="([^"]+)"\s*>([^<]*)<\/a>/g, "[$2]($1)");
 }
 
 function handle_tags(s: string) {
   return s.replace(/<p>/g, ' ').replace(/<\/p>(\s*\S)/g, '\n>\n> $1').replace(/<\/p>/g, ' ')
           .replace(/<div>/g, ' ').replace(/<\/div>/g, ' ')
+          .replace(/<br>/g, ' ').replace(/<br\/>/g, ' ')
           .replace(/<span>/g, ' ').replace(/<\/span>/g, ' ');
 }
 
@@ -761,4 +757,78 @@ async function show_feed() {
    Global.elTotalCount.innerText = fd.items.length;
    Global.elUnreadCount.innerText = nUnread;
    Global.elSepUnreadTotal.innerText = '/';
+}
+
+
+export async function loadSubscriptions() {
+  var fpath_feedList = Global.feeds_reader_dir+'/'+Global.subscriptions_fname;
+  Global.feedList = [];
+  if (await this.app.vault.exists(fpath_feedList)) {
+    Global.feedList = await JSON.parse(await
+      this.app.vault.adapter.read(fpath_feedList));
+  }
+  sort_feed_list();
+}
+
+
+async function saveSubscriptions() {
+  if (! await this.app.vault.exists(Global.feeds_reader_dir)) {
+    await this.app.vault.createFolder(Global.feeds_reader_dir);
+  }
+  var fpath_feedList = Global.feeds_reader_dir+'/'+Global.subscriptions_fname;
+  if (! await this.app.vault.exists(fpath_feedList)) {
+      await this.app.vault.create(fpath_feedList, JSON.stringify(Global.feedList, null, 1));
+  } else {
+      await this.app.vault.adapter.write(fpath_feedList, JSON.stringify(Global.feedList, null, 1));
+  }
+}
+
+async function saveStringToFile(s: string, folder: string, fname: string) {
+  var written = 0;
+  if (! await app.vault.exists(folder)) {
+    await app.vault.createFolder(folder);
+  }
+  var fpath = folder + "/" + fname;
+  if (! await app.vault.exists(fpath)) {
+    await app.vault.create(fpath, s);
+    written = 1;
+  } else {
+    if ((await app.vault.adapter.read(fpath)) != s) {
+      await app.vault.adapter.write(fpath, s);
+      written = 1;
+    }
+  }
+  return written;
+}
+
+async function saveStringSplitted(s: string, folder: string, fname_base: string, nCharPerFile: number, iPostfix: number) {
+  try {
+    var lenTotal = s.length;
+    if (lenTotal === 0) {
+      return 0;
+    }
+  } catch (e) {
+    return 0;
+  }
+  var fname = makeFilename(fname_base, iPostfix);
+  return ((await saveStringToFile(s.substring(lenTotal-nCharPerFile), folder, fname)) +
+          + (await saveStringSplitted(s.substring(0, lenTotal-nCharPerFile), folder, fname_base, nCharPerFile, iPostfix+1)));
+}
+
+async function loadStringSplitted(folder: string, fname_base: string) {
+  var res = '';
+  if (await app.vault.exists(folder)) {
+    for (var i=0;;i++) {
+      var fpath = folder + '/' + makeFilename(fname_base, i);
+      if (! await app.vault.exists(fpath)) {
+        break;
+      }
+      res = (await app.vault.adapter.read(fpath)).concat('', res);
+    }
+  }
+  return res;
+}
+
+function makeFilename (fname_base: string, iPostfix: number) {
+  return fname_base + '-' + iPostfix.toString() + '.json.frag';
 }
