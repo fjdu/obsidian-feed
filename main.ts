@@ -1,6 +1,6 @@
 import { App, Editor, MarkdownView, Menu, Modal, Notice, addIcon, Plugin, PluginSettingTab, Setting } from 'obsidian';
 import { FRView, VIEW_TYPE_FEEDS_READER, createFeedBar, waitForElm } from "./view";
-import { getFeedItems, RssFeedContent, RssFeedItem, nowdatetime } from "./getFeed"
+import { getFeedItems, RssFeedContent, nowdatetime, itemKeys } from "./getFeed"
 import { Global } from "./globals"
 
 // Remember to rename these classes and interfaces!
@@ -93,6 +93,7 @@ export default class FeedsReader extends Plugin {
       if (evt.target.className === 'showFeed') {
         Global.currentFeed = evt.target.id;
         Global.currentFeedName = '';
+        Global.undoList = [];
         for (var i=0; i<Global.feedList.length; i++) {
           if (Global.feedList[i].feedUrl === Global.currentFeed) {
             Global.currentFeedName = Global.feedList[i].name;
@@ -100,7 +101,12 @@ export default class FeedsReader extends Plugin {
           }
         }
         if (Global.currentFeed != '') {
-          show_feed();
+          show_feed([]);
+        }
+      }
+      if (evt.target.id === 'undo') {
+        if (Global.currentFeed != '') {
+          show_feed(Global.undoList);
         }
       }
       if (evt.target.className === 'showItemContent') {
@@ -180,6 +186,11 @@ export default class FeedsReader extends Plugin {
             Global.elUnreadCount.innerText = parseInt(Global.elUnreadCount.innerText) + 1;
           }
         }
+        const idxOf = Global.undoList.indexOf(idx);
+        if (idxOf > -1) {
+          Global.undoList.splice(idxOf, 1);
+        }
+        Global.undoList.unshift(idx);
       }
       if (evt.target.className === 'toggleDelete') {
         var idx = this.getNumFromId(evt.target.id, 'toggleDelete');
@@ -201,6 +212,11 @@ export default class FeedsReader extends Plugin {
             Global.elUnreadCount.innerText = parseInt(Global.elUnreadCount.innerText) + 1;
           }
         }
+        const idxOf = Global.undoList.indexOf(idx);
+        if (idxOf > -1) {
+          Global.undoList.splice(idxOf, 1);
+        }
+        Global.undoList.unshift(idx);
       }
       if ((evt.target.className === 'toggleRead') ||
           (evt.target.className === 'toggleDelete')) {
@@ -300,7 +316,7 @@ export default class FeedsReader extends Plugin {
     );
 
     if (Global.currentFeed != '') {
-      show_feed();
+      show_feed([]);
     }
   }
 
@@ -315,6 +331,7 @@ export default class FeedsReader extends Plugin {
     Global.currentFeedName = '';
     Global.nMergeLookback = 1000;
     Global.lenStrPerFile = 1024 * 1024;
+    Global.feedsStoreChange = false;
 
 		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
 	}
@@ -572,6 +589,24 @@ export async function loadFeedsStoredData() {
       Global.feedsStore = JSON.parse(await this.app.vault.adapter.read(fpath));
     }
   }
+  // // Remove redundant properties saved in the json files.
+  // for (const k in Global.feedsStore) {
+  //   for (var i=0; i<Global.feedsStore[k].items.length; i++) {
+  //     const item = Global.feedsStore[k].items[i];
+  //     var keys = Object.keys(item);
+  //     var change = false;
+  //     for (var j=0; j<keys.length; j++) {
+  //       if (!(itemKeys.includes(keys[j]))) {
+  //         delete item[keys[j]];
+  //         change = true;
+  //       }
+  //     }
+  //     if (change) {
+  //       Global.feedsStoreChange = true;
+  //       Global.feedsStore[k].items[i] = item;
+  //     }
+  //   }
+  // }
 }
 
 function str2filename(s: string) {
@@ -685,7 +720,7 @@ function sort_feed_list() {
   });
 }
 
-async function show_feed() {
+async function show_feed(showList) {
    const feed_content = document.getElementById('feed_content');
    feed_content.empty();
 
@@ -705,8 +740,15 @@ async function show_feed() {
    Global.elSepUnreadTotal = document.getElementById('sepUnreadTotal' + Global.currentFeed);
    var nUnread = 0;
    fd.items.forEach((item, idx) => {
-     if ((!Global.showAll) && ((item.read != '') || (item.deleted != ''))) {
-       return;
+     if (showList.length === 0) {
+       if ((!Global.showAll) && ((item.read != '') || (item.deleted != ''))) {
+         return;
+       }
+     }
+     if (showList.length > 0) {
+       if (!showList.includes(idx)) {
+         return;
+       }
      }
      const itemEl = feed_content.createEl('div');
      itemEl.className = 'oneFeedItem';
@@ -737,11 +779,13 @@ async function show_feed() {
      const toggleDelete = tr.createEl('td').createEl('div', {text: t_delete});
      toggleDelete.className = 'toggleDelete';
      toggleDelete.id = 'toggleDelete' + idx;
+     var elPubDate;
      if (item.pubDate != "") {
-       tr.createEl('td').createEl('div', {text: item.pubDate});
+       elPubDate = tr.createEl('td').createEl('div', {text: item.pubDate});
      } else {
-       tr.createEl('td').createEl('div', {text: item.downloaded});
+       elPubDate = tr.createEl('td').createEl('div', {text: item.downloaded});
      }
+     elPubDate.className = 'elPubDate';
      const elCreator = itemEl.createEl('div');
      elCreator.className = 'itemCreator';
      elCreator.innerHTML = item.creator;
@@ -805,6 +849,16 @@ async function saveStringSplitted(s: string, folder: string, fname_base: string,
   try {
     var lenTotal = s.length;
     if (lenTotal === 0) {
+      // Remove redundant files with higher serial number.
+      for (var i=0;;i++) {
+        var fpath_unneeded = folder + '/' + makeFilename(fname_base, iPostfix+i);
+        if (await app.vault.exists(fpath_unneeded)) {
+          await app.vault.adapter.remove(fpath_unneeded);
+          new Notice('Redundant file ' + fpath_unneeded + ' removed.', 2000);
+        } else {
+          break;
+        }
+      }
       return 0;
     }
   } catch (e) {

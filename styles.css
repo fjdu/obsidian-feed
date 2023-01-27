@@ -136,6 +136,10 @@ hr.divider {
   font-size: large;
 }
 
+.elPubDate {
+  font-size: xx-small;
+}
+
 .noteThis:hover {
   color: #f15500;
 }

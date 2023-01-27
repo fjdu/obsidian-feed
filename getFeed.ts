@@ -22,18 +22,17 @@ export interface RssFeedContent {
 
 export interface RssFeedItem {
     title: string,
-    description: string,
     content: string,
     category: string,
     link: string,
     creator: string,
     pubDate: string,
-    folder: string,
     read: string
     deleted: string,
-    downloaded: string,
-    tags: string[]
+    downloaded: string
 }
+
+export const itemKeys = ["title", "content", "link", "creator", "pubDate", "read", "deleted", "downloaded"];
 
 /**
  * return the node with the specified name
@@ -146,17 +145,15 @@ function getContent(element: Element | Document, names: string[]): string {
 function buildItem(element: Element): RssFeedItem {
     return {
         title: getContent(element, ["title"]),
-        description: getContent(element, ["content", "content:encoded", "itunes:summary", "description", "summary", "media:description"]),
-        content: getContent(element, ["itunes:summary", "description", "summary", "media:description", "content", "content:encoded", "ns0:encoded"]),
+        // description: getContent(element, ["content", "content:encoded", "itunes:summary", "description", "summary", "media:description"]),
+        content: getContent(element, ["content", "content:encoded", "itunes:summary", "description", "summary", "media:description", "ns0:encoded", "abstract"]),
         category: getContent(element, ["category"]),
         link: getContent(element, ["link", "link#href"]),
         creator: getContent(element, ["creator", "dc:creator", "author", "author.name"]),
         pubDate: getContent(element, ["pubDate", "published", "updated", "dc:date"]),
-        folder: null,
         read: null,
         deleted: null,
-        downloaded: null,
-        tags: [],
+        downloaded: null
     }
 }
 

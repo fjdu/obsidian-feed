@@ -15,4 +15,5 @@ export namespace Global {
   var itemIdx: number;
   var nMergeLookback: number;
   var lenStrPerFile: number;
+  var undoList: number [];
 }

@@ -50,6 +50,8 @@ export class FRView extends ItemView {
     saveFeedsData.id = 'saveFeedsData';
     const updateAll = manage.createEl('div').createEl('span', {text: "Update all"});
     updateAll.id = 'updateAll';
+    const undo = manage.createEl('div').createEl('span', {text: "Undo"});
+    undo.id = 'undo';
     const add = manage.createEl('div').createEl('span', {text: "Add feed"});
     add.id = 'addFeed';
     const manageFeeds = manage.createEl('div').createEl('span', {text: "Manage"});
