@@ -1,3 +1,10 @@
+.itemContent, .itemTitle {
+    -moz-user-select: text;
+    -webkit-user-select: text;
+    -ms-user-select: text;
+    user-select: text;
+}
+
 td {
   padding: 4px 8px;
 }

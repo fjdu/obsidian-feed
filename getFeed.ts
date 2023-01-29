@@ -146,7 +146,7 @@ function buildItem(element: Element): RssFeedItem {
     return {
         title: getContent(element, ["title"]),
         // description: getContent(element, ["content", "content:encoded", "itunes:summary", "description", "summary", "media:description"]),
-        content: getContent(element, ["content", "content:encoded", "itunes:summary", "description", "summary", "media:description", "ns0:encoded", "abstract"]),
+        content: getContent(element, ["itunes:summary", "description", "summary", "media:description", "ns0:encoded", "abstract", "content", "content:encoded"]),
         category: getContent(element, ["category"]),
         link: getContent(element, ["link", "link#href"]),
         creator: getContent(element, ["creator", "dc:creator", "author", "author.name"]),

@@ -115,6 +115,7 @@ export default class FeedsReader extends Plugin {
           var elID = evt.target.getAttribute('_link');
           var item = Global.feedsStore[Global.currentFeed].items[idx];
           var elContent = document.getElementById(elID).createEl('div');
+          elContent.className = 'itemContent';
           elContent.innerHTML = item.content.replace(/<img src="\/\//g,"<img src=\"https://");
           elContent.id = 'toggleContent' + idx;
           evt.target.innerText = '<<< <<<';
@@ -790,7 +791,9 @@ async function show_feed(showList) {
      elCreator.className = 'itemCreator';
      elCreator.innerHTML = item.creator;
      if (!Global.titleOnly) {
-       itemEl.createEl('div').innerHTML = item.content.replace(/<img src="\/\//g,"<img src=\"https://");
+       const elContent = itemEl.createEl('div');
+       elContent.className = 'itemContent';
+       elContent.innerHTML = item.content.replace(/<img src="\/\//g,"<img src=\"https://");
      } else {
        const showItemContent = itemEl.createEl('div', {text: '>>> >>>'});
        showItemContent.className = 'showItemContent';
