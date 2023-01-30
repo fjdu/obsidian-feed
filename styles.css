@@ -102,7 +102,7 @@ hr.divider {
 .itemActions td {
   border: none;
   border-spacing: 0px;
-  padding-right: 15px;
+  padding-right: 5px;
   padding-left: 0px;
   font-style: italic;
 }
@@ -187,4 +187,13 @@ hr.divider {
 
 input[type=text] {
   width: 90%;
+}
+
+.next_prev {
+  font-weight: bold;
+  padding-right: 5px;
+}
+
+.next_prev:hover {
+  color: #f15500;
 }

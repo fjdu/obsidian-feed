@@ -92,21 +92,40 @@ export default class FeedsReader extends Plugin {
       }
       if (evt.target.className === 'showFeed') {
         Global.currentFeed = evt.target.id;
+        if (Global.currentFeed === '') {
+          return;
+        }
         Global.currentFeedName = '';
-        Global.undoList = [];
         for (var i=0; i<Global.feedList.length; i++) {
           if (Global.feedList[i].feedUrl === Global.currentFeed) {
             Global.currentFeedName = Global.feedList[i].name;
             break;
           }
         }
-        if (Global.currentFeed != '') {
-          show_feed([]);
-        }
+        Global.undoList = [];
+        Global.idxItemStart = 0;
+        Global.nPage = 1;
+        makeDisplayList();
+        show_feed();
+      }
+      if (evt.target.id === 'nextPage') {
+        Global.idxItemStart += Global.nItemPerPage;
+        Global.nPage += 1;
+        makeDisplayList();
+        show_feed();
+      }
+      if (evt.target.id === 'prevPage') {
+        Global.idxItemStart -= Global.nItemPerPage;
+        Global.nPage -= 1;
+        makeDisplayList();
+        show_feed();
       }
       if (evt.target.id === 'undo') {
         if (Global.currentFeed != '') {
-          show_feed(Global.undoList);
+          Global.idxItemStart = 0;
+          Global.nPage = 1;
+          Global.displayIndices = Global.undoList.slice(0, Global.nItemPerPage);
+          show_feed();
         }
       }
       if (evt.target.className === 'showItemContent') {
@@ -317,7 +336,7 @@ export default class FeedsReader extends Plugin {
     );
 
     if (Global.currentFeed != '') {
-      show_feed([]);
+      show_feed();
     }
   }
 
@@ -332,6 +351,7 @@ export default class FeedsReader extends Plugin {
     Global.currentFeedName = '';
     Global.nMergeLookback = 1000;
     Global.lenStrPerFile = 1024 * 1024;
+    Global.nItemPerPage = 100;
     Global.feedsStoreChange = false;
 
 		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
@@ -721,7 +741,18 @@ function sort_feed_list() {
   });
 }
 
-async function show_feed(showList) {
+function makeDisplayList() {
+  Global.displayIndices = [];
+  var fd = Global.feedsStore[Global.currentFeed];
+  for (var i=0; i<fd.items.length; i++) {
+    if ((Global.showAll) || ((fd.items[i].read === '') && (fd.items[i].deleted === ''))) {
+      Global.displayIndices.push(i);
+    }
+  }
+}
+
+
+async function show_feed() {
    const feed_content = document.getElementById('feed_content');
    feed_content.empty();
 
@@ -736,21 +767,10 @@ async function show_feed(showList) {
    if (fd.pubDate != '') {
      feed_content.createEl('div', {text: fd.pubDate});
    }
-   Global.elUnreadCount = document.getElementById('unreadCount' + Global.currentFeed);
-   Global.elTotalCount = document.getElementById('totalCount' + Global.currentFeed);
-   Global.elSepUnreadTotal = document.getElementById('sepUnreadTotal' + Global.currentFeed);
-   var nUnread = 0;
-   fd.items.forEach((item, idx) => {
-     if (showList.length === 0) {
-       if ((!Global.showAll) && ((item.read != '') || (item.deleted != ''))) {
-         return;
-       }
-     }
-     if (showList.length > 0) {
-       if (!showList.includes(idx)) {
-         return;
-       }
-     }
+   var nDisplayed = 0;
+   for (var i=Global.idxItemStart; i<Global.displayIndices.length; i++) {
+     idx = Global.displayIndices[i];
+     item = fd.items[idx];
      const itemEl = feed_content.createEl('div');
      itemEl.className = 'oneFeedItem';
      itemEl.id = item.link;
@@ -773,9 +793,6 @@ async function show_feed(showList) {
      var t_delete = "Delete";
      if (item.deleted != '') {
        t_delete = 'Undelete';
-     }
-     if ((item.read === '') && (item.deleted === '')) {
-       nUnread += 1;
      }
      const toggleDelete = tr.createEl('td').createEl('div', {text: t_delete});
      toggleDelete.className = 'toggleDelete';
@@ -800,9 +817,29 @@ async function show_feed(showList) {
        showItemContent.setAttribute('_link', item.link);
        showItemContent.setAttribute('_idx', idx);
      }
-     });
+     nDisplayed += 1;
+     if (nDisplayed == Global.nItemPerPage) {
+       feed_content.createEl('hr');
+       const next_prev = feed_content.createEl('div');
+       if (Global.nPage > 1) {
+         const prevPage = next_prev.createEl('span', {text: "Prev"});
+         prevPage.className = "next_prev";
+         prevPage.id = "prevPage";
+       }
+       if (i < Global.displayIndices.length-1) {
+         const nextPage = next_prev.createEl('span', {text: "Next"});
+         nextPage.className = "next_prev";
+         nextPage.id = "nextPage";
+       }
+       break;
+     }
+   }
+   var stats = getFeedStats(Global.currentFeed);
+   Global.elUnreadCount = document.getElementById('unreadCount' + Global.currentFeed);
+   Global.elTotalCount = document.getElementById('totalCount' + Global.currentFeed);
+   Global.elSepUnreadTotal = document.getElementById('sepUnreadTotal' + Global.currentFeed);
+   Global.elUnreadCount.innerText = stats.unread.toString();
    Global.elTotalCount.innerText = fd.items.length;
-   Global.elUnreadCount.innerText = nUnread;
    Global.elSepUnreadTotal.innerText = '/';
 }
 
