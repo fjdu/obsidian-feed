@@ -111,13 +111,13 @@ export default class FeedsReader extends Plugin {
       if (evt.target.id === 'nextPage') {
         Global.idxItemStart += Global.nItemPerPage;
         Global.nPage += 1;
-        makeDisplayList();
+        // makeDisplayList();
         show_feed();
       }
       if (evt.target.id === 'prevPage') {
         Global.idxItemStart -= Global.nItemPerPage;
         Global.nPage -= 1;
-        makeDisplayList();
+        // makeDisplayList();
         show_feed();
       }
       if (evt.target.id === 'undo') {
@@ -319,11 +319,10 @@ export default class FeedsReader extends Plugin {
         leaf = leaves[0];
     }
     if (!leaf) {
-        leaf = this.app.workspace.activeLeaf;
+        leaf = this.app.workspace.getLeaf(false);
     }
-
     if (!leaf) {
-        leaf = this.app.workspace.getLeaf();
+        leaf = this.app.workspace.activeLeaf;
     }
 
     await leaf.setViewState({
@@ -488,18 +487,24 @@ class ManageFeedsModal extends Modal {
       var btMarkAllRead = actions.createEl('button', {text: 'Mark all as read'});
       var btPurgeDeleted = actions.createEl('button', {text: 'Purge deleted'});
       var btPurgeAll = actions.createEl('button', {text: 'Purge all'});
+      var btPurgeOldHalf = actions.createEl('button', {text: 'Purge old half'});
       var btDeduplicate = actions.createEl('button', {text: 'Deduplicate'});
+      var btRemoveDeed = actions.createEl('button', {text: 'Remove feed'});
       btMarkAllRead.setAttribute('val', Global.feedList[i].feedUrl);
       btPurgeDeleted.setAttribute('val', Global.feedList[i].feedUrl);
       btPurgeAll.setAttribute('val', Global.feedList[i].feedUrl);
+      btPurgeOldHalf.setAttribute('val', Global.feedList[i].feedUrl);
       btDeduplicate.setAttribute('val', Global.feedList[i].feedUrl);
       btDeduplicate.setAttribute('fdName', Global.feedList[i].name);
+      btRemoveDeed.setAttribute('val', Global.feedList[i].feedUrl);
       btMarkAllRead.addEventListener('click', (evt) => markAllRead(evt.target.getAttribute('val')));
       btPurgeDeleted.addEventListener('click', (evt) => purgeDeleted(evt.target.getAttribute('val')));
       btPurgeAll.addEventListener('click', (evt) => purgeAll(evt.target.getAttribute('val')));
+      btPurgeOldHalf.addEventListener('click', (evt) => purgeOldHalf(evt.target.getAttribute('val')));
       btDeduplicate.addEventListener('click', (evt) => {
         var nRemoved = deduplicate(evt.target.getAttribute('val'));
         new Notice(nRemoved + " removed for " + evt.target.getAttribute('fdName'), 2000);});
+      btRemoveDeed.addEventListener('click', async (evt) => removeFeed(evt.target.getAttribute('val')));
     }
 	}
 
@@ -696,6 +701,12 @@ function purgeAll(feedUrl: string) {
   Global.feedsStoreChange = true;
 }
 
+function purgeOldHalf(feedUrl: string) {
+  var iDel = Math.floor(Global.feedsStore[feedUrl].items.length / 2);
+  Global.feedsStore[feedUrl].items.splice(iDel);
+  Global.feedsStoreChange = true;
+}
+
 function deduplicate(feedUrl: string) {
   var n = Global.feedsStore[feedUrl].items.length;
   const delete_mark = 'DELETE-NOW';
@@ -713,6 +724,22 @@ function deduplicate(feedUrl: string) {
     Global.feedsStoreChange = true;
   }
   return nBefore - nAfter;
+}
+
+async function removeFeed(feedUrl: string) {
+  for (var i=0; i<Global.feedList.length; i++) {
+    if (Global.feedList[i].feedUrl === feedUrl) {
+      if (Global.feedsStore.hasOwnProperty(feedUrl)) {
+        delete Global.feedsStore[feedUrl];
+        Global.feedsStoreChange = true;
+        await removeFileFragments(Global.feeds_reader_dir + '/' + Global.feeds_store_base, Global.feedList[i].name);
+      }
+      Global.feedList.splice(i, 1);
+      await saveSubscriptions();
+      await createFeedBar();
+      break;
+    }
+  }
 }
 
 function handle_img_tag(s: string) {
@@ -768,7 +795,9 @@ async function show_feed() {
      feed_content.createEl('div', {text: fd.pubDate});
    }
    var nDisplayed = 0;
-   for (var i=Global.idxItemStart; i<Global.displayIndices.length; i++) {
+   for (var i=Global.idxItemStart;
+        i<Math.min(Global.displayIndices.length, Global.idxItemStart+Global.nItemPerPage);
+        i++) {
      idx = Global.displayIndices[i];
      item = fd.items[idx];
      const itemEl = feed_content.createEl('div');
@@ -778,6 +807,16 @@ async function show_feed() {
      itemEl.createEl('div')
      .createEl('a', {text: item.title.replace(/(<([^>]+)>)/gi, ""), href: item.link})
      .className = 'itemTitle';
+     const elCreator = itemEl.createEl('div');
+     elCreator.className = 'itemCreator';
+     elCreator.innerHTML = item.creator;
+     var elPubDate;
+     if (item.pubDate != "") {
+       elPubDate = itemEl.createEl('div', {text: item.pubDate});
+     } else {
+       elPubDate = itemEl.createEl('div', {text: item.downloaded});
+     }
+     elPubDate.className = 'elPubDate';
      let tr = itemEl.createEl('table').createEl('tr');
      tr.className = 'itemActions';
      var t_read = "Read";
@@ -797,16 +836,6 @@ async function show_feed() {
      const toggleDelete = tr.createEl('td').createEl('div', {text: t_delete});
      toggleDelete.className = 'toggleDelete';
      toggleDelete.id = 'toggleDelete' + idx;
-     var elPubDate;
-     if (item.pubDate != "") {
-       elPubDate = tr.createEl('td').createEl('div', {text: item.pubDate});
-     } else {
-       elPubDate = tr.createEl('td').createEl('div', {text: item.downloaded});
-     }
-     elPubDate.className = 'elPubDate';
-     const elCreator = itemEl.createEl('div');
-     elCreator.className = 'itemCreator';
-     elCreator.innerHTML = item.creator;
      if (!Global.titleOnly) {
        const elContent = itemEl.createEl('div');
        elContent.className = 'itemContent';
@@ -818,21 +847,18 @@ async function show_feed() {
        showItemContent.setAttribute('_idx', idx);
      }
      nDisplayed += 1;
-     if (nDisplayed == Global.nItemPerPage) {
-       feed_content.createEl('hr');
-       const next_prev = feed_content.createEl('div');
-       if (Global.nPage > 1) {
-         const prevPage = next_prev.createEl('span', {text: "Prev"});
-         prevPage.className = "next_prev";
-         prevPage.id = "prevPage";
-       }
-       if (i < Global.displayIndices.length-1) {
-         const nextPage = next_prev.createEl('span', {text: "Next"});
-         nextPage.className = "next_prev";
-         nextPage.id = "nextPage";
-       }
-       break;
-     }
+   }
+   feed_content.createEl('hr');
+   const next_prev = feed_content.createEl('div');
+   if (Global.nPage > 1) {
+     const prevPage = next_prev.createEl('span', {text: "Prev"});
+     prevPage.className = "next_prev";
+     prevPage.id = "prevPage";
+   }
+   if (Global.idxItemStart+Global.nItemPerPage < Global.displayIndices.length) {
+     const nextPage = next_prev.createEl('span', {text: "Next"});
+     nextPage.className = "next_prev";
+     nextPage.id = "nextPage";
    }
    var stats = getFeedStats(Global.currentFeed);
    Global.elUnreadCount = document.getElementById('unreadCount' + Global.currentFeed);
@@ -925,4 +951,15 @@ async function loadStringSplitted(folder: string, fname_base: string) {
 
 function makeFilename (fname_base: string, iPostfix: number) {
   return fname_base + '-' + iPostfix.toString() + '.json.frag';
+}
+
+async function removeFileFragments(folder: string, fname_base: string) {
+  for (var i=0;;i++) {
+    var fpath = folder + '/' + makeFilename(fname_base, i);
+    if (! await app.vault.exists(fpath)) {
+      break;
+    }
+    await app.vault.adapter.remove(fpath);
+    new Notice(fpath + ' removed.', 1000);
+  }
 }
