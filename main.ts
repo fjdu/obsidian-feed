@@ -91,6 +91,7 @@ export default class FeedsReader extends Plugin {
         });
       }
       if (evt.target.className === 'showFeed') {
+        var previousFeed = Global.currentFeed;
         Global.currentFeed = evt.target.id;
         if (Global.currentFeed === '') {
           return;
@@ -102,6 +103,11 @@ export default class FeedsReader extends Plugin {
             break;
           }
         }
+        if (previousFeed != '') {
+          var prevColor = document.getElementById(Global.currentFeed).style['background-color'];
+          document.getElementById(previousFeed).style['background-color'] = prevColor;
+        }
+        document.getElementById(Global.currentFeed).style['background-color'] = '#8181aa';
         Global.undoList = [];
         Global.idxItemStart = 0;
         Global.nPage = 1;

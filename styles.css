@@ -109,6 +109,7 @@ hr.divider {
 
 .feedFolder {
   font-weight: bold;
+  font-size: large;
 }
 
 .navigation .feedFolder:hover {
