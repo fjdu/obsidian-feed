@@ -462,49 +462,47 @@ class ManageFeedsModal extends Modal {
 	onOpen() {
 		const {contentEl} = this;
     this.titleEl.innerText = "Manage feeds";
-    contentEl.setText('Caution: all the actions take effect immediately and cannot be undone!');
+    contentEl.setText('Caution: all actions take effect immediately and cannot be undone!  Save data then reopen the plugin to see the effect.');
     const form = contentEl.createEl('table');
     form.className = "manageFeedsForm";
     var tr = form.createEl('thead').createEl('tr');
-    tr.createEl('th', {text: "Name"});
-    tr.createEl('th', {text: "URL"});
-    tr.createEl('th', {text: "Folder"});
-    tr.createEl('th', {text: "Total"});
-    tr.createEl('th', {text: "Read"});
-    tr.createEl('th', {text: "Deleted"});
+    tr.createEl('th', {text: "Name/URL/Folder/T/R/D"});
     tr.createEl('th', {text: "Actions"});
     var tbody = form.createEl('tbody');
     for (var i=0; i<Global.feedList.length; i++) {
       var tr = tbody.createEl('tr');
-      tr.createEl('td').createEl('input', {value: Global.feedList[i].name});
-      tr.createEl('td').createEl('input', {value: Global.feedList[i].feedUrl});
-      tr.createEl('td').createEl('input', {value: Global.feedList[i].folder});
+      var cellName = tr.createEl('td');
       var stats = getFeedStats(Global.feedList[i].feedUrl);
-      tr.createEl('td', {text: stats.total.toString()});
-      tr.createEl('td', {text: stats.read.toString()});
-      tr.createEl('td', {text: stats.deleted.toString()});
+      cellName.createEl('input', {value: Global.feedList[i].name}).readOnly = true;
+      cellName.createEl('input', {value: Global.feedList[i].feedUrl}).readOnly = true;
+      cellName.createEl('input', {value: Global.feedList[i].folder}).readOnly = true;
+      cellName.createEl('div', {text: ''});
+      cellName.createEl('span', {text: stats.total.toString() + '/' + stats.read.toString() + '/' + stats.deleted.toString()});
       var actions = tr.createEl('td');
       var btMarkAllRead = actions.createEl('button', {text: 'Mark all as read'});
       var btPurgeDeleted = actions.createEl('button', {text: 'Purge deleted'});
+      var btRemoveContent = actions.createEl('button', {text: 'Remove content'});
       var btPurgeAll = actions.createEl('button', {text: 'Purge all'});
       var btPurgeOldHalf = actions.createEl('button', {text: 'Purge old half'});
       var btDeduplicate = actions.createEl('button', {text: 'Deduplicate'});
-      var btRemoveDeed = actions.createEl('button', {text: 'Remove feed'});
+      var btRemoveFeed = actions.createEl('button', {text: 'Remove feed'});
       btMarkAllRead.setAttribute('val', Global.feedList[i].feedUrl);
       btPurgeDeleted.setAttribute('val', Global.feedList[i].feedUrl);
+      btRemoveContent.setAttribute('val', Global.feedList[i].feedUrl);
       btPurgeAll.setAttribute('val', Global.feedList[i].feedUrl);
       btPurgeOldHalf.setAttribute('val', Global.feedList[i].feedUrl);
       btDeduplicate.setAttribute('val', Global.feedList[i].feedUrl);
       btDeduplicate.setAttribute('fdName', Global.feedList[i].name);
-      btRemoveDeed.setAttribute('val', Global.feedList[i].feedUrl);
+      btRemoveFeed.setAttribute('val', Global.feedList[i].feedUrl);
       btMarkAllRead.addEventListener('click', (evt) => markAllRead(evt.target.getAttribute('val')));
       btPurgeDeleted.addEventListener('click', (evt) => purgeDeleted(evt.target.getAttribute('val')));
+      btRemoveContent.addEventListener('click', (evt) => removeContent(evt.target.getAttribute('val')));
       btPurgeAll.addEventListener('click', (evt) => purgeAll(evt.target.getAttribute('val')));
       btPurgeOldHalf.addEventListener('click', (evt) => purgeOldHalf(evt.target.getAttribute('val')));
       btDeduplicate.addEventListener('click', (evt) => {
         var nRemoved = deduplicate(evt.target.getAttribute('val'));
         new Notice(nRemoved + " removed for " + evt.target.getAttribute('fdName'), 2000);});
-      btRemoveDeed.addEventListener('click', async (evt) => removeFeed(evt.target.getAttribute('val')));
+      btRemoveFeed.addEventListener('click', async (evt) => removeFeed(evt.target.getAttribute('val')));
     }
 	}
 
@@ -693,6 +691,13 @@ function markAllRead(feedUrl: string) {
 
 function purgeDeleted(feedUrl: string) {
   Global.feedsStore[feedUrl].items = Global.feedsStore[feedUrl].items.filter(item => item.deleted === "");
+  Global.feedsStoreChange = true;
+}
+
+function removeContent(feedUrl: string) {
+  for (var i=0; i<Global.feedsStore[feedUrl].items.length; i++) {
+    Global.feedsStore[feedUrl].items[i].content = '';
+  }
   Global.feedsStoreChange = true;
 }
 
