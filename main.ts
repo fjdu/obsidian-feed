@@ -104,10 +104,10 @@ export default class FeedsReader extends Plugin {
           }
         }
         if (previousFeed != '') {
-          var prevColor = document.getElementById(Global.currentFeed).style['background-color'];
-          document.getElementById(previousFeed).style['background-color'] = prevColor;
+          var prevColor = document.getElementById(Global.currentFeed).style['color'];
+          document.getElementById(previousFeed).style['color'] = prevColor;
         }
-        document.getElementById(Global.currentFeed).style['background-color'] = '#8181aa';
+        document.getElementById(Global.currentFeed).style['color'] = '#f15500';
         Global.undoList = [];
         Global.idxItemStart = 0;
         Global.nPage = 1;
