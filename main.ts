@@ -472,18 +472,20 @@ class ManageFeedsModal extends Modal {
     const form = contentEl.createEl('table');
     form.className = "manageFeedsForm";
     var tr = form.createEl('thead').createEl('tr');
-    tr.createEl('th', {text: "Name/URL/Folder/T/R/D"});
+    tr.createEl('th', {text: "Name/URL/Folder/T/R/D/A"});
     tr.createEl('th', {text: "Actions"});
     var tbody = form.createEl('tbody');
     for (var i=0; i<Global.feedList.length; i++) {
       var tr = tbody.createEl('tr');
       var cellName = tr.createEl('td');
       var stats = getFeedStats(Global.feedList[i].feedUrl);
+      var averageCharPerItem = Math.floor(getFeedAverageLength(Global.feedList[i].feedUrl));
       cellName.createEl('input', {value: Global.feedList[i].name}).readOnly = true;
       cellName.createEl('input', {value: Global.feedList[i].feedUrl}).readOnly = true;
       cellName.createEl('input', {value: Global.feedList[i].folder}).readOnly = true;
       cellName.createEl('div', {text: ''});
-      cellName.createEl('span', {text: stats.total.toString() + '/' + stats.read.toString() + '/' + stats.deleted.toString()});
+      cellName.createEl('span', {text: stats.total.toString() + '/' + stats.read.toString() +
+          '/' + stats.deleted.toString() + '/' + averageCharPerItem});
       var actions = tr.createEl('td');
       var btMarkAllRead = actions.createEl('button', {text: 'Mark all as read'});
       var btPurgeDeleted = actions.createEl('button', {text: 'Purge deleted'});
@@ -684,6 +686,15 @@ export function getFeedStats(feedUrl: string) {
   }
   return {total: nTotal, read: nRead, deleted: nDeleted, unread: nUnread};
 }
+
+
+export function getFeedAverageLength(feedUrl: string) {
+  if (Global.feedsStore[feedUrl].items.length == 0) {
+    return 0;
+  }
+  return JSON.stringify(Global.feedsStore[feedUrl], null, 1).length/Global.feedsStore[feedUrl].items.length;
+}
+
 
 function markAllRead(feedUrl: string) {
   var nowStr = nowdatetime();
