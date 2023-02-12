@@ -468,7 +468,7 @@ class ManageFeedsModal extends Modal {
 	onOpen() {
 		const {contentEl} = this;
     this.titleEl.innerText = "Manage feeds";
-    contentEl.setText('Caution: all actions take effect immediately and cannot be undone!  Save data then reopen the plugin to see the effect.');
+    contentEl.innerHTML = '<div><b>Caution:</b><br>All actions take effect immediately and cannot be undone!<br>Save data then reopen the plugin to see the effect.<br>N: name; U: url; F: folder; T: total number of items; R: number of items marked as read; D: number of items marked as deleted; A: average length of items.</div>';
     const form = contentEl.createEl('table');
     form.className = "manageFeedsForm";
     var tr = form.createEl('thead').createEl('tr');
@@ -483,20 +483,21 @@ class ManageFeedsModal extends Modal {
       cellName.createEl('input', {value: Global.feedList[i].name}).readOnly = true;
       cellName.createEl('input', {value: Global.feedList[i].feedUrl}).readOnly = true;
       cellName.createEl('input', {value: Global.feedList[i].folder}).readOnly = true;
-      cellName.createEl('div', {text: ''});
-      cellName.createEl('span', {text: stats.total.toString() + '/' + stats.read.toString() +
-          '/' + stats.deleted.toString() + '/' + averageCharPerItem});
+      cellName.createEl('input', {value: stats.total.toString() + '/' + stats.read.toString() +
+          '/' + stats.deleted.toString() + '/' + averageCharPerItem}).readOnly = true;
       var actions = tr.createEl('td');
-      var btMarkAllRead = actions.createEl('button', {text: 'Mark all as read'});
+      var btMarkAllRead = actions.createEl('button', {text: 'Mark all read'});
       var btPurgeDeleted = actions.createEl('button', {text: 'Purge deleted'});
-      var btRemoveContent = actions.createEl('button', {text: 'Keep title only'});
+      var btRemoveContent = actions.createEl('button', {text: 'Remove content'});
+      var btRemoveContentOld = actions.createEl('button', {text: 'Remove old content'});
       var btPurgeAll = actions.createEl('button', {text: 'Purge all'});
-      var btPurgeOldHalf = actions.createEl('button', {text: 'Purge old half'});
+      var btPurgeOldHalf = actions.createEl('button', {text: 'Purge old'});
       var btDeduplicate = actions.createEl('button', {text: 'Deduplicate'});
       var btRemoveFeed = actions.createEl('button', {text: 'Remove feed'});
       btMarkAllRead.setAttribute('val', Global.feedList[i].feedUrl);
       btPurgeDeleted.setAttribute('val', Global.feedList[i].feedUrl);
       btRemoveContent.setAttribute('val', Global.feedList[i].feedUrl);
+      btRemoveContentOld.setAttribute('val', Global.feedList[i].feedUrl);
       btPurgeAll.setAttribute('val', Global.feedList[i].feedUrl);
       btPurgeOldHalf.setAttribute('val', Global.feedList[i].feedUrl);
       btDeduplicate.setAttribute('val', Global.feedList[i].feedUrl);
@@ -505,6 +506,7 @@ class ManageFeedsModal extends Modal {
       btMarkAllRead.addEventListener('click', (evt) => markAllRead(evt.target.getAttribute('val')));
       btPurgeDeleted.addEventListener('click', (evt) => purgeDeleted(evt.target.getAttribute('val')));
       btRemoveContent.addEventListener('click', (evt) => removeContent(evt.target.getAttribute('val')));
+      btRemoveContentOld.addEventListener('click', (evt) => removeContentOld(evt.target.getAttribute('val')));
       btPurgeAll.addEventListener('click', (evt) => purgeAll(evt.target.getAttribute('val')));
       btPurgeOldHalf.addEventListener('click', (evt) => purgeOldHalf(evt.target.getAttribute('val')));
       btDeduplicate.addEventListener('click', (evt) => {
@@ -713,6 +715,15 @@ function purgeDeleted(feedUrl: string) {
 
 function removeContent(feedUrl: string) {
   for (var i=0; i<Global.feedsStore[feedUrl].items.length; i++) {
+    Global.feedsStore[feedUrl].items[i].content = '';
+    Global.feedsStore[feedUrl].items[i].creator = '';
+  }
+  Global.feedsStoreChange = true;
+}
+
+function removeContentOld(feedUrl: string) {
+  var iDel = Math.floor(Global.feedsStore[feedUrl].items.length / 2);
+  for (var i=iDel; i<Global.feedsStore[feedUrl].items.length; i++) {
     Global.feedsStore[feedUrl].items[i].content = '';
     Global.feedsStore[feedUrl].items[i].creator = '';
   }
