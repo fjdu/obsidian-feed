@@ -472,7 +472,7 @@ class ManageFeedsModal extends Modal {
     const form = contentEl.createEl('table');
     form.className = "manageFeedsForm";
     var tr = form.createEl('thead').createEl('tr');
-    tr.createEl('th', {text: "Name/URL/Folder/T/R/D/A"});
+    tr.createEl('th', {text: "N/U/F/T/R/D/A"});
     tr.createEl('th', {text: "Actions"});
     var tbody = form.createEl('tbody');
     for (var i=0; i<Global.feedList.length; i++) {
