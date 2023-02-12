@@ -489,7 +489,7 @@ class ManageFeedsModal extends Modal {
       var actions = tr.createEl('td');
       var btMarkAllRead = actions.createEl('button', {text: 'Mark all as read'});
       var btPurgeDeleted = actions.createEl('button', {text: 'Purge deleted'});
-      var btRemoveContent = actions.createEl('button', {text: 'Remove content'});
+      var btRemoveContent = actions.createEl('button', {text: 'Keep title only'});
       var btPurgeAll = actions.createEl('button', {text: 'Purge all'});
       var btPurgeOldHalf = actions.createEl('button', {text: 'Purge old half'});
       var btDeduplicate = actions.createEl('button', {text: 'Deduplicate'});
@@ -714,6 +714,7 @@ function purgeDeleted(feedUrl: string) {
 function removeContent(feedUrl: string) {
   for (var i=0; i<Global.feedsStore[feedUrl].items.length; i++) {
     Global.feedsStore[feedUrl].items[i].content = '';
+    Global.feedsStore[feedUrl].items[i].creator = '';
   }
   Global.feedsStoreChange = true;
 }
