@@ -649,7 +649,7 @@ function str2filename(s: string) {
   var reservedRe = /^\.+$/;
   var windowsReservedRe = /^(con|prn|aux|nul|com[0-9]|lpt[0-9])(\..*)?$/i;
   var windowsTrailingRe = /[\. ]+$/;
-  var replacement = '_';
+  var replacement = '';
   return s.replace(illegalRe, replacement)
           .replace(controlRe, replacement)
           .replace(reservedRe, replacement)
