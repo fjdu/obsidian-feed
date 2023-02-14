@@ -108,7 +108,9 @@ export default class FeedsReader extends Plugin {
           document.getElementById(previousFeed).style['color'] = prevColor;
         }
         document.getElementById(Global.currentFeed).style['color'] = '#f15500';
-        Global.undoList = [];
+        if (previousFeed != Global.currentFeed) {
+          Global.undoList = [];
+        }
         Global.idxItemStart = 0;
         Global.nPage = 1;
         makeDisplayList();
