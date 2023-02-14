@@ -71,10 +71,10 @@ export default class FeedsReader extends Plugin {
               return;
             }
             var nNew = this.mergeStoreWithNewData(res, f.feedUrl);
-            if (nNew > 0) {
-              new Notice(nNew + " new items for " + f.name, 3000);
-            }
             await saveFeedsData();
+            if (nNew > 0) {
+              new Notice(nNew.toString() + " new items for " + f.name, 3000);
+            }
           });
         });
       }
@@ -84,10 +84,8 @@ export default class FeedsReader extends Plugin {
             return;
           }
           var nNew = this.mergeStoreWithNewData(res, evt.target.id);
-          if (nNew > 0) {
-            new Notice(nNew + " new items for " + evt.target.getAttribute('fdName'), 3000);
-          }
           await saveFeedsData();
+          new Notice(nNew.toString() + " new items for " + evt.target.getAttribute('fdName'), 3000);
         });
       }
       if (evt.target.className === 'showFeed') {
