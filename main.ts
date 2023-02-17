@@ -994,6 +994,9 @@ export async function loadSubscriptions() {
     Global.feedList = await JSON.parse(await
       this.app.vault.adapter.read(fpath_feedList));
   }
+  if (Global.feedList.length == 0) {
+    new Notice('No feed yet. Use "Add feed".', 5000);
+  }
   sort_feed_list();
 }
 

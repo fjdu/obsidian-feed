@@ -91,6 +91,10 @@ hr.divider {
   border-collapse: collapse;
 }
 
+.feedTableDiv td {
+  border: none;
+}
+
 .manageFeedsForm table {
   border-bottom: 1px solid #ddd;
 }
@@ -197,4 +201,13 @@ input[type=text] {
 
 .next_prev:hover {
   color: #f15500;
+}
+
+.thanks {
+  font-size: 65%;
+  font-weight: bold;
+}
+
+.thanks a {
+  text-decoration: none;
 }

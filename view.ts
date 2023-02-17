@@ -69,6 +69,16 @@ export class FRView extends ItemView {
       await createFeedBar();
     });
 
+    if (Global.feedList.length > 2) {
+      feedTableDiv.createEl('hr');
+      const thanksTable = feedTableDiv.createEl('table');
+      const thanks = thanksTable.createEl('tr');
+      thanks.className = 'thanks';
+      thanks.createEl('td').createEl('a', {text: "Thanks", href: "https://www.buymeacoffee.com/fjdu"});
+      thanks.createEl('td').createEl('span', {text: "or"});
+      thanks.createEl('td').createEl('a', {text: "Complain", href: "https://github.com/fjdu/obsidian-feed/issues"});
+    }
+
     const feed_content = content.createEl('div');
     feed_content.id = 'feed_content';
   }
