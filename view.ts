@@ -42,6 +42,8 @@ export class FRView extends ItemView {
 
     const manage = navigation.createEl('div');
     manage.className = 'manage';
+    const search = manage.createEl('div').createEl('span', {text: "Search"});
+    search.id = 'search';
     const showAll = manage.createEl('div').createEl('span', {text: "Unread only"});
     showAll.id = 'showAll';
     const titleOnly = manage.createEl('div').createEl('span', {text: "Title only"});

@@ -301,6 +301,13 @@ export default class FeedsReader extends Plugin {
           document.getElementById('contentBox').style['margin-left'] = '160px';
         }
       }
+      if (evt.target.id === 'search') {
+        if (Global.currentFeed === '') {
+          new Notice("Feed not selected: I can only search when a feed is selected.", 3000);
+        } else {
+          new SearchModal(this.app).open();
+        }
+      }
       if (evt.target.id === 'addFeed') {
         new AddFeedModal(this.app).open();
       }
@@ -401,6 +408,76 @@ export default class FeedsReader extends Plugin {
   }
 }
 
+
+class SearchModal extends Modal {
+	constructor(app: App) {
+		super(app);
+	}
+
+	onOpen() {
+		const {contentEl} = this;
+    this.titleEl.innerText = "Search";
+    const form = contentEl.createEl('table');
+    form.style["width"] = "100%";
+    form.className = "searchForm";
+    var tr = form.createEl('tr');
+    tr.createEl('td', {text: 'Search terms'});
+    var td = tr.createEl('td');
+    td.style["width"] = "70%";
+    var inputBox = td.createEl('input');
+    inputBox.id = 'searchTerms';
+    inputBox.style["width"] = "70%";
+    tr = form.createEl('tr');
+    tr.createEl('td', {text: "Wordwise"});
+    var checkBox = tr.createEl('td').createEl('input');
+    checkBox.id = 'checkBox';
+    checkBox.type = 'checkBox';
+    tr = form.createEl('tr');
+    var searchButton = tr.createEl('td').createEl('button', {text: "Search"});
+    searchButton.addEventListener("click", async () => {
+      var wordWise = document.getElementById('checkBox').checked;
+      var searchTerms = ([...new Set(document.getElementById('searchTerms').value.toLowerCase().split(/[ ,;\t\n]+/))]
+                         .filter(i => i)
+                         .sort((a,b) => {return b.length-a.length;}));
+      if (searchTerms.length === 0) {
+        return;
+      }
+      let fd = Global.feedsStore[Global.currentFeed].items;
+      var sep = /\s+/;
+      Global.displayIndices = [];
+      for (let i=0; i<fd.length; i++) {
+        let item = fd[i];
+        var sItems;
+        if (wordWise) {
+          sItems = (item.title.toLowerCase().split(sep)
+              .concat(item.creator.toLowerCase().split(sep))
+              .concat(item.content.toLowerCase().split(sep)));
+        } else {
+          sItems = [item.title.toLowerCase(), item.creator.toLowerCase(),
+                    item.content.toLowerCase()].join(' ');
+        }
+        let found = true;
+        for (let j=0; j<searchTerms.length; j++) {
+          if (!sItems.includes(searchTerms[j])) {
+            found = false;
+            break;
+          }
+        }
+        if (found) {
+          Global.displayIndices.push(i);
+        }
+      }
+      show_feed();
+      this.close();
+    });
+	}
+
+	onClose() {
+		const {contentEl} = this;
+		contentEl.empty();
+	}
+}
+
 class AddFeedModal extends Modal {
 	constructor(app: App) {
 		super(app);
@@ -413,13 +490,19 @@ class AddFeedModal extends Modal {
     form.className = "addFeedForm";
     var tr = form.createEl('tr');
     tr.createEl('td', {text: "Name"});
-    tr.createEl('td').createEl('input').id = 'newFeedName';
+    var tdnewFeedName = tr.createEl('td').createEl('input');
+    tdnewFeedName.style["width"] = "70%";
+    tdnewFeedName.id = 'newFeedName';
     tr = form.createEl('tr');
     tr.createEl('td', {text: "URL"});
-    tr.createEl('td').createEl('input').id = 'newFeedUrl';
+    var tdnewFeedUrl = tr.createEl('td').createEl('input');
+    tdnewFeedUrl.style["width"] = "70%";
+    tdnewFeedUrl.id = 'newFeedUrl';
     tr = form.createEl('tr');
     tr.createEl('td', {text: "Folder"});
-    tr.createEl('td').createEl('input').id = 'newFeedFolder';
+    var tdnewFeedFolder = tr.createEl('td').createEl('input');
+    tdnewFeedFolder.id = 'newFeedFolder';
+    tdnewFeedFolder.style["width"] = "70%";
     tr = form.createEl('tr');
     var saveButton = tr.createEl('td').createEl('button', {text: "Save"});
     saveButton.addEventListener("click", async () => {
