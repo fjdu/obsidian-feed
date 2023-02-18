@@ -551,23 +551,24 @@ class ManageFeedsModal extends Modal {
 	onOpen() {
 		const {contentEl} = this;
     this.titleEl.innerText = "Manage feeds";
-    contentEl.innerHTML = '<div><b>Caution:</b><br>All actions take effect immediately and cannot be undone!<br>Save data then reopen the plugin to see the effect.<br>N: name; U: url; F: folder; T: total number of items; R: number of items marked as read; D: number of items marked as deleted; A: average length of items.</div>';
+    contentEl.innerHTML = '<div><b>CAUTION:</b><br>All actions take effect immediately and cannot be undone!<br>To see the effect, save data then reopen the plugin.<br>N: name; U: url; F: folder; T: total number of items; R: number of items marked as read; D: number of items marked as deleted; A: average length of items; S: storage size.</div><hr>';
     const form = contentEl.createEl('table');
     form.className = "manageFeedsForm";
     var tr = form.createEl('thead').createEl('tr');
-    tr.createEl('th', {text: "N/U/F/T/R/D/A"});
+    tr.createEl('th', {text: "N/U/F/T/R/D/A/S"});
     tr.createEl('th', {text: "Actions"});
     var tbody = form.createEl('tbody');
     for (var i=0; i<Global.feedList.length; i++) {
       var tr = tbody.createEl('tr');
       var cellName = tr.createEl('td');
+      cellName.className = 'cellInput';
       var stats = getFeedStats(Global.feedList[i].feedUrl);
-      var averageCharPerItem = Math.floor(getFeedAverageLength(Global.feedList[i].feedUrl));
+      var storeSizeInfo = getFeedStorageInfo(Global.feedList[i].feedUrl);
       cellName.createEl('input', {value: Global.feedList[i].name}).readOnly = true;
       cellName.createEl('input', {value: Global.feedList[i].feedUrl}).readOnly = true;
       cellName.createEl('input', {value: Global.feedList[i].folder}).readOnly = true;
       cellName.createEl('input', {value: stats.total.toString() + '/' + stats.read.toString() +
-          '/' + stats.deleted.toString() + '/' + averageCharPerItem}).readOnly = true;
+          '/' + stats.deleted.toString() + '/' + storeSizeInfo[0] + '/' + storeSizeInfo[1]}).readOnly = true;
       var actions = tr.createEl('td');
       var btMarkAllRead = actions.createEl('button', {text: 'Mark all read'});
       var btPurgeDeleted = actions.createEl('button', {text: 'Purge deleted'});
@@ -773,11 +774,25 @@ export function getFeedStats(feedUrl: string) {
 }
 
 
-export function getFeedAverageLength(feedUrl: string) {
+export function getFeedStorageInfo(feedUrl: string) {
   if (Global.feedsStore[feedUrl].items.length == 0) {
-    return 0;
+    return ['0', '0'];
   }
-  return JSON.stringify(Global.feedsStore[feedUrl], null, 1).length/Global.feedsStore[feedUrl].items.length;
+  const s = JSON.stringify(Global.feedsStore[feedUrl], null, 1);
+  const sz = (new Blob([s])).size;
+  let szstr = '';
+  if (sz <= 1e3) {
+    szstr = sz.toString() + 'B';
+  } else if (sz <= 1e6) {
+    szstr = (sz/1e3).toFixed(1) + 'kB';
+  } else if (sz <= 1e9) {
+    szstr = (sz/1e6).toFixed(1) + 'MB';
+  } else if (sz <= 1e12) {
+    szstr = (sz/1e9).toFixed(1) + 'GB';
+  } else {
+    szstr = (sz/1e12).toFixed(1) + 'TB';
+  }
+  return [Math.floor(s.length/Global.feedsStore[feedUrl].items.length).toString(), szstr];
 }
 
 
@@ -1080,6 +1095,6 @@ async function removeFileFragments(folder: string, fname_base: string) {
       break;
     }
     await app.vault.adapter.remove(fpath);
-    new Notice(fpath + ' removed.', 1000);
+    new Notice(fpath + ' removed.', 2000);
   }
 }

@@ -25,7 +25,7 @@ td {
 
 .content {
   margin-left: 160px; /* Same as the width of the sidebar */
-  padding: 0px 5px 2em 0px;
+  padding: 0px 1% 3em 0px;
   overflow-y: auto;
 }
 
@@ -192,6 +192,10 @@ hr.divider {
 
 input[type=text] {
   width: 90%;
+}
+
+.cellInput input {
+  display: block;
 }
 
 .next_prev {

@@ -14,7 +14,7 @@ export class FRView extends ItemView {
   }
 
   getDisplayText() {
-    return "Feeds";
+    return "Feeds Reader";
   }
 
   async onOpen() {
@@ -70,6 +70,12 @@ export class FRView extends ItemView {
     });
 
     if (Global.feedList.length > 2) {
+      if (Global.feedList.length < 20) {
+        var nVertSep = 20-Global.feedList.length;
+        for (var i=0; i<nVertSep; i++) {
+          feedTableDiv.createEl('br');
+        }
+      }
       feedTableDiv.createEl('hr');
       const thanksTable = feedTableDiv.createEl('table');
       const thanks = thanksTable.createEl('tr');
