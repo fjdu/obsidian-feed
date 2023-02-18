@@ -18,8 +18,15 @@ export class FRView extends ItemView {
   }
 
   async onOpen() {
+    var startTime = performance.now();
     await loadSubscriptions();
     await loadFeedsStoredData();
+    var endTime = performance.now();
+    var timeSpent = (endTime-startTime)/1e3;
+    if (timeSpent > 0.02) {
+      var tStr = timeSpent.toFixed(2);
+      new Notice(`Data loaded in ${tStr} seconds.`, 2000);
+    }
 
     const container = this.containerEl.children[1];
     container.empty();

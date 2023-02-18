@@ -1,11 +1,7 @@
 import {request, Notice} from "obsidian";
 
 /**
- * parser for .rss files, build from scratch
- * because I could not find a parser that
- * - works on mobile
- * - is up-to-date
- * - works for multiple different interpretations of the rss spec
+ This file is adapted from https://github.com/joethei/obsidian-rss/blob/master/src/parser/rssParser.ts, with a few modifications.
  */
 
 export interface RssFeedContent {
