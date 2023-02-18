@@ -141,7 +141,7 @@ export default class FeedsReader extends Plugin {
           var item = Global.feedsStore[Global.currentFeed].items[idx];
           var elContent = document.getElementById(elID).createEl('div');
           elContent.className = 'itemContent';
-          elContent.innerHTML = item.content.replace(/<img src="\/\//g,"<img src=\"https://");
+          elContent.innerHTML = santilize(item.content.replace(/<img src="\/\//g,"<img src=\"https://"));
           elContent.id = 'toggleContent' + idx;
           evt.target.innerText = '<<< <<<';
         } else {
@@ -903,6 +903,9 @@ function sort_feed_list() {
 function makeDisplayList() {
   Global.displayIndices = [];
   var fd = Global.feedsStore[Global.currentFeed];
+  if (fd === undefined) {
+    return;
+  }
   for (var i=0; i<fd.items.length; i++) {
     if ((Global.showAll) || ((fd.items[i].read === '') && (fd.items[i].deleted === ''))) {
       Global.displayIndices.push(i);
@@ -922,7 +925,7 @@ async function show_feed() {
      return;
    }
    var fd = Global.feedsStore[Global.currentFeed];
-   feedTitle.createEl('a', {href: fd.link}).innerHTML = fd.title;
+   feedTitle.createEl('a', {href: fd.link}).innerHTML = santilize(fd.title);
    if (fd.pubDate != '') {
      feed_content.createEl('div', {text: fd.pubDate});
    }
@@ -941,7 +944,7 @@ async function show_feed() {
      .className = 'itemTitle';
      const elCreator = itemEl.createEl('div');
      elCreator.className = 'itemCreator';
-     elCreator.innerHTML = item.creator;
+     elCreator.innerHTML = santilize(item.creator);
      var elPubDate;
      if (item.pubDate != "") {
        elPubDate = itemEl.createEl('div', {text: item.pubDate});
@@ -971,7 +974,7 @@ async function show_feed() {
      if (!Global.titleOnly) {
        const elContent = itemEl.createEl('div');
        elContent.className = 'itemContent';
-       elContent.innerHTML = item.content.replace(/<img src="\/\//g,"<img src=\"https://");
+       elContent.innerHTML = santilize(item.content.replace(/<img src="\/\//g,"<img src=\"https://"));
      } else {
        const showItemContent = itemEl.createEl('div', {text: '>>> >>>'});
        showItemContent.className = 'showItemContent';
@@ -1001,6 +1004,16 @@ async function show_feed() {
    Global.elSepUnreadTotal.innerText = '/';
 }
 
+
+function santilize(s: string) {
+  // https://stackoverflow.com/questions/6659351/removing-all-script-tags-from-html-with-js-regular-expression
+  // var SCRIPT_REGEX = /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi;
+  var SCRIPT_REGEX = /<script(?:(?!\/\/)(?!\/\*)[^'"]|"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\/\/.*(?:\n)|\/\*(?:(?:.|\s))*?\*\/)*?<\/script\s*>/gi;
+  while (SCRIPT_REGEX.test(s)) {
+      s = s.replace(SCRIPT_REGEX, "");
+  }
+  return s;
+}
 
 export async function loadSubscriptions() {
   var fpath_feedList = Global.feeds_reader_dir+'/'+Global.subscriptions_fname;
