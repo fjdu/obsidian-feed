@@ -177,7 +177,7 @@ export default class FeedsReader extends Plugin {
           await this.app.vault.create(fpath,
             '\n> [!abstract]+ [' +
             the_item.title.trim().replace(/(<([^>]+)>)/gi, " ").replace(/\n/g, " ") +
-            '](' + the_item.link + ')\n> ' +
+            '](' + santilize(the_item.link) + ')\n> ' +
             unEscape(handle_tags(handle_a_tag(handle_img_tag(the_item.content.replace(/\n/g, ' '))))
             .replace(/ +/g, ' ')
             .replace(/\s+$/g, '').replace(/^\s+/g, '')) +
@@ -925,7 +925,7 @@ async function show_feed() {
      return;
    }
    var fd = Global.feedsStore[Global.currentFeed];
-   feedTitle.createEl('a', {href: fd.link}).innerHTML = santilize(fd.title);
+   feedTitle.createEl('a', {href: santilize(fd.link)}).innerHTML = santilize(fd.title);
    if (fd.pubDate != '') {
      feed_content.createEl('div', {text: fd.pubDate});
    }
@@ -940,7 +940,7 @@ async function show_feed() {
      itemEl.id = item.link;
      itemEl.createEl('hr');
      itemEl.createEl('div')
-     .createEl('a', {text: item.title.replace(/(<([^>]+)>)/gi, ""), href: item.link})
+     .createEl('a', {text: item.title.replace(/(<([^>]+)>)/gi, ""), href: santilize(item.link)})
      .className = 'itemTitle';
      const elCreator = itemEl.createEl('div');
      elCreator.className = 'itemCreator';
