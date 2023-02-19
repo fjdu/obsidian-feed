@@ -1,6 +1,6 @@
 # An Obsidian plugin for reading rss feeds
 
-This plugin is mostly built for my own use.  Online services are good, but it is also good to be able to save important rss messages in the local machine.  At present it may still look rudimentary (it does not even have a settings page), but its functions already quite satisfies me.
+This plugin is mostly built for my own use.  Online services are good, but it is also good to be able to save important rss messages in the local machine.  At present it may still look rudimentary (it does not even have a settings page), but its functions already quite satisfies me.  It differs from the existing plugin `RSS Reader` in a few aspects, some of which are described in the [issues](https://github.com/joethei/obsidian-rss/issues/112) I raised for that plugin some time ago.
 
 ## How it works
 
@@ -13,7 +13,7 @@ This plugin is mostly built for my own use.  Online services are good, but it is
 - `Update all` is for fetching new items for all the subscribed feeds.
 - `Undo` is for undoing recent `mark as read` and `mark as deleted` actions for the **selected feed**.
 - `Add feed` is for adding new feed subscriptions.  The first time you use this plugin, you will need to add subscriptions with this `Add`.  **Keep the feed name as short as possible, and it must be unique.**
-   - *Be careful with the feed provider!  Santilization is not performed for the feed contents, and malicious content may cause data loss!*
+   - *Be careful with the feed provider!  Sanitization is not performed for the feed contents, and malicious content may cause data loss!*
 - `Manage` is for managing your feeds, where you can mark all as read, purge those that are marked as deleted, and purge all (i.e. to permanently remove all items of a feed).  Be cautious that these actions cannot be undone.
 - All the subscribed sources are listed under their respective folders.
 - The number of unread and total items are displayed after the feed name.

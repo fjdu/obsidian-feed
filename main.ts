@@ -112,6 +112,7 @@ export default class FeedsReader extends Plugin {
         Global.idxItemStart = 0;
         Global.nPage = 1;
         makeDisplayList();
+        Global.elUnreadCount = document.getElementById('unreadCount' + Global.currentFeed);
         show_feed();
       }
       if (evt.target.id === 'nextPage') {
@@ -141,7 +142,7 @@ export default class FeedsReader extends Plugin {
           var item = Global.feedsStore[Global.currentFeed].items[idx];
           var elContent = document.getElementById(elID).createEl('div');
           elContent.className = 'itemContent';
-          elContent.innerHTML = santilize(item.content.replace(/<img src="\/\//g,"<img src=\"https://"));
+          elContent.innerHTML = sanitize(item.content.replace(/<img src="\/\//g,"<img src=\"https://"));
           elContent.id = 'toggleContent' + idx;
           evt.target.innerText = '<<< <<<';
         } else {
@@ -177,7 +178,7 @@ export default class FeedsReader extends Plugin {
           await this.app.vault.create(fpath,
             '\n> [!abstract]+ [' +
             the_item.title.trim().replace(/(<([^>]+)>)/gi, " ").replace(/\n/g, " ") +
-            '](' + santilize(the_item.link) + ')\n> ' +
+            '](' + sanitize(the_item.link) + ')\n> ' +
             unEscape(handle_tags(handle_a_tag(handle_img_tag(the_item.content.replace(/\n/g, ' '))))
             .replace(/ +/g, ' ')
             .replace(/\s+$/g, '').replace(/^\s+/g, '')) +
@@ -191,7 +192,6 @@ export default class FeedsReader extends Plugin {
           new Notice(fpath + " already exists.", 1000);
         }
       }
-      //
       if (evt.target.className === 'toggleRead') {
         var idx = this.getNumFromId(evt.target.id, 'toggleRead');
         Global.itemIdx = idx;
@@ -365,6 +365,7 @@ export default class FeedsReader extends Plugin {
     Global.lenStrPerFile = 1024 * 1024;
     Global.nItemPerPage = 100;
     Global.feedsStoreChange = false;
+    Global.elUnreadCount = undefined;
 
 		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
 	}
@@ -925,7 +926,7 @@ async function show_feed() {
      return;
    }
    var fd = Global.feedsStore[Global.currentFeed];
-   feedTitle.createEl('a', {href: santilize(fd.link)}).innerHTML = santilize(fd.title);
+   feedTitle.createEl('a', {href: sanitize(fd.link)}).innerHTML = sanitize(fd.title);
    if (fd.pubDate != '') {
      feed_content.createEl('div', {text: fd.pubDate});
    }
@@ -940,11 +941,11 @@ async function show_feed() {
      itemEl.id = item.link;
      itemEl.createEl('hr');
      itemEl.createEl('div')
-     .createEl('a', {text: item.title.replace(/(<([^>]+)>)/gi, ""), href: santilize(item.link)})
+     .createEl('a', {text: item.title.replace(/(<([^>]+)>)/gi, ""), href: sanitize(item.link)})
      .className = 'itemTitle';
      const elCreator = itemEl.createEl('div');
      elCreator.className = 'itemCreator';
-     elCreator.innerHTML = santilize(item.creator);
+     elCreator.innerHTML = sanitize(item.creator);
      var elPubDate;
      if (item.pubDate != "") {
        elPubDate = itemEl.createEl('div', {text: item.pubDate});
@@ -974,7 +975,7 @@ async function show_feed() {
      if (!Global.titleOnly) {
        const elContent = itemEl.createEl('div');
        elContent.className = 'itemContent';
-       elContent.innerHTML = santilize(item.content.replace(/<img src="\/\//g,"<img src=\"https://"));
+       elContent.innerHTML = sanitize(item.content.replace(/<img src="\/\//g,"<img src=\"https://"));
      } else {
        const showItemContent = itemEl.createEl('div', {text: '>>> >>>'});
        showItemContent.className = 'showItemContent';
@@ -996,7 +997,7 @@ async function show_feed() {
      nextPage.id = "nextPage";
    }
    var stats = getFeedStats(Global.currentFeed);
-   Global.elUnreadCount = document.getElementById('unreadCount' + Global.currentFeed);
+   //  Global.elUnreadCount = document.getElementById('unreadCount' + Global.currentFeed);
    Global.elTotalCount = document.getElementById('totalCount' + Global.currentFeed);
    Global.elSepUnreadTotal = document.getElementById('sepUnreadTotal' + Global.currentFeed);
    Global.elUnreadCount.innerText = stats.unread.toString();
@@ -1005,13 +1006,19 @@ async function show_feed() {
 }
 
 
-function santilize(s: string) {
+function sanitize(s: string) {
   // https://stackoverflow.com/questions/6659351/removing-all-script-tags-from-html-with-js-regular-expression
   // var SCRIPT_REGEX = /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi;
   var SCRIPT_REGEX = /<script(?:(?!\/\/)(?!\/\*)[^'"]|"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\/\/.*(?:\n)|\/\*(?:(?:.|\s))*?\*\/)*?<\/script\s*>/gi;
-  while (SCRIPT_REGEX.test(s)) {
-      s = s.replace(SCRIPT_REGEX, "");
-  }
+  var onerror_regex = /onerror\s*=\s*/gi;
+  var onclick_regex = /onclick\s*=\s*/gi;
+  var onmouseover_regex = /onmouseover\s*=\s*/gi;
+  var onload_regex = /onload\s*=\s*/gi;
+  [SCRIPT_REGEX, onerror_regex, onclick_regex, onmouseover_regex, onload_regex].forEach(r => {
+    while (r.test(s)) {
+      s = s.replace(r, " ");
+    }
+  });
   return s;
 }
 

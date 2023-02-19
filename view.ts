@@ -29,6 +29,11 @@ export class FRView extends ItemView {
     }
 
     const container = this.containerEl.children[1];
+    if (container === undefined) {
+      console.log('Fail to get container.');
+      return;
+    }
+
     container.empty();
 
     const toggleNaviContainer = container.createEl('div');
