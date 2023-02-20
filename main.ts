@@ -926,7 +926,7 @@ async function show_feed() {
      return;
    }
    var fd = Global.feedsStore[Global.currentFeed];
-   feedTitle.createEl('a', {href: sanitize(fd.link)}).innerHTML = sanitize(fd.title);
+   feedTitle.createEl('a', {href: sanitize(fd.link)}).innerText = sanitize(fd.title);
    if (fd.pubDate != '') {
      feed_content.createEl('div', {text: fd.pubDate});
    }
