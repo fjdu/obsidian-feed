@@ -20,4 +20,6 @@ export namespace Global {
   var nPage: number;
   var idxItemStart: number;
   var displayIndices: number [];
+  var maxTotalnumDisplayed: number;
+  var nThanksSep: number;
 }

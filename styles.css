@@ -177,13 +177,18 @@ hr.divider {
 }
 
 .unreadCount {
-  font-size: 40%;
-  font-weight: bold;
+  z-index: -1;
+  pointer-events: none;
 }
 
-.totalCount {
+.elUnreadTotalAndRefresh {
   font-size: 40%;
   font-weight: bold;
+  z-index: 2;
+}
+
+.elUnreadTotalAndRefresh:hover {
+  color: #f15500;
 }
 
 .addFeedForm {
@@ -208,7 +213,7 @@ input[type=text] {
 }
 
 .thanks {
-  font-size: 65%;
+  font-size: 56%;
   font-weight: bold;
 }
 

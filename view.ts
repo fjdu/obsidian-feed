@@ -82,8 +82,8 @@ export class FRView extends ItemView {
     });
 
     if (Global.feedList.length > 2) {
-      if (Global.feedList.length < 20) {
-        var nVertSep = 20-Global.feedList.length;
+      if (Global.feedList.length < Global.nThanksSep) {
+        var nVertSep = Global.nThanksSep-Global.feedList.length;
         for (var i=0; i<nVertSep; i++) {
           feedTableDiv.createEl('br');
         }
@@ -127,6 +127,9 @@ export async function createFeedBar() {
     var stats = getFeedStats(item.feedUrl);
 
     const elUnreadTotal = tr.createEl('td');
+    elUnreadTotal.setAttribute('fdUrl', item.feedUrl);
+    elUnreadTotal.setAttribute('fdName', item.name);
+    elUnreadTotal.className = 'elUnreadTotalAndRefresh';
     const unreadCount = elUnreadTotal.createEl('span', {text: stats.unread.toString()});
     unreadCount.className = 'unreadCount';
     unreadCount.id = 'unreadCount' + item.feedUrl;
@@ -134,13 +137,13 @@ export async function createFeedBar() {
     elSep.className = 'unreadCount';
     elSep.id = 'sepUnreadTotal'+item.feedUrl;
     const totalCount = elUnreadTotal.createEl('span', {text: stats.total.toString()});
-    totalCount.className = 'totalCount';
+    totalCount.className = 'unreadCount';
     totalCount.id = 'totalCount' + item.feedUrl;
 
-    const refreshFeed = tr.createEl('td', {text: '\u21BB'});
-    refreshFeed.className = 'refreshFeed';
-    refreshFeed.id = item.feedUrl;
-    refreshFeed.setAttribute('fdName', item.name);
+    // const refreshFeed = tr.createEl('td', {text: '\u21BB'});
+    // refreshFeed.className = 'refreshFeed';
+    // refreshFeed.id = item.feedUrl;
+    // refreshFeed.setAttribute('fdName', item.name);
   });
 }
 

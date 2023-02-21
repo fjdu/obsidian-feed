@@ -16,10 +16,10 @@ This plugin is mostly built for my own use.  Online services are good, but it is
 - `Add feed` is for adding new feed subscriptions.  The first time you use this plugin, you will need to add subscriptions with this `Add`.  **Keep the feed name as short as possible, and it must be unique.**
    - *Be careful with the feed provider!  Sanitization is not performed for the feed contents, and malicious content may cause data loss!*
    - While it is true that meticulously crafted contents may sabotage your data, normal feed providers have no intention to do this (unless they are hacked).  So please only subscribe from legitimate websites.  I choose not to thoroughly purify the contents, because that would ruin the reading experience (we need the outgoing links, images, etc.).  If you have a better solution please let me know.
-- `Manage` is for managing your feeds, where you can mark all as read, purge those that are marked as deleted, and purge all (i.e. to permanently remove all items of a feed).  Be cautious that these actions cannot be undone.
+- `Manage` is for managing your feeds, where you can mark all as read, purge those that are marked as deleted, and purge all (i.e. to permanently remove all items of a feed).  **Be cautious that these actions cannot be undone.**
 - All the subscribed sources are listed under their respective folders.
 - The number of unread and total items are displayed after the feed name.
-- To retrieve new items, click the `refresh` (↻) button.  Wait a few seconds (depending on the internet speed), then click on the feed name again, and new items (if any) will be displayed.
+- To retrieve new items, click on the `unread/total` number.
 - For each displayed item, you can click `Read` to mark it as read, `Save` to create an `.md` note for it, and `Delete` to mark it as deleted.  All these must be done manually (instead of automatically by the plugin itself).  Click on `>>> >>>` to show the item content.
   - If you would like to add notes to an item, you have to first use `Save` to create the `.md` file, then edit that file directly.
 - The items are paginated with 100 items per page.

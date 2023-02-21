@@ -78,13 +78,21 @@ export default class FeedsReader extends Plugin {
           });
         });
       }
-      if (evt.target.className === 'refreshFeed') {
-        getFeedItems(evt.target.id).then(async (res) => {
+      if (evt.target.className === 'elUnreadTotalAndRefresh') {
+        var fdUrl = evt.target.getAttribute('fdUrl');
+        getFeedItems(fdUrl).then(async (res) => {
           if (res === undefined) {
             return;
           }
-          var nNew = this.mergeStoreWithNewData(res, evt.target.id);
+          var nNew = this.mergeStoreWithNewData(res, fdUrl);
           await saveFeedsData();
+          if (nNew > 0) {
+            var stats = getFeedStats(fdUrl);
+            document.getElementById('unreadCount' + fdUrl).innerText = stats.unread.toString();
+            if (stats.total < Global.maxTotalnumDisplayed) {
+              document.getElementById('totalCount' + fdUrl).innerText = stats.total.toString();
+            }
+          }
           new Notice(nNew.toString() + " new items for " + evt.target.getAttribute('fdName'), 3000);
         });
       }
@@ -366,6 +374,8 @@ export default class FeedsReader extends Plugin {
     Global.nItemPerPage = 100;
     Global.feedsStoreChange = false;
     Global.elUnreadCount = undefined;
+    Global.maxTotalnumDisplayed = 1e4;
+    Global.nThanksSep = 20;
 
 		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
 	}
@@ -1001,8 +1011,13 @@ async function show_feed() {
    Global.elTotalCount = document.getElementById('totalCount' + Global.currentFeed);
    Global.elSepUnreadTotal = document.getElementById('sepUnreadTotal' + Global.currentFeed);
    Global.elUnreadCount.innerText = stats.unread.toString();
-   Global.elTotalCount.innerText = fd.items.length;
-   Global.elSepUnreadTotal.innerText = '/';
+   if (fd.items.length < Global.maxTotalnumDisplayed) {
+     Global.elTotalCount.innerText = fd.items.length.toString();
+     Global.elSepUnreadTotal.innerText = '/';
+   } else {
+     Global.elTotalCount.innerText = '';
+     Global.elSepUnreadTotal.innerText = '';
+   }
 }
 
 
