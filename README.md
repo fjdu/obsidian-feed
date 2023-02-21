@@ -15,6 +15,7 @@ This plugin is mostly built for my own use.  Online services are good, but it is
 - `Undo` is for undoing recent `mark as read` and `mark as deleted` actions for the **selected feed**.
 - `Add feed` is for adding new feed subscriptions.  The first time you use this plugin, you will need to add subscriptions with this `Add`.  **Keep the feed name as short as possible, and it must be unique.**
    - *Be careful with the feed provider!  Sanitization is not performed for the feed contents, and malicious content may cause data loss!*
+   - While it is true that meticulously crafted contents may sabotage your data, normal feed providers have no intention to do this (unless they are hacked).  So please only subscribe from legitimate websites.  I choose not to thoroughly purify the contents, because that would ruin the reading experience (we need the outgoing links, images, etc.).  If you have a better solution please let me know.
 - `Manage` is for managing your feeds, where you can mark all as read, purge those that are marked as deleted, and purge all (i.e. to permanently remove all items of a feed).  Be cautious that these actions cannot be undone.
 - All the subscribed sources are listed under their respective folders.
 - The number of unread and total items are displayed after the feed name.
@@ -29,3 +30,4 @@ This plugin is mostly built for my own use.  Online services are good, but it is
 ## Known issues:
 
 - The plugin uses the Obsidian `request` api.  Sometimes it appears to me that the `request` call returns prematurely and too quickly (my network speed can't be that fast), but I am not sure and don't know why.
+- I would like the LaTeX equations in the contents to be properly displayed with something like MathJax, but I have not figured out how to do this yet.
