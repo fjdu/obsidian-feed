@@ -19,8 +19,8 @@ This plugin is mostly built for my own use.  Online services are good, but it is
 - `Manage` is for managing your feeds, where you can mark all as read, purge those that are marked as deleted, and purge all (i.e. to permanently remove all items of a feed).  Be cautious that these actions cannot be undone.
 - All the subscribed sources are listed under their respective folders.
 - The number of unread and total items are displayed after the feed name.
-- To retrieve new items, click the `refresh` button.  Wait a few seconds (depending on the internet speed), then click on the feed name again, and new items (if any) will be displayed.
-- For each displayed item, you can click `Read` to mark it as read, `Save` to create an `.md` note for it (further notes for it can be added by directly editing that `.md` file), and `Delete` to mark it as deleted.  All these must be done manually (instead of automatically by the plugin itself).  Click on `>>> >>>` to show the item content.
+- To retrieve new items, click the `refresh` (↻) button.  Wait a few seconds (depending on the internet speed), then click on the feed name again, and new items (if any) will be displayed.
+- For each displayed item, you can click `Read` to mark it as read, `Save` to create an `.md` note for it, and `Delete` to mark it as deleted.  All these must be done manually (instead of automatically by the plugin itself).  Click on `>>> >>>` to show the item content.
   - If you would like to add notes to an item, you have to first use `Save` to create the `.md` file, then edit that file directly.
 - The items are paginated with 100 items per page.
 - The feeds data are saved as fragmented `.json` files.  They are intentionally fragmented so that when new items come, old files do not need to be updated (hence do not need to be synced).
