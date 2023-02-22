@@ -66,7 +66,7 @@ export default class FeedsReader extends Plugin {
 		this.registerDomEvent(document, 'click', async (evt: MouseEvent) => {
       if (evt.target.id === 'updateAll') {
         Global.feedList.forEach(async (f) => {
-          var nNew = updateOneFeed(f.feedUrl);
+          var nNew = await updateOneFeed(f.feedUrl);
           if (nNew > 0) {
             new Notice(nNew.toString() + " new items for " + f.name, 3000);
           }
@@ -74,7 +74,7 @@ export default class FeedsReader extends Plugin {
       }
       if (evt.target.className === 'elUnreadTotalAndRefresh') {
         var fdUrl = evt.target.getAttribute('fdUrl');
-        var nNew = updateOneFeed(fdUrl);
+        var nNew = await updateOneFeed(fdUrl);
         new Notice(nNew.toString() + " new items for " + evt.target.getAttribute('fdName'), 3000);
       }
       if (evt.target.className === 'showFeed') {
@@ -408,11 +408,10 @@ function mergeStoreWithNewData(newdata: RssFeedContent, key: string) {
 }
 
 async function updateOneFeed(fdUrl: string) {
-  getFeedItems(fdUrl).then(async (res) => {
-    if (res === undefined) {
-      return;
-    }
-    var nNew = mergeStoreWithNewData(res, fdUrl);
+  var nNew = 0;
+  var res = await getFeedItems(fdUrl);
+  if (res != undefined) {
+    nNew = mergeStoreWithNewData(res, fdUrl);
     if (nNew > 0) {
       var stats = getFeedStats(fdUrl);
       document.getElementById('unreadCount' + fdUrl).innerText = stats.unread.toString();
@@ -427,10 +426,10 @@ async function updateOneFeed(fdUrl: string) {
       if (stats.total < Global.maxTotalnumDisplayed) {
         document.getElementById('totalCount' + fdUrl).innerText = stats.total.toString();
       }
+      await saveFeedsData();
     }
-    await saveFeedsData();
-    return nNew;
-  });
+  }
+  return nNew;
 }
 
 
