@@ -11,6 +11,7 @@ export namespace Global {
   var feedList: {name: string, feedUrl: string, unread: number, updated: number, folder: string} [];
   var feedsStore: {[id: string]: RssFeedContent;};
   var feedsStoreChange: boolean;
+  var feedsStoreChangeList;
   var hideThisItem: boolean;
   var itemIdx: number;
   var nMergeLookback: number;

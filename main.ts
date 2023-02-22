@@ -66,35 +66,16 @@ export default class FeedsReader extends Plugin {
 		this.registerDomEvent(document, 'click', async (evt: MouseEvent) => {
       if (evt.target.id === 'updateAll') {
         Global.feedList.forEach(async (f) => {
-          getFeedItems(f.feedUrl).then(async (res) => {
-            if (res === undefined) {
-              return;
-            }
-            var nNew = this.mergeStoreWithNewData(res, f.feedUrl);
-            await saveFeedsData();
-            if (nNew > 0) {
-              new Notice(nNew.toString() + " new items for " + f.name, 3000);
-            }
-          });
+          var nNew = updateOneFeed(f.feedUrl);
+          if (nNew > 0) {
+            new Notice(nNew.toString() + " new items for " + f.name, 3000);
+          }
         });
       }
       if (evt.target.className === 'elUnreadTotalAndRefresh') {
         var fdUrl = evt.target.getAttribute('fdUrl');
-        getFeedItems(fdUrl).then(async (res) => {
-          if (res === undefined) {
-            return;
-          }
-          var nNew = this.mergeStoreWithNewData(res, fdUrl);
-          await saveFeedsData();
-          if (nNew > 0) {
-            var stats = getFeedStats(fdUrl);
-            document.getElementById('unreadCount' + fdUrl).innerText = stats.unread.toString();
-            if (stats.total < Global.maxTotalnumDisplayed) {
-              document.getElementById('totalCount' + fdUrl).innerText = stats.total.toString();
-            }
-          }
-          new Notice(nNew.toString() + " new items for " + evt.target.getAttribute('fdName'), 3000);
-        });
+        var nNew = updateOneFeed(fdUrl);
+        new Notice(nNew.toString() + " new items for " + evt.target.getAttribute('fdName'), 3000);
       }
       if (evt.target.className === 'showFeed') {
         var previousFeed = Global.currentFeed;
@@ -126,13 +107,11 @@ export default class FeedsReader extends Plugin {
       if (evt.target.id === 'nextPage') {
         Global.idxItemStart += Global.nItemPerPage;
         Global.nPage += 1;
-        // makeDisplayList();
         show_feed();
       }
       if (evt.target.id === 'prevPage') {
         Global.idxItemStart -= Global.nItemPerPage;
         Global.nPage -= 1;
-        // makeDisplayList();
         show_feed();
       }
       if (evt.target.id === 'undo') {
@@ -204,6 +183,7 @@ export default class FeedsReader extends Plugin {
         var idx = this.getNumFromId(evt.target.id, 'toggleRead');
         Global.itemIdx = idx;
         Global.feedsStoreChange = true;
+        Global.feedsStoreChangeList.add(Global.currentFeed);
         var el = document.getElementById(evt.target.id);
         if (el.innerText === 'Read') {
           Global.feedsStore[Global.currentFeed].items[idx].read = nowdatetime();
@@ -230,6 +210,7 @@ export default class FeedsReader extends Plugin {
         var idx = this.getNumFromId(evt.target.id, 'toggleDelete');
         Global.itemIdx = idx;
         Global.feedsStoreChange = true;
+        Global.feedsStoreChangeList.add(Global.currentFeed);
         var el = document.getElementById(evt.target.id);
         if (el.innerText === 'Delete') {
           Global.feedsStore[Global.currentFeed].items[idx].deleted = nowdatetime();
@@ -377,6 +358,7 @@ export default class FeedsReader extends Plugin {
     Global.lenStrPerFile = 1024 * 1024;
     Global.nItemPerPage = 100;
     Global.feedsStoreChange = false;
+    Global.feedsStoreChangeList = new Set<string>();
     Global.elUnreadCount = undefined;
     Global.maxTotalnumDisplayed = 1e4;
     Global.nThanksSep = 20;
@@ -392,35 +374,63 @@ export default class FeedsReader extends Plugin {
     var n = pref.length;
     return parseInt(idstr.substring(n));
   }
+}
 
-  mergeStoreWithNewData(newdata: RssFeedContent, key: string) {
-    if (!Global.feedsStore.hasOwnProperty(key)) {
-      Global.feedsStore[key] = newdata;
-      Global.feedsStoreChange = true;
-      return newdata.items.length;
-    }
-    Global.feedsStore[key].title = newdata.title;
-    Global.feedsStore[key].subtitle = newdata.subtitle;
-    Global.feedsStore[key].description = newdata.description;
-    Global.feedsStore[key].pubDate = newdata.pubDate;
-    var nNew = 0;
-    var nLookback = Math.min(Global.nMergeLookback, Global.feedsStore[key].items.length);
-    for (var j=newdata.items.length-1; j>=0; j--) {
-      var found = false;
-      for (let i=0; i<nLookback; i++) {
-        if (Global.feedsStore[key].items[i].link === newdata.items[j].link) {
-          found = true;
-          break;
-        }
-      }
-      if (!found) {
-        nNew += 1;
-        Global.feedsStore[key].items.unshift(newdata.items[j]);
-        Global.feedsStoreChange = true;
-      }
-    }
-    return nNew;
+function mergeStoreWithNewData(newdata: RssFeedContent, key: string) {
+  if (!Global.feedsStore.hasOwnProperty(key)) {
+    Global.feedsStore[key] = newdata;
+    Global.feedsStoreChange = true;
+    Global.feedsStoreChangeList.add(key);
+    return newdata.items.length;
   }
+  Global.feedsStore[key].title = newdata.title;
+  Global.feedsStore[key].subtitle = newdata.subtitle;
+  Global.feedsStore[key].description = newdata.description;
+  Global.feedsStore[key].pubDate = newdata.pubDate;
+  var nNew = 0;
+  var nLookback = Math.min(Global.nMergeLookback, Global.feedsStore[key].items.length);
+  for (var j=newdata.items.length-1; j>=0; j--) {
+    var found = false;
+    for (let i=0; i<nLookback; i++) {
+      if (Global.feedsStore[key].items[i].link === newdata.items[j].link) {
+        found = true;
+        break;
+      }
+    }
+    if (!found) {
+      nNew += 1;
+      Global.feedsStore[key].items.unshift(newdata.items[j]);
+      Global.feedsStoreChange = true;
+      Global.feedsStoreChangeList.add(key);
+    }
+  }
+  return nNew;
+}
+
+async function updateOneFeed(fdUrl: string) {
+  getFeedItems(fdUrl).then(async (res) => {
+    if (res === undefined) {
+      return;
+    }
+    var nNew = mergeStoreWithNewData(res, fdUrl);
+    if (nNew > 0) {
+      var stats = getFeedStats(fdUrl);
+      document.getElementById('unreadCount' + fdUrl).innerText = stats.unread.toString();
+      if (fdUrl === Global.currentFeed) {
+        Global.elUnreadCount.innerText = stats.unread.toString();
+        Global.undoList = [];
+        Global.idxItemStart = 0;
+        Global.nPage = 1;
+        makeDisplayList();
+        show_feed();
+      }
+      if (stats.total < Global.maxTotalnumDisplayed) {
+        document.getElementById('totalCount' + fdUrl).innerText = stats.total.toString();
+      }
+    }
+    await saveFeedsData();
+    return nNew;
+  });
 }
 
 
@@ -688,11 +698,18 @@ export async function saveFeedsData () {
   }
   for (var i=0; i<Global.feedList.length; i++) {
     key = Global.feedList[i].feedUrl;
+    if (!Global.feedsStoreChangeList.has(key)) {
+      continue;
+    }
+    if (!Global.feedsStore.hasOwnProperty(key)) {
+      continue;
+    }
     nSaved += (await saveStringSplitted(JSON.stringify(Global.feedsStore[key], null, 1),
                 Global.feeds_reader_dir + '/' + Global.feeds_store_base,
                 Global.feedList[i].name,
                 Global.lenStrPerFile, 0));
   }
+
   // if (! await this.app.vault.exists(Global.feeds_reader_dir)) {
   //   await this.app.vault.createFolder(Global.feeds_reader_dir);
   // }
@@ -702,7 +719,9 @@ export async function saveFeedsData () {
   // } else {
   //   await this.app.vault.adapter.write(fpath, JSON.stringify(Global.feedsStore, null, 1));
   // }
+
   Global.feedsStoreChange = false;
+  Global.feedsStoreChangeList.clear();
   return nSaved;
 }
 
@@ -795,6 +814,9 @@ export function getFeedStats(feedUrl: string) {
 
 
 export function getFeedStorageInfo(feedUrl: string) {
+  if (!Global.feedsStore.hasOwnProperty(feedUrl)) {
+    return ['0', '0'];
+  }
   if (Global.feedsStore[feedUrl].items.length == 0) {
     return ['0', '0'];
   }
@@ -824,11 +846,13 @@ function markAllRead(feedUrl: string) {
     }
   }
   Global.feedsStoreChange = true;
+  Global.feedsStoreChangeList.add(feedUrl);
 }
 
 function purgeDeleted(feedUrl: string) {
   Global.feedsStore[feedUrl].items = Global.feedsStore[feedUrl].items.filter(item => item.deleted === "");
   Global.feedsStoreChange = true;
+  Global.feedsStoreChangeList.add(feedUrl);
 }
 
 function removeContent(feedUrl: string) {
@@ -837,6 +861,7 @@ function removeContent(feedUrl: string) {
     Global.feedsStore[feedUrl].items[i].creator = '';
   }
   Global.feedsStoreChange = true;
+  Global.feedsStoreChangeList.add(feedUrl);
 }
 
 function removeContentOld(feedUrl: string) {
@@ -846,17 +871,20 @@ function removeContentOld(feedUrl: string) {
     Global.feedsStore[feedUrl].items[i].creator = '';
   }
   Global.feedsStoreChange = true;
+  Global.feedsStoreChangeList.add(feedUrl);
 }
 
 function purgeAll(feedUrl: string) {
   Global.feedsStore[feedUrl].items.length = 0;
   Global.feedsStoreChange = true;
+  Global.feedsStoreChangeList.add(feedUrl);
 }
 
 function purgeOldHalf(feedUrl: string) {
   var iDel = Math.floor(Global.feedsStore[feedUrl].items.length / 2);
   Global.feedsStore[feedUrl].items.splice(iDel);
   Global.feedsStoreChange = true;
+  Global.feedsStoreChangeList.add(feedUrl);
 }
 
 function deduplicate(feedUrl: string) {
@@ -874,6 +902,7 @@ function deduplicate(feedUrl: string) {
   const nAfter = Global.feedsStore[feedUrl].items.length;
   if (nBefore > nAfter) {
     Global.feedsStoreChange = true;
+    Global.feedsStoreChangeList.add(feedUrl);
   }
   return nBefore - nAfter;
 }
@@ -883,10 +912,11 @@ async function removeFeed(feedUrl: string) {
     if (Global.feedList[i].feedUrl === feedUrl) {
       if (Global.feedsStore.hasOwnProperty(feedUrl)) {
         delete Global.feedsStore[feedUrl];
-        Global.feedsStoreChange = true;
         await removeFileFragments(Global.feeds_reader_dir + '/' + Global.feeds_store_base, Global.feedList[i].name);
       }
       Global.feedList.splice(i, 1);
+      Global.feedsStoreChange = true;
+      Global.feedsStoreChangeList.add(feedUrl);
       await saveSubscriptions();
       break;
     }
