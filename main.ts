@@ -290,7 +290,7 @@ export default class FeedsReader extends Plugin {
       }
       if ((evt.target.id === 'toggleNavi') && (Global.currentFeed != '')) {
         let toggle = document.getElementById('toggleNavi');
-        if (toggle.innerText == '>') {
+        if (toggle.innerText === '>') {
           toggle.innerText = '<';
           var toggleNaviAux = document.getElementById('toggleNaviAux');
           Global.elUnreadCount = toggleNaviAux.createEl('span', {text: Global.elUnreadCount.innerText});
@@ -299,6 +299,8 @@ export default class FeedsReader extends Plugin {
           save_data_toggling.className = 'save_data_toggling';
           document.getElementById('naviBar').style.display = 'none';
           document.getElementById('contentBox').style['margin-left'] = '0mm';
+          document.getElementById('toggleNaviContainer').style['background-color'] = '#bc90a1';
+          document.getElementById('toggleNaviContainer').style['opacity'] = '0.9';
         } else {
           toggle.innerText = '>';
           var s = Global.elUnreadCount.innerText;
@@ -307,6 +309,8 @@ export default class FeedsReader extends Plugin {
           document.getElementById('toggleNaviAux').empty();
           document.getElementById('naviBar').style.display = 'block';
           document.getElementById('contentBox').style['margin-left'] = '160px';
+          document.getElementById('toggleNaviContainer').style.removeProperty('background-color');
+          document.getElementById('toggleNaviContainer').style.removeProperty('opacity');
         }
       }
       if (evt.target.id === 'search') {
@@ -611,8 +615,11 @@ class ManageFeedsModal extends Modal {
     }
 	}
 
-	onClose() {
+	async onClose() {
 		const {contentEl} = this;
+    if (Global.feedsStoreChange) {
+      await createFeedBar();
+    }
 		contentEl.empty();
 	}
 }
@@ -744,15 +751,17 @@ function str2filename(s: string) {
   var reservedRe = /^\.+$/;
   var windowsReservedRe = /^(con|prn|aux|nul|com[0-9]|lpt[0-9])(\..*)?$/i;
   var windowsTrailingRe = /[\. ]+$/;
-  var replacement = '';
+  var replacement = ' ';
+  s = unEscape(s);
   return s.replace(illegalRe, replacement)
           .replace(controlRe, replacement)
           .replace(reservedRe, replacement)
           .replace(windowsReservedRe, replacement)
           .replace(windowsTrailingRe, replacement)
           .replace(/[\[\]]/g, '')
-          .replace(/_\s+/g, ' ')
-          .replace(/_*\s*$/g, '');
+          .replace(/[_-]\s+/g, ' ')
+          .replace(/\s{2,}/g, ' ')
+          .replace(/[_-]*\s+$/g, '');
 }
 
 function unEscape(htmlStr) {
@@ -879,7 +888,6 @@ async function removeFeed(feedUrl: string) {
       }
       Global.feedList.splice(i, 1);
       await saveSubscriptions();
-      await createFeedBar();
       break;
     }
   }
@@ -926,6 +934,9 @@ function makeDisplayList() {
 
 
 async function show_feed() {
+   if (Global.currentFeed === '') {
+     return;
+   }
    const feed_content = document.getElementById('feed_content');
    feed_content.empty();
 
