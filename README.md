@@ -26,9 +26,8 @@ This plugin is mostly built for my own use.  Online services are good, but it is
 - The feeds data are saved as fragmented `.json` files.  They are intentionally fragmented so that when new items come, old files do not need to be updated (hence do not need to be synced).
 
 ## Acknowledgment
-- This plugin makes use of the [rssParser](https://github.com/joethei/obsidian-rss/blob/master/src/parser/rssParser.ts) source code from the [RSS Reader](https://github.com/joethei/obsidian-rss) plugin, with a few modifications.
+- This plugin makes use of the [rssParser](https://github.com/joethei/obsidian-rss/blob/master/src/parser/rssParser.ts) source code from the [RSS Reader](https://github.com/joethei/obsidian-rss) plugin written by [Johannes Theiner](https://github.com/joethei), with a few modifications.
 
 ## Known issues:
 
-- The plugin uses the Obsidian `request` api.  Sometimes it appears to me that the `request` call returns prematurely and too quickly (my network speed can't be that fast), but I am not sure and don't know why.
 - I would like the LaTeX equations in the contents to be properly displayed with something like MathJax, but I have not figured out how to do this yet.

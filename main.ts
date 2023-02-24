@@ -66,16 +66,19 @@ export default class FeedsReader extends Plugin {
 		this.registerDomEvent(document, 'click', async (evt: MouseEvent) => {
       if (evt.target.id === 'updateAll') {
         Global.feedList.forEach(async (f) => {
-          var nNew = await updateOneFeed(f.feedUrl);
+          var [nNew, nTotal] = await updateOneFeed(f.feedUrl);
           if (nNew > 0) {
-            new Notice(nNew.toString() + " new items for " + f.name, 3000);
+            new Notice(f.name + ': ' + nTotal.toString() + ' retrieved, '
+                       + nNew.toString() + " new.", 3000);
           }
         });
       }
       if (evt.target.className === 'elUnreadTotalAndRefresh') {
         var fdUrl = evt.target.getAttribute('fdUrl');
-        var nNew = await updateOneFeed(fdUrl);
-        new Notice(nNew.toString() + " new items for " + evt.target.getAttribute('fdName'), 3000);
+        var [nNew, nTotal] = await updateOneFeed(fdUrl);
+        new Notice(evt.target.getAttribute('fdName') + ': '
+                   + nTotal.toString() + " retrieved, "
+                   + nNew.toString() + ' new.', 3000);
       }
       if (evt.target.className === 'showFeed') {
         var previousFeed = Global.currentFeed;
@@ -410,7 +413,7 @@ function mergeStoreWithNewData(newdata: RssFeedContent, key: string) {
 async function updateOneFeed(fdUrl: string) {
   var nNew = 0;
   var res = await getFeedItems(fdUrl);
-  if (res != undefined) {
+  if ((res != undefined) && (res.items != undefined)) {
     nNew = mergeStoreWithNewData(res, fdUrl);
     if (nNew > 0) {
       var stats = getFeedStats(fdUrl);
@@ -428,8 +431,10 @@ async function updateOneFeed(fdUrl: string) {
       }
       await saveFeedsData();
     }
+    return [nNew, res.items.length];
+  } else {
+    return [0, 0];
   }
-  return nNew;
 }
 
 

@@ -76,28 +76,53 @@ function getElementByName(element: Element | Document, name: string): ChildNode 
             });
         }
 
-    } else if (element.getElementsByTagName(name).length > 0) {
-        if (element.getElementsByTagName(name)[0].childNodes.length == 0) {
-            value = element.getElementsByTagName(name)[0];
-        } else {
-            const node = element.getElementsByTagName(name)[0].childNodes[0];
-            if (node !== undefined)
-                value = node;
+    } else {
+        var els = element.getElementsByTagName(name);
+        if (els.length > 0) {
+          var el = els[0];
+          if (el.childNodes.length === 0) {
+            value = el;
+          } else {
+            //value = el.firstChild;
+            value = [... el.childNodes].reduce((a, b) => {return getElLen(a) > getElLen(b) ? a : b;});
+          }
         }
     }
-    //if(name === "content") console.log(value);
 
     return value;
 }
 
+function getElLen(el) {
+  var possibleTextTags = ['innerHTML', 'wholeText', 'innerText', 'nodeValue', 'textContent', 'data'];
+  var len_s = [0];
+  for (var t of possibleTextTags) {
+    if ((typeof el[t]) === 'string') {
+      len_s.push(el[t].length);
+    }
+  }
+  return Math.max(...len_s);
+}
+
+function getElPossibleText(el) {
+  var possibleTextTags = ['innerHTML', 'wholeText', 'innerText', 'nodeValue', 'textContent', 'data'];
+  var possibleTexts = [''];
+  for (var t of possibleTextTags) {
+    if ((typeof el[t]) === 'string') {
+      possibleTexts.push(el[t]);
+    }
+  }
+  return possibleTexts;
+}
+
 /**
  * # to get attribute
- * Always returns the last found value for names
+ * Always returns the longest value for names
  * @param element
  * @param names possible names
  */
 function getContent(element: Element | Document, names: string[]): string {
     let value: string;
+    let values: string [] = [];
     for (const name of names) {
         if (name.includes("#")) {
             const [elementName, attr] = name.split("#");
@@ -114,28 +139,30 @@ function getContent(element: Element | Document, names: string[]): string {
         } else {
             const data = getElementByName(element, name);
             if (data) {
-                //@ts-ignore
-                if(data.wholeText && data.wholeText.length > 0) {
-                    //@ts-ignore
-                    value = data.wholeText;
-                }
+                value = getElPossibleText(data).reduce((a, b) => {return a.length > b.length ? a : b;});
+                // //@ts-ignore
+                // if(data.innerHTML && data.innerHTML.length > 0) {
+                //     //@ts-ignore
+                //     value = data.innerHTML;
+                // }
 
-                //@ts-ignore
-                if (!value && data.nodeValue && data.nodeValue.length > 0) {
-                    value = data.nodeValue;
-                }
-                //@ts-ignore
-                if (!value && data.innerHTML && data.innerHTML.length > 0) {
-                    //@ts-ignore
-                    value = data.innerHTML;
-                }
+                // //@ts-ignore
+                // if (!value && data.nodeValue && data.nodeValue.length > 0) {
+                //     value = data.nodeValue;
+                // }
+                // //@ts-ignore
+                // if (!value && data.wholeText && data.wholeText.length > 0) {
+                //     //@ts-ignore
+                //     value = data.wholeText;
+                // }
             }
         }
+        if (value === undefined) {
+          value = '';
+        }
+        values.push(value);
     }
-    if (value === undefined) {
-        return "";
-    }
-    return value;
+    return values.reduce((a, b) => {return a.length > b.length ? a : b;});
 }
 
 function buildItem(element: Element): RssFeedItem {
@@ -173,9 +200,9 @@ function getAllItems(doc: Document): Element[] {
 }
 
 async function requestFeed(feedUrl: string) : Promise<string> {
-    return await request({url: feedUrl, method: "GET", cache: 'no-store',
-                          contentType: "application/text+xml",
-                          credentials: 'include'
+    return await request({url: feedUrl,
+                          method: "GET",
+                          headers: {"Cache-Control": "max-age=0, no-cache"}
                          });
 }
 
