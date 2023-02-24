@@ -1,6 +1,7 @@
 export namespace Global {
   var showAll: boolean;
   var titleOnly: boolean;
+  var itemOrder: string;
   var feeds_reader_dir: string;
   var feeds_data_fname: string;
   var feeds_store_base: string;

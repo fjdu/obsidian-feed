@@ -256,13 +256,24 @@ export default class FeedsReader extends Plugin {
       }
       if (evt.target.id === 'titleOnly') {
         let toggle = document.getElementById('titleOnly');
-        if (toggle.innerText == 'Title only') {
+        if (toggle.innerText === 'Title only') {
           toggle.innerText = 'Show content';
           Global.titleOnly = false;
         } else {
           toggle.innerText = 'Title only';
           Global.titleOnly = true;
         }
+      }
+      if (evt.target.id === 'toggleOrder') {
+        let toggle = document.getElementById('toggleOrder');
+        if (toggle.innerText === 'New to old') {
+          toggle.innerText = 'Old to new';
+        } else if (toggle.innerText === 'Old to new') {
+          toggle.innerText = 'Random';
+        } else {
+          toggle.innerText = 'New to old';
+        }
+        Global.itemOrder = toggle.innerText;
       }
       if ((evt.target.id === 'saveFeedsData') || (evt.target.id === 'save_data_toggling')) {
         var nSaved = await saveFeedsData();
@@ -355,6 +366,7 @@ export default class FeedsReader extends Plugin {
     Global.subscriptions_fname = 'subscriptions.json';
     Global.showAll = false;
     Global.titleOnly = true;
+    Global.itemOrder = 'New to old';
     Global.currentFeed = '';
     Global.currentFeedName = '';
     Global.nMergeLookback = 1000;
@@ -963,6 +975,20 @@ function makeDisplayList() {
     if ((Global.showAll) || ((fd.items[i].read === '') && (fd.items[i].deleted === ''))) {
       Global.displayIndices.push(i);
     }
+  }
+  if (Global.itemOrder === 'Old to new') {
+    Global.displayIndices.reverse();
+  }
+  if (Global.itemOrder === 'Random') {
+    // From: https://dev.to/codebubb/how-to-shuffle-an-array-in-javascript-2ikj
+    (array => {
+      for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        const temp = array[i];
+        array[i] = array[j];
+        array[j] = temp;
+      }
+    })(Global.displayIndices);
   }
 }
 

@@ -61,6 +61,8 @@ export class FRView extends ItemView {
     showAll.id = 'showAll';
     const titleOnly = manage.createEl('div').createEl('span', {text: "Title only"});
     titleOnly.id = 'titleOnly';
+    const toggleOrder = manage.createEl('div').createEl('span', {text: Global.itemOrder});
+    toggleOrder.id = 'toggleOrder';
     const saveFeedsData = manage.createEl('div').createEl('span', {text: "Save data"});
     saveFeedsData.id = 'saveFeedsData';
     const updateAll = manage.createEl('div').createEl('span', {text: "Update all"});

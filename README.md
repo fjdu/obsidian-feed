@@ -10,6 +10,7 @@ This plugin is mostly built for my own use.  Online services are good, but it is
 - `Search` is for searching for one or more keywords (separated by space) in the current selected feed.
 - `Unread only`/`Show all` is for toggling displaying only unread items or all items (Note: all those marked as "read" or "deleted" are considered "read").
 - `Title only`/`Show content` is for toggling whether to show the content of each item.  My own experience is that most of the time a glancing over the title is enough to decide whether to read an article in detail.
+- `New to old` is for toggling of display orders.  It cycles from `New to old`, `Old to new`, to `Random`.
 - `Save data` is for saving the feed data (after you have marking some items as `read/deleted`), so that your reading progress would not be accidentally lost.
 - `Update all` is for fetching new items for all the subscribed feeds.
 - `Undo` is for undoing recent `mark as read` and `mark as deleted` actions for the **selected feed**.
