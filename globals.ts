@@ -14,7 +14,6 @@ export namespace Global {
   var feedsStoreChange: boolean;
   var feedsStoreChangeList;
   var hideThisItem: boolean;
-  var itemIdx: number;
   var nMergeLookback: number;
   var lenStrPerFile: number;
   var undoList: number [];

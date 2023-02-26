@@ -15,8 +15,8 @@ This plugin is mostly built for my own use.  Online services are good, but it is
 - `Update all` is for fetching new items for all the subscribed feeds.
 - `Undo` is for undoing recent `mark as read` and `mark as deleted` actions for the **selected feed**.
 - `Add feed` is for adding new feed subscriptions.  The first time you use this plugin, you will need to add subscriptions with this `Add`.  **Keep the feed name as short as possible, and it must be unique.**
-   - *Be careful with the feed provider!  Sanitization is not performed for the feed contents, and malicious content may cause data loss!*
-   - While it is true that meticulously crafted contents may sabotage your data, normal feed providers have no intention to do this (unless they are hacked).  So please only subscribe from legitimate websites.  I choose not to thoroughly purify the contents, because that would ruin the reading experience (we need the outgoing links, images, etc.).  If you have a better solution please let me know.
+   - *Be careful with the feed provider!  While sanitization is performed for the feed contents using the `sanitizeHTMLToDom` api, malicious content may still cause data loss!*
+   - While it is true that meticulously crafted contents may sabotage your data, normal feed providers have no intention to do this (unless they are hacked).  So please only subscribe from legitimate websites.  I choose not to only show plain text for the contents, because that would ruin the reading experience (we need the outgoing links, images, etc.).  Thanks to the reviewer for letting me know of the `sanitizeHTMLToDom` api!
 - `Manage` is for managing your feeds, where you can mark all as read, purge those that are marked as deleted, and purge all (i.e. to permanently remove all items of a feed).  **Be cautious that these actions cannot be undone.**
 - All the subscribed sources are listed under their respective folders.
 - The number of unread and total items are displayed after the feed name.

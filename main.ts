@@ -1,4 +1,4 @@
-import { App, Editor, MarkdownView, Menu, Modal, Notice, addIcon, Plugin, PluginSettingTab, Setting } from 'obsidian';
+import { App, Editor, MarkdownView, Menu, Modal, Notice, addIcon, Plugin, PluginSettingTab, Setting, sanitizeHTMLToDom } from 'obsidian';
 import { FRView, VIEW_TYPE_FEEDS_READER, createFeedBar, waitForElm } from "./view";
 import { getFeedItems, RssFeedContent, nowdatetime, itemKeys } from "./getFeed"
 import { Global } from "./globals"
@@ -56,8 +56,6 @@ export default class FeedsReader extends Plugin {
       // );
       // menu.showAtMouseEvent(evt);
 		});
-		// Perform additional things with the ribbon
-		ribbonIconEl.addClass('my-plugin-ribbon-class');
 
     // this.addSettingTab(new SampleSettingTab(this.app, this));
 
@@ -80,7 +78,7 @@ export default class FeedsReader extends Plugin {
                    + nTotal.toString() + " retrieved, "
                    + nNew.toString() + ' new.', 3000);
       }
-      if (evt.target.className === 'showFeed') {
+      if (evt.target.className.includes('showFeed')) {
         var previousFeed = Global.currentFeed;
         Global.currentFeed = evt.target.id;
         if (Global.currentFeed === '') {
@@ -94,10 +92,9 @@ export default class FeedsReader extends Plugin {
           }
         }
         if (previousFeed != '') {
-          var prevColor = document.getElementById(Global.currentFeed).style['color'];
-          document.getElementById(previousFeed).style['color'] = prevColor;
+          document.getElementById(previousFeed).className = 'showFeed nonShowingFeed';
         }
-        document.getElementById(Global.currentFeed).style['color'] = '#f15500';
+        document.getElementById(Global.currentFeed).className = 'showFeed showingFeed';
         if (previousFeed != Global.currentFeed) {
           Global.undoList = [];
         }
@@ -132,7 +129,7 @@ export default class FeedsReader extends Plugin {
           var item = Global.feedsStore[Global.currentFeed].items[idx];
           var elContent = document.getElementById(elID).createEl('div');
           elContent.className = 'itemContent';
-          elContent.innerHTML = sanitize(item.content.replace(/<img src="\/\//g,"<img src=\"https://"));
+          elContent.appendChild(sanitizeHTMLToDom(item.content.replace(/<img src="\/\//g,"<img src=\"https://")));
           elContent.id = 'toggleContent' + idx;
           evt.target.innerText = '<<< <<<';
         } else {
@@ -168,7 +165,7 @@ export default class FeedsReader extends Plugin {
           await this.app.vault.create(fpath,
             '\n> [!abstract]+ [' +
             the_item.title.trim().replace(/(<([^>]+)>)/gi, " ").replace(/\n/g, " ") +
-            '](' + sanitize(the_item.link) + ')\n> ' +
+            '](' + sanitizeHTMLToDom(the_item.link).textContent + ')\n> ' +
             unEscape(handle_tags(handle_a_tag(handle_img_tag(the_item.content.replace(/\n/g, ' '))))
             .replace(/ +/g, ' ')
             .replace(/\s+$/g, '').replace(/^\s+/g, '')) +
@@ -184,7 +181,6 @@ export default class FeedsReader extends Plugin {
       }
       if (evt.target.className === 'toggleRead') {
         var idx = this.getNumFromId(evt.target.id, 'toggleRead');
-        Global.itemIdx = idx;
         Global.feedsStoreChange = true;
         Global.feedsStoreChangeList.add(Global.currentFeed);
         var el = document.getElementById(evt.target.id);
@@ -208,10 +204,13 @@ export default class FeedsReader extends Plugin {
           Global.undoList.splice(idxOf, 1);
         }
         Global.undoList.unshift(idx);
+        if ((!Global.showAll) && Global.hideThisItem) {
+          document.getElementById(
+            Global.feedsStore[Global.currentFeed].items[idx].link ).style.display = 'none';
+        }
       }
       if (evt.target.className === 'toggleDelete') {
         var idx = this.getNumFromId(evt.target.id, 'toggleDelete');
-        Global.itemIdx = idx;
         Global.feedsStoreChange = true;
         Global.feedsStoreChangeList.add(Global.currentFeed);
         var el = document.getElementById(evt.target.id);
@@ -235,15 +234,12 @@ export default class FeedsReader extends Plugin {
           Global.undoList.splice(idxOf, 1);
         }
         Global.undoList.unshift(idx);
-      }
-      if ((evt.target.className === 'toggleRead') ||
-          (evt.target.className === 'toggleDelete')) {
         if ((!Global.showAll) && Global.hideThisItem) {
           document.getElementById(
-            Global.feedsStore[Global.currentFeed].items[Global.itemIdx].link ).style.display = 'none';
+            Global.feedsStore[Global.currentFeed].items[idx].link ).style.display = 'none';
         }
       }
-      //
+
       if (evt.target.id === 'showAll') {
         let toggle = document.getElementById('showAll');
         if (toggle.innerText == 'Show all') {
@@ -292,20 +288,18 @@ export default class FeedsReader extends Plugin {
           var save_data_toggling = toggleNaviAux.createEl('span', {text: 'Save'});
           save_data_toggling.id = 'save_data_toggling';
           save_data_toggling.className = 'save_data_toggling';
-          document.getElementById('naviBar').style.display = 'none';
-          document.getElementById('contentBox').style['margin-left'] = '0mm';
-          document.getElementById('toggleNaviContainer').style['background-color'] = '#bc90a1';
-          document.getElementById('toggleNaviContainer').style['opacity'] = '0.9';
+          document.getElementById('naviBar').className = 'navigation naviBarHidden';
+          document.getElementById('contentBox').className = 'content contentBoxFullpage';
+          document.getElementById('toggleNaviContainer').className = 'toggleNaviContainer toggleNaviContainerExpanded';
         } else {
           toggle.innerText = '>';
           var s = Global.elUnreadCount.innerText;
           Global.elUnreadCount = document.getElementById('unreadCount' + Global.currentFeed);
           Global.elUnreadCount.innerText = s;
           document.getElementById('toggleNaviAux').empty();
-          document.getElementById('naviBar').style.display = 'block';
-          document.getElementById('contentBox').style['margin-left'] = '160px';
-          document.getElementById('toggleNaviContainer').style.removeProperty('background-color');
-          document.getElementById('toggleNaviContainer').style.removeProperty('opacity');
+          document.getElementById('naviBar').className = 'navigation naviBarShown';
+          document.getElementById('contentBox').className = 'content contentBoxRightpage';
+          document.getElementById('toggleNaviContainer').className = 'toggleNaviContainer toggleNaviContainerFolded';
         }
       }
       if (evt.target.id === 'search') {
@@ -470,13 +464,13 @@ class SearchModal extends Modal {
     inputBox.style["width"] = "70%";
     tr = form.createEl('tr');
     tr.createEl('td', {text: "Wordwise"});
-    var checkBox = tr.createEl('td').createEl('input');
-    checkBox.id = 'checkBox';
-    checkBox.type = 'checkBox';
+    var checkBoxWordwise = tr.createEl('td').createEl('input');
+    checkBoxWordwise.id = 'checkBoxWordwise';
+    checkBoxWordwise.type = 'checkBox';
     tr = form.createEl('tr');
     var searchButton = tr.createEl('td').createEl('button', {text: "Search"});
     searchButton.addEventListener("click", async () => {
-      var wordWise = document.getElementById('checkBox').checked;
+      var wordWise = document.getElementById('checkBoxWordwise').checked;
       var searchTerms = ([...new Set(document.getElementById('searchTerms').value.toLowerCase().split(/[ ,;\t\n]+/))]
                          .filter(i => i)
                          .sort((a,b) => {return b.length-a.length;}));
@@ -592,53 +586,201 @@ class ManageFeedsModal extends Modal {
 	onOpen() {
 		const {contentEl} = this;
     this.titleEl.innerText = "Manage feeds";
-    contentEl.innerHTML = '<div><b>CAUTION:</b><br>All actions take effect immediately and cannot be undone!<br>To see the effect, save data then reopen the plugin.<br>N: name; U: url; F: folder; T: total number of items; R: number of items marked as read; D: number of items marked as deleted; A: average length of items; S: storage size.</div><hr>';
-    const form = contentEl.createEl('table');
-    form.className = "manageFeedsForm";
+    contentEl.appendChild(sanitizeHTMLToDom('<div><b>CAUTION:</b><br>All actions take effect immediately and cannot be undone!<br>N: name; U: url; F: folder; T: total number of items; R: number of items marked as read; D: number of items marked as deleted; A: average length of items; S: storage size.</div><hr>'));
+
+    const actions = contentEl.createEl('div');
+
+    const btApplyChanges = actions.createEl('button', {text: 'Modify N/U/F'});
+    const btMarkAllRead = actions.createEl('button', {text: 'Mark all read'});
+    const btPurgeDeleted = actions.createEl('button', {text: 'Purge deleted'});
+    const btRemoveContent = actions.createEl('button', {text: 'Remove content'});
+    const btRemoveContentOld = actions.createEl('button', {text: 'Remove old content'});
+    const btPurgeAll = actions.createEl('button', {text: 'Purge all'});
+    const btPurgeOldHalf = actions.createEl('button', {text: 'Purge old'});
+    const btDeduplicate = actions.createEl('button', {text: 'Deduplicate'});
+    const btRemoveFeed = actions.createEl('button', {text: 'Remove feed'});
+
+    btApplyChanges.addEventListener('click', async () => {
+      for (var i=0; i<Global.feedList.length; i++) {
+        var newName = document.getElementById('manageFdName' + i.toString()).value;
+        var newUrl = document.getElementById('manageFdUrl' + i.toString()).value;
+        var newFolder = document.getElementById('manageFdFolder' + i.toString()).value;
+        var sMsg = '';
+        if (Global.feedList[i].name != newName) {
+          sMsg += 'Name: ' + Global.feedList[i].name + ' -> ' + newName;
+        }
+        if (Global.feedList[i].feedUrl != newUrl) {
+          sMsg += '\nUrl: ' + Global.feedList[i].feedUrl + ' -> ' + newUrl;
+        }
+        if (Global.feedList[i].folder != newFolder) {
+          sMsg += '\nFolder: ' + Global.feedList[i].folder + ' -> ' + newFolder;
+        }
+        if (sMsg !== '') {
+          if (window.confirm("Apply changes for " + Global.feedList[i].name + '?\n' + sMsg)) {
+            if (Global.feedList[i].name != newName) {
+              var alreadyIncluded = false;
+              for (var j=0; j<Global.feedList.length; j++) {
+                if ((j != i) && (Global.feedList[j].name === newName)) {
+                  new Notice("Not changed: name already included.", 1000);
+                  alreadyIncluded = True;
+                  break;
+                }
+              }
+              if (!alreadyIncluded) {
+                for (var j=0;;j++) {
+                  var fpath_old = [Global.feeds_reader_dir, Global.feeds_store_base,
+                                   makeFilename(Global.feedList[i].name, j)].join('/');
+                  var fpath_new = [Global.feeds_reader_dir, Global.feeds_store_base,
+                                   makeFilename(newName, j)].join('/');
+                  if (await app.vault.exists(fpath_old)) {
+                    await app.vault.adapter.rename(fpath_old, fpath_new);
+                  } else {
+                    break;
+                  }
+                }
+                if (Global.currentFeedName === Global.feedList[i].name) {
+                  Global.currentFeedName = newName;
+                }
+                Global.feedList[i].name = newName;
+              }
+            }
+            if (Global.feedList[i].feedUrl != newUrl) {
+              var alreadyIncluded = false;
+              for (var j=0; j<Global.feedList.length; j++) {
+                if ((j != i) && (Global.feedList[j].feedUrl === newUrl)) {
+                  new Notice("Not changed: url already included.", 1000);
+                  alreadyIncluded = True;
+                  break;
+                }
+              }
+              if (!alreadyIncluded) {
+                if (Global.currentFeed === Global.feedList[i].feedUrl) {
+                  Global.currentFeed = newUrl;
+                }
+                Global.feedsStore[newUrl] = Global.feedsStore[Global.feedList[i].feedUrl];
+                delete Global.feedsStore[Global.feedList[i].feedUrl];
+                Global.feedList[i].feedUrl = newUrl;
+              }
+            }
+            if (Global.feedList[i].folder != newFolder) {
+              Global.feedList[i].folder = newFolder;
+            }
+            await saveSubscriptions();
+            sort_feed_list();
+            await createFeedBar();
+          }
+        }
+      }
+    });
+    btMarkAllRead.addEventListener('click', () => {
+      if (window.confirm('Sure?')) {
+      [...document.getElementsByClassName('checkThis')]
+      .filter(el => el.checked)
+      .forEach(el => {markAllRead(el.getAttribute('val'));});}});
+    btPurgeDeleted.addEventListener('click', () => {
+      if (window.confirm('Sure?')) {
+      [...document.getElementsByClassName('checkThis')]
+      .filter(el => el.checked)
+      .forEach(el => {purgeDeleted(el.getAttribute('val'));});}});
+    btRemoveContent.addEventListener('click', () => {
+      if (window.confirm('Sure?')) {
+      [...document.getElementsByClassName('checkThis')]
+      .filter(el => el.checked)
+      .forEach(el => {removeContent(el.getAttribute('val'));});}});
+    btRemoveContentOld.addEventListener('click', () => {
+      if (window.confirm('Sure?')) {
+      [...document.getElementsByClassName('checkThis')]
+      .filter(el => el.checked)
+      .forEach(el => {removeContentOld(el.getAttribute('val'));});}});
+    btPurgeAll.addEventListener('click', () => {
+      if (window.confirm('Sure?')) {
+      [...document.getElementsByClassName('checkThis')]
+      .filter(el => el.checked)
+      .forEach(el => {purgeAll(el.getAttribute('val'));});}});
+    btPurgeOldHalf.addEventListener('click', () => {
+      if (window.confirm('Sure?')) {
+      [...document.getElementsByClassName('checkThis')]
+      .filter(el => el.checked)
+      .forEach(el => {purgeOldHalf(el.getAttribute('val'));});}});
+    btDeduplicate.addEventListener('click', () => {
+      if (window.confirm('Sure?')) {
+      [...document.getElementsByClassName('checkThis')]
+      .filter(el => el.checked)
+      .forEach(el => {var nRemoved = deduplicate(el.getAttribute('val'));
+                      new Notice(nRemoved + " removed for " + el.getAttribute('fdName'), 2000);});}});
+    btRemoveFeed.addEventListener('click', () => {
+      if (window.confirm('Sure?')) {
+      [...document.getElementsByClassName('checkThis')]
+      .filter(el => el.checked)
+      .forEach(el => {removeFeed(el.getAttribute('val'));});}});
+
+    const formContainer = contentEl.createEl('div');
+    const form = formContainer.createEl('table');
+    form.className = 'manageFeedsForm';
     var tr = form.createEl('thead').createEl('tr');
-    tr.createEl('th', {text: "N/U/F/T/R/D/A/S"});
-    tr.createEl('th', {text: "Actions"});
+    tr.createEl('th', {text: "N/U"});
+    tr.createEl('th', {text: "F"});
+    tr.createEl('th', {text: "T"});
+    tr.createEl('th', {text: "R"});
+    tr.createEl('th', {text: "D"});
+    tr.createEl('th', {text: "A"});
+    tr.createEl('th', {text: "S"});
+    const checkAll = tr.createEl('th').createEl('input');
+    checkAll.type = 'checkBox';
+    checkAll.id = 'checkAll';
+    checkAll.addEventListener('click', (evt) => {
+      if (document.getElementById('checkAll').checked) {
+        [...document.getElementsByClassName('checkThis')].forEach(el => {el.checked = true;});
+      } else {
+        [...document.getElementsByClassName('checkThis')].forEach(el => {el.checked = false;});
+      }
+    });
+
     var tbody = form.createEl('tbody');
+    var nTotal=0, nRead=0, nDeleted=0, nLength=0, nStoreSize=0;
     for (var i=0; i<Global.feedList.length; i++) {
       var tr = tbody.createEl('tr');
-      var cellName = tr.createEl('td');
-      cellName.className = 'cellInput';
+      var cellNameContainer = tr.createEl('td');
+      cellNameContainer.className = 'cellNameContainer';
+      const elName = cellNameContainer.createEl('input', {value: Global.feedList[i].name});
+      elName.readOnly = false;
+      elName.id = 'manageFdName' + i.toString();
+      const elUrl = cellNameContainer.createEl('input', {value: Global.feedList[i].feedUrl});
+      elUrl.readOnly = false;
+      elUrl.id = 'manageFdUrl' + i.toString();
+      const cellFolderContainer = tr.createEl('td');
+      cellFolderContainer.className = 'cellFolderContainer';
+      const elFolder = cellFolderContainer.createEl('input', {value: Global.feedList[i].folder});
+      elFolder.readOnly = false;
+      elFolder.id = 'manageFdFolder' + i.toString();
+
       var stats = getFeedStats(Global.feedList[i].feedUrl);
       var storeSizeInfo = getFeedStorageInfo(Global.feedList[i].feedUrl);
-      cellName.createEl('input', {value: Global.feedList[i].name}).readOnly = true;
-      cellName.createEl('input', {value: Global.feedList[i].feedUrl}).readOnly = true;
-      cellName.createEl('input', {value: Global.feedList[i].folder}).readOnly = true;
-      cellName.createEl('input', {value: stats.total.toString() + '/' + stats.read.toString() +
-          '/' + stats.deleted.toString() + '/' + storeSizeInfo[0] + '/' + storeSizeInfo[1]}).readOnly = true;
-      var actions = tr.createEl('td');
-      var btMarkAllRead = actions.createEl('button', {text: 'Mark all read'});
-      var btPurgeDeleted = actions.createEl('button', {text: 'Purge deleted'});
-      var btRemoveContent = actions.createEl('button', {text: 'Remove content'});
-      var btRemoveContentOld = actions.createEl('button', {text: 'Remove old content'});
-      var btPurgeAll = actions.createEl('button', {text: 'Purge all'});
-      var btPurgeOldHalf = actions.createEl('button', {text: 'Purge old'});
-      var btDeduplicate = actions.createEl('button', {text: 'Deduplicate'});
-      var btRemoveFeed = actions.createEl('button', {text: 'Remove feed'});
-      btMarkAllRead.setAttribute('val', Global.feedList[i].feedUrl);
-      btPurgeDeleted.setAttribute('val', Global.feedList[i].feedUrl);
-      btRemoveContent.setAttribute('val', Global.feedList[i].feedUrl);
-      btRemoveContentOld.setAttribute('val', Global.feedList[i].feedUrl);
-      btPurgeAll.setAttribute('val', Global.feedList[i].feedUrl);
-      btPurgeOldHalf.setAttribute('val', Global.feedList[i].feedUrl);
-      btDeduplicate.setAttribute('val', Global.feedList[i].feedUrl);
-      btDeduplicate.setAttribute('fdName', Global.feedList[i].name);
-      btRemoveFeed.setAttribute('val', Global.feedList[i].feedUrl);
-      btMarkAllRead.addEventListener('click', (evt) => markAllRead(evt.target.getAttribute('val')));
-      btPurgeDeleted.addEventListener('click', (evt) => purgeDeleted(evt.target.getAttribute('val')));
-      btRemoveContent.addEventListener('click', (evt) => removeContent(evt.target.getAttribute('val')));
-      btRemoveContentOld.addEventListener('click', (evt) => removeContentOld(evt.target.getAttribute('val')));
-      btPurgeAll.addEventListener('click', (evt) => purgeAll(evt.target.getAttribute('val')));
-      btPurgeOldHalf.addEventListener('click', (evt) => purgeOldHalf(evt.target.getAttribute('val')));
-      btDeduplicate.addEventListener('click', (evt) => {
-        var nRemoved = deduplicate(evt.target.getAttribute('val'));
-        new Notice(nRemoved + " removed for " + evt.target.getAttribute('fdName'), 2000);});
-      btRemoveFeed.addEventListener('click', async (evt) => removeFeed(evt.target.getAttribute('val')));
+      tr.createEl('td', {text: stats.total.toString()});
+      tr.createEl('td', {text: stats.read.toString()});
+      tr.createEl('td', {text: stats.deleted.toString()});
+      tr.createEl('td', {text: storeSizeInfo[0]});
+      tr.createEl('td', {text: storeSizeInfo[1]});
+      const checkThis = tr.createEl('td').createEl('input');
+      checkThis.type = 'checkBox';
+      checkThis.className = 'checkThis';
+      checkThis.setAttribute('val', Global.feedList[i].feedUrl);
+      checkThis.setAttribute('fdName', Global.feedList[i].name);
+
+      nTotal += stats.total;
+      nRead += stats.read;
+      nDeleted += stats.deleted;
+      nLength += storeSizeInfo[2];
+      nStoreSize += storeSizeInfo[3];
     }
+    var tr = tbody.createEl('tr');
+    tr.createEl('td');
+    tr.createEl('td');
+    tr.createEl('td', {text: nTotal.toString()});
+    tr.createEl('td', {text: nRead.toString()});
+    tr.createEl('td', {text: nDeleted.toString()});
+    tr.createEl('td', {text: Math.floor(nLength/nTotal).toString()});
+    tr.createEl('td', {text: getStoreSizeStr(nStoreSize)});
 	}
 
 	async onClose() {
@@ -831,13 +973,18 @@ export function getFeedStats(feedUrl: string) {
 
 export function getFeedStorageInfo(feedUrl: string) {
   if (!Global.feedsStore.hasOwnProperty(feedUrl)) {
-    return ['0', '0'];
+    return ['0', '0', 0, 0];
   }
   if (Global.feedsStore[feedUrl].items.length == 0) {
-    return ['0', '0'];
+    return ['0', '0', 0, 0];
   }
   const s = JSON.stringify(Global.feedsStore[feedUrl], null, 1);
   const sz = (new Blob([s])).size;
+  const szstr = getStoreSizeStr(sz);
+  return [Math.floor(s.length/Global.feedsStore[feedUrl].items.length).toString(), szstr, s.length, sz];
+}
+
+function getStoreSizeStr(sz: number) {
   let szstr = '';
   if (sz <= 1e3) {
     szstr = sz.toString() + 'B';
@@ -850,7 +997,7 @@ export function getFeedStorageInfo(feedUrl: string) {
   } else {
     szstr = (sz/1e12).toFixed(1) + 'TB';
   }
-  return [Math.floor(s.length/Global.feedsStore[feedUrl].items.length).toString(), szstr];
+  return szstr;
 }
 
 
@@ -1007,7 +1154,7 @@ async function show_feed() {
      return;
    }
    var fd = Global.feedsStore[Global.currentFeed];
-   feedTitle.createEl('a', {href: sanitize(fd.link)}).innerText = sanitize(fd.title);
+   feedTitle.createEl('a', {href: sanitizeHTMLToDom(fd.link).textContent}).appendChild(sanitizeHTMLToDom(fd.title));
    if (fd.pubDate != '') {
      feed_content.createEl('div', {text: fd.pubDate});
    }
@@ -1021,12 +1168,13 @@ async function show_feed() {
      itemEl.className = 'oneFeedItem';
      itemEl.id = item.link;
      itemEl.createEl('hr');
-     itemEl.createEl('div')
-     .createEl('a', {text: item.title.replace(/(<([^>]+)>)/gi, ""), href: sanitize(item.link)})
-     .className = 'itemTitle';
+     const itemTitle = itemEl.createEl('div');
+     itemTitle.className = 'itemTitle';
+     itemTitle.createEl('a', {href: sanitizeHTMLToDom(item.link).textContent})
+              .appendChild(sanitizeHTMLToDom(item.title));
      const elCreator = itemEl.createEl('div');
      elCreator.className = 'itemCreator';
-     elCreator.innerHTML = sanitize(item.creator);
+     elCreator.appendChild(sanitizeHTMLToDom(item.creator));
      var elPubDate;
      if (item.pubDate != "") {
        elPubDate = itemEl.createEl('div', {text: item.pubDate});
@@ -1056,7 +1204,7 @@ async function show_feed() {
      if (!Global.titleOnly) {
        const elContent = itemEl.createEl('div');
        elContent.className = 'itemContent';
-       elContent.innerHTML = sanitize(item.content.replace(/<img src="\/\//g,"<img src=\"https://"));
+       elContent.appendChild(sanitizeHTMLToDom(item.content.replace(/<img src="\/\//g,"<img src=\"https://")));
      } else {
        const showItemContent = itemEl.createEl('div', {text: '>>> >>>'});
        showItemContent.className = 'showItemContent';

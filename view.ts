@@ -123,7 +123,7 @@ export async function createFeedBar() {
       }
     }
     const tr = feedTable.createEl('tr');
-    const showFeed = tr.createEl('td').createEl('span', {text: item.name});
+    const showFeed = tr.createEl('td', {text: item.name});
     showFeed.className = 'showFeed';
     showFeed.id = item.feedUrl;
 
@@ -142,11 +142,6 @@ export async function createFeedBar() {
     const totalCount = elUnreadTotal.createEl('span', {text: stats.total.toString()});
     totalCount.className = 'unreadCount';
     totalCount.id = 'totalCount' + item.feedUrl;
-
-    // const refreshFeed = tr.createEl('td', {text: '\u21BB'});
-    // refreshFeed.className = 'refreshFeed';
-    // refreshFeed.id = item.feedUrl;
-    // refreshFeed.setAttribute('fdName', item.name);
   });
 }
 
