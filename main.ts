@@ -1,7 +1,7 @@
 import { App, Editor, MarkdownView, Menu, Modal, Notice, addIcon, Plugin, PluginSettingTab, Setting, sanitizeHTMLToDom } from 'obsidian';
 import { FRView, VIEW_TYPE_FEEDS_READER, createFeedBar, waitForElm } from "./view";
 import { getFeedItems, RssFeedContent, nowdatetime, itemKeys } from "./getFeed"
-import { Global } from "./globals"
+import { GLB } from "./globals"
 
 // Remember to rename these classes and interfaces!
 
@@ -63,7 +63,7 @@ export default class FeedsReader extends Plugin {
 		// Using this function will automatically remove the event listener when this plugin is disabled.
 		this.registerDomEvent(document, 'click', async (evt: MouseEvent) => {
       if (evt.target.id === 'updateAll') {
-        Global.feedList.forEach(async (f) => {
+        GLB.feedList.forEach(async (f) => {
           var [nNew, nTotal] = await updateOneFeed(f.feedUrl);
           if (nNew > 0) {
             new Notice(f.name + ': ' + nTotal.toString() + ' retrieved, '
@@ -79,46 +79,46 @@ export default class FeedsReader extends Plugin {
                    + nNew.toString() + ' new.', 3000);
       }
       if (evt.target.className.includes('showFeed')) {
-        var previousFeed = Global.currentFeed;
-        Global.currentFeed = evt.target.id;
-        if (Global.currentFeed === '') {
+        var previousFeed = GLB.currentFeed;
+        GLB.currentFeed = evt.target.id;
+        if (GLB.currentFeed === '') {
           return;
         }
-        Global.currentFeedName = '';
-        for (var i=0; i<Global.feedList.length; i++) {
-          if (Global.feedList[i].feedUrl === Global.currentFeed) {
-            Global.currentFeedName = Global.feedList[i].name;
+        GLB.currentFeedName = '';
+        for (var i=0; i<GLB.feedList.length; i++) {
+          if (GLB.feedList[i].feedUrl === GLB.currentFeed) {
+            GLB.currentFeedName = GLB.feedList[i].name;
             break;
           }
         }
         if (previousFeed != '') {
           document.getElementById(previousFeed).className = 'showFeed nonShowingFeed';
         }
-        document.getElementById(Global.currentFeed).className = 'showFeed showingFeed';
-        if (previousFeed != Global.currentFeed) {
-          Global.undoList = [];
+        document.getElementById(GLB.currentFeed).className = 'showFeed showingFeed';
+        if (previousFeed != GLB.currentFeed) {
+          GLB.undoList = [];
         }
-        Global.idxItemStart = 0;
-        Global.nPage = 1;
+        GLB.idxItemStart = 0;
+        GLB.nPage = 1;
         makeDisplayList();
-        Global.elUnreadCount = document.getElementById('unreadCount' + Global.currentFeed);
+        GLB.elUnreadCount = document.getElementById('unreadCount' + GLB.currentFeed);
         show_feed();
       }
       if (evt.target.id === 'nextPage') {
-        Global.idxItemStart += Global.nItemPerPage;
-        Global.nPage += 1;
+        GLB.idxItemStart += GLB.nItemPerPage;
+        GLB.nPage += 1;
         show_feed();
       }
       if (evt.target.id === 'prevPage') {
-        Global.idxItemStart -= Global.nItemPerPage;
-        Global.nPage -= 1;
+        GLB.idxItemStart -= GLB.nItemPerPage;
+        GLB.nPage -= 1;
         show_feed();
       }
       if (evt.target.id === 'undo') {
-        if (Global.currentFeed != '') {
-          Global.idxItemStart = 0;
-          Global.nPage = 1;
-          Global.displayIndices = Global.undoList.slice(0, Global.nItemPerPage);
+        if (GLB.currentFeed != '') {
+          GLB.idxItemStart = 0;
+          GLB.nPage = 1;
+          GLB.displayIndices = GLB.undoList.slice(0, GLB.nItemPerPage);
           show_feed();
         }
       }
@@ -126,7 +126,7 @@ export default class FeedsReader extends Plugin {
         var idx = evt.target.getAttribute('_idx');
         if (evt.target.innerText === '>>> >>>') {
           var elID = evt.target.getAttribute('_link');
-          var item = Global.feedsStore[Global.currentFeed].items[idx];
+          var item = GLB.feedsStore[GLB.currentFeed].items[idx];
           var elContent = document.getElementById(elID).createEl('div');
           elContent.className = 'itemContent';
           elContent.appendChild(sanitizeHTMLToDom(item.content.replace(/<img src="\/\//g,"<img src=\"https://")));
@@ -138,29 +138,29 @@ export default class FeedsReader extends Plugin {
         }
       }
       if (evt.target.className === 'noteThis') {
-        if (! await this.app.vault.exists(Global.feeds_reader_dir)) {
-          await this.app.vault.createFolder(Global.feeds_reader_dir);
+        if (! await this.app.vault.exists(GLB.feeds_reader_dir)) {
+          await this.app.vault.createFolder(GLB.feeds_reader_dir);
         }
 
         var idx = this.getNumFromId(evt.target.id, 'noteThis');
-        const the_item = Global.feedsStore[Global.currentFeed].items[idx];
+        const the_item = GLB.feedsStore[GLB.currentFeed].items[idx];
         var dt_str: string = '';
         if (the_item.pubDate != '') {
           dt_str = the_item.pubDate;
-        } else if (Global.feedsStore[Global.currentFeed].pubDate != '') {
-          dt_str = Global.feedsStore[Global.currentFeed].pubDate;
+        } else if (GLB.feedsStore[GLB.currentFeed].pubDate != '') {
+          dt_str = GLB.feedsStore[GLB.currentFeed].pubDate;
         } else {
           dt_str = nowdatetime();
         }
         dt_str = dt_str.substring(0, 10) + '-';
         const fname: string = dt_str + 
                               str2filename(
-                              (Global.currentFeedName === ''? '' :
-                               Global.currentFeedName.replace(/(\s+)/g, '-') + '-') +
+                              (GLB.currentFeedName === ''? '' :
+                               GLB.currentFeedName.replace(/(\s+)/g, '-') + '-') +
                               the_item.title.trim()
                               .replace(/(<([^>]+)>)/g, " ")
                               .replace(/[:!?@#\*\^\$]+/g, '')) + '.md';
-        const fpath: string = Global.feeds_reader_dir + '/' + fname;
+        const fpath: string = GLB.feeds_reader_dir + '/' + fname;
         if (! await this.app.vault.exists(fpath)) {
           await this.app.vault.create(fpath,
             '\n> [!abstract]+ [' +
@@ -181,62 +181,62 @@ export default class FeedsReader extends Plugin {
       }
       if (evt.target.className === 'toggleRead') {
         var idx = this.getNumFromId(evt.target.id, 'toggleRead');
-        Global.feedsStoreChange = true;
-        Global.feedsStoreChangeList.add(Global.currentFeed);
+        GLB.feedsStoreChange = true;
+        GLB.feedsStoreChangeList.add(GLB.currentFeed);
         var el = document.getElementById(evt.target.id);
         if (el.innerText === 'Read') {
-          Global.feedsStore[Global.currentFeed].items[idx].read = nowdatetime();
+          GLB.feedsStore[GLB.currentFeed].items[idx].read = nowdatetime();
           el.innerText = 'Unread';
-          Global.hideThisItem = true;
-          if (Global.feedsStore[Global.currentFeed].items[idx].deleted === '') {
-            Global.elUnreadCount.innerText = parseInt(Global.elUnreadCount.innerText) - 1;
+          GLB.hideThisItem = true;
+          if (GLB.feedsStore[GLB.currentFeed].items[idx].deleted === '') {
+            GLB.elUnreadCount.innerText = parseInt(GLB.elUnreadCount.innerText) - 1;
           }
         } else {
-          Global.feedsStore[Global.currentFeed].items[idx].read = '';
+          GLB.feedsStore[GLB.currentFeed].items[idx].read = '';
           el.innerText = 'Read';
-          Global.hideThisItem = false;
-          if (Global.feedsStore[Global.currentFeed].items[idx].deleted === '') {
-            Global.elUnreadCount.innerText = parseInt(Global.elUnreadCount.innerText) + 1;
+          GLB.hideThisItem = false;
+          if (GLB.feedsStore[GLB.currentFeed].items[idx].deleted === '') {
+            GLB.elUnreadCount.innerText = parseInt(GLB.elUnreadCount.innerText) + 1;
           }
         }
-        const idxOf = Global.undoList.indexOf(idx);
+        const idxOf = GLB.undoList.indexOf(idx);
         if (idxOf > -1) {
-          Global.undoList.splice(idxOf, 1);
+          GLB.undoList.splice(idxOf, 1);
         }
-        Global.undoList.unshift(idx);
-        if ((!Global.showAll) && Global.hideThisItem) {
+        GLB.undoList.unshift(idx);
+        if ((!GLB.showAll) && GLB.hideThisItem) {
           document.getElementById(
-            Global.feedsStore[Global.currentFeed].items[idx].link ).className = 'hidedItem';
+            GLB.feedsStore[GLB.currentFeed].items[idx].link ).className = 'hidedItem';
         }
       }
       if (evt.target.className === 'toggleDelete') {
         var idx = this.getNumFromId(evt.target.id, 'toggleDelete');
-        Global.feedsStoreChange = true;
-        Global.feedsStoreChangeList.add(Global.currentFeed);
+        GLB.feedsStoreChange = true;
+        GLB.feedsStoreChangeList.add(GLB.currentFeed);
         var el = document.getElementById(evt.target.id);
         if (el.innerText === 'Delete') {
-          Global.feedsStore[Global.currentFeed].items[idx].deleted = nowdatetime();
+          GLB.feedsStore[GLB.currentFeed].items[idx].deleted = nowdatetime();
           el.innerText = 'Undelete';
-          Global.hideThisItem = true;
-          if (Global.feedsStore[Global.currentFeed].items[idx].read === '') {
-            Global.elUnreadCount.innerText = parseInt(Global.elUnreadCount.innerText) - 1;
+          GLB.hideThisItem = true;
+          if (GLB.feedsStore[GLB.currentFeed].items[idx].read === '') {
+            GLB.elUnreadCount.innerText = parseInt(GLB.elUnreadCount.innerText) - 1;
           }
         } else {
-          Global.feedsStore[Global.currentFeed].items[idx].deleted = '';
+          GLB.feedsStore[GLB.currentFeed].items[idx].deleted = '';
           el.innerText = 'Delete';
-          Global.hideThisItem = false;
-          if (Global.feedsStore[Global.currentFeed].items[idx].read === '') {
-            Global.elUnreadCount.innerText = parseInt(Global.elUnreadCount.innerText) + 1;
+          GLB.hideThisItem = false;
+          if (GLB.feedsStore[GLB.currentFeed].items[idx].read === '') {
+            GLB.elUnreadCount.innerText = parseInt(GLB.elUnreadCount.innerText) + 1;
           }
         }
-        const idxOf = Global.undoList.indexOf(idx);
+        const idxOf = GLB.undoList.indexOf(idx);
         if (idxOf > -1) {
-          Global.undoList.splice(idxOf, 1);
+          GLB.undoList.splice(idxOf, 1);
         }
-        Global.undoList.unshift(idx);
-        if ((!Global.showAll) && Global.hideThisItem) {
+        GLB.undoList.unshift(idx);
+        if ((!GLB.showAll) && GLB.hideThisItem) {
           document.getElementById(
-            Global.feedsStore[Global.currentFeed].items[idx].link ).className = 'hidedItem';
+            GLB.feedsStore[GLB.currentFeed].items[idx].link ).className = 'hidedItem';
         }
       }
 
@@ -244,20 +244,20 @@ export default class FeedsReader extends Plugin {
         let toggle = document.getElementById('showAll');
         if (toggle.innerText == 'Show all') {
           toggle.innerText = 'Unread only';
-          Global.showAll = false;
+          GLB.showAll = false;
         } else {
           toggle.innerText = 'Show all';
-          Global.showAll = true;
+          GLB.showAll = true;
         }
       }
       if (evt.target.id === 'titleOnly') {
         let toggle = document.getElementById('titleOnly');
         if (toggle.innerText === 'Title only') {
           toggle.innerText = 'Show content';
-          Global.titleOnly = false;
+          GLB.titleOnly = false;
         } else {
           toggle.innerText = 'Title only';
-          Global.titleOnly = true;
+          GLB.titleOnly = true;
         }
       }
       if (evt.target.id === 'toggleOrder') {
@@ -269,7 +269,7 @@ export default class FeedsReader extends Plugin {
         } else {
           toggle.innerText = 'New to old';
         }
-        Global.itemOrder = toggle.innerText;
+        GLB.itemOrder = toggle.innerText;
       }
       if ((evt.target.id === 'saveFeedsData') || (evt.target.id === 'save_data_toggling')) {
         var nSaved = await saveFeedsData();
@@ -279,12 +279,12 @@ export default class FeedsReader extends Plugin {
           new Notice("No need to save.", 1000);
         }
       }
-      if ((evt.target.id === 'toggleNavi') && (Global.currentFeed != '')) {
+      if ((evt.target.id === 'toggleNavi') && (GLB.currentFeed != '')) {
         let toggle = document.getElementById('toggleNavi');
         if (toggle.innerText === '>') {
           toggle.innerText = '<';
           var toggleNaviAux = document.getElementById('toggleNaviAux');
-          Global.elUnreadCount = toggleNaviAux.createEl('span', {text: Global.elUnreadCount.innerText});
+          GLB.elUnreadCount = toggleNaviAux.createEl('span', {text: GLB.elUnreadCount.innerText});
           var save_data_toggling = toggleNaviAux.createEl('span', {text: 'Save'});
           save_data_toggling.id = 'save_data_toggling';
           save_data_toggling.className = 'save_data_toggling';
@@ -293,9 +293,9 @@ export default class FeedsReader extends Plugin {
           document.getElementById('toggleNaviContainer').className = 'toggleNaviContainer toggleNaviContainerExpanded';
         } else {
           toggle.innerText = '>';
-          var s = Global.elUnreadCount.innerText;
-          Global.elUnreadCount = document.getElementById('unreadCount' + Global.currentFeed);
-          Global.elUnreadCount.innerText = s;
+          var s = GLB.elUnreadCount.innerText;
+          GLB.elUnreadCount = document.getElementById('unreadCount' + GLB.currentFeed);
+          GLB.elUnreadCount.innerText = s;
           document.getElementById('toggleNaviAux').empty();
           document.getElementById('naviBar').className = 'navigation naviBarShown';
           document.getElementById('contentBox').className = 'content contentBoxRightpage';
@@ -303,7 +303,7 @@ export default class FeedsReader extends Plugin {
         }
       }
       if (evt.target.id === 'search') {
-        if (Global.currentFeed === '') {
+        if (GLB.currentFeed === '') {
           new Notice("Feed not selected: I can only search when a feed is selected.", 3000);
         } else {
           new SearchModal(this.app).open();
@@ -348,29 +348,29 @@ export default class FeedsReader extends Plugin {
       this.app.workspace.getLeavesOfType(VIEW_TYPE_FEEDS_READER)[0]
     );
 
-    if (Global.currentFeed != '') {
+    if (GLB.currentFeed != '') {
       show_feed();
     }
   }
 
 	async loadSettings() {
-    Global.feeds_reader_dir = 'feeds-reader';
-    Global.feeds_data_fname = 'feeds-data.json';
-    Global.feeds_store_base = 'feeds-store';
-    Global.subscriptions_fname = 'subscriptions.json';
-    Global.showAll = false;
-    Global.titleOnly = true;
-    Global.itemOrder = 'New to old';
-    Global.currentFeed = '';
-    Global.currentFeedName = '';
-    Global.nMergeLookback = 1000;
-    Global.lenStrPerFile = 1024 * 1024;
-    Global.nItemPerPage = 100;
-    Global.feedsStoreChange = false;
-    Global.feedsStoreChangeList = new Set<string>();
-    Global.elUnreadCount = undefined;
-    Global.maxTotalnumDisplayed = 1e4;
-    Global.nThanksSep = 20;
+    GLB.feeds_reader_dir = 'feeds-reader';
+    GLB.feeds_data_fname = 'feeds-data.json';
+    GLB.feeds_store_base = 'feeds-store';
+    GLB.subscriptions_fname = 'subscriptions.json';
+    GLB.showAll = false;
+    GLB.titleOnly = true;
+    GLB.itemOrder = 'New to old';
+    GLB.currentFeed = '';
+    GLB.currentFeedName = '';
+    GLB.nMergeLookback = 1000;
+    GLB.lenStrPerFile = 1024 * 1024;
+    GLB.nItemPerPage = 100;
+    GLB.feedsStoreChange = false;
+    GLB.feedsStoreChangeList = new Set<string>();
+    GLB.elUnreadCount = undefined;
+    GLB.maxTotalnumDisplayed = 1e4;
+    GLB.nThanksSep = 20;
 
 		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
 	}
@@ -386,31 +386,31 @@ export default class FeedsReader extends Plugin {
 }
 
 function mergeStoreWithNewData(newdata: RssFeedContent, key: string) {
-  if (!Global.feedsStore.hasOwnProperty(key)) {
-    Global.feedsStore[key] = newdata;
-    Global.feedsStoreChange = true;
-    Global.feedsStoreChangeList.add(key);
+  if (!GLB.feedsStore.hasOwnProperty(key)) {
+    GLB.feedsStore[key] = newdata;
+    GLB.feedsStoreChange = true;
+    GLB.feedsStoreChangeList.add(key);
     return newdata.items.length;
   }
-  Global.feedsStore[key].title = newdata.title;
-  Global.feedsStore[key].subtitle = newdata.subtitle;
-  Global.feedsStore[key].description = newdata.description;
-  Global.feedsStore[key].pubDate = newdata.pubDate;
+  GLB.feedsStore[key].title = newdata.title;
+  GLB.feedsStore[key].subtitle = newdata.subtitle;
+  GLB.feedsStore[key].description = newdata.description;
+  GLB.feedsStore[key].pubDate = newdata.pubDate;
   var nNew = 0;
-  var nLookback = Math.min(Global.nMergeLookback, Global.feedsStore[key].items.length);
+  var nLookback = Math.min(GLB.nMergeLookback, GLB.feedsStore[key].items.length);
   for (var j=newdata.items.length-1; j>=0; j--) {
     var found = false;
     for (let i=0; i<nLookback; i++) {
-      if (Global.feedsStore[key].items[i].link === newdata.items[j].link) {
+      if (GLB.feedsStore[key].items[i].link === newdata.items[j].link) {
         found = true;
         break;
       }
     }
     if (!found) {
       nNew += 1;
-      Global.feedsStore[key].items.unshift(newdata.items[j]);
-      Global.feedsStoreChange = true;
-      Global.feedsStoreChangeList.add(key);
+      GLB.feedsStore[key].items.unshift(newdata.items[j]);
+      GLB.feedsStoreChange = true;
+      GLB.feedsStoreChangeList.add(key);
     }
   }
   return nNew;
@@ -424,15 +424,15 @@ async function updateOneFeed(fdUrl: string) {
     if (nNew > 0) {
       var stats = getFeedStats(fdUrl);
       document.getElementById('unreadCount' + fdUrl).innerText = stats.unread.toString();
-      if (fdUrl === Global.currentFeed) {
-        Global.elUnreadCount.innerText = stats.unread.toString();
-        Global.undoList = [];
-        Global.idxItemStart = 0;
-        Global.nPage = 1;
+      if (fdUrl === GLB.currentFeed) {
+        GLB.elUnreadCount.innerText = stats.unread.toString();
+        GLB.undoList = [];
+        GLB.idxItemStart = 0;
+        GLB.nPage = 1;
         makeDisplayList();
         show_feed();
       }
-      if (stats.total < Global.maxTotalnumDisplayed) {
+      if (stats.total < GLB.maxTotalnumDisplayed) {
         document.getElementById('totalCount' + fdUrl).innerText = stats.total.toString();
       }
       await saveFeedsData();
@@ -476,9 +476,9 @@ class SearchModal extends Modal {
       if (searchTerms.length === 0) {
         return;
       }
-      let fd = Global.feedsStore[Global.currentFeed].items;
+      let fd = GLB.feedsStore[GLB.currentFeed].items;
       var sep = /\s+/;
-      Global.displayIndices = [];
+      GLB.displayIndices = [];
       for (let i=0; i<fd.length; i++) {
         let item = fd[i];
         var sItems;
@@ -498,7 +498,7 @@ class SearchModal extends Modal {
           }
         }
         if (found) {
-          Global.displayIndices.push(i);
+          GLB.displayIndices.push(i);
         }
       }
       show_feed();
@@ -550,17 +550,17 @@ class AddFeedModal extends Modal {
         new Notice("Feed name and url must not be empty.", 1000);
         return;
       }
-      for (var i=0; i<Global.feedList.length; i++) {
-        if (Global.feedList[i].feedUrl == newFeedUrl) {
+      for (var i=0; i<GLB.feedList.length; i++) {
+        if (GLB.feedList[i].feedUrl == newFeedUrl) {
           new Notice("Not added: url already included.", 1000);
           return;
         }
-        if (Global.feedList[i].name == newFeedName) {
+        if (GLB.feedList[i].name == newFeedName) {
           new Notice("Not added: name already used.", 1000);
           return;
         }
       }
-      Global.feedList.push({
+      GLB.feedList.push({
         name: newFeedName,
         feedUrl: newFeedUrl,
         folder: newFeedFolder,
@@ -603,26 +603,26 @@ class ManageFeedsModal extends Modal {
     const btRemoveFeed = actions.createEl('button', {text: 'Remove feed'});
 
     btApplyChanges.addEventListener('click', async () => {
-      for (var i=0; i<Global.feedList.length; i++) {
+      for (var i=0; i<GLB.feedList.length; i++) {
         var newName = document.getElementById('manageFdName' + i.toString()).value;
         var newUrl = document.getElementById('manageFdUrl' + i.toString()).value;
         var newFolder = document.getElementById('manageFdFolder' + i.toString()).value;
         var sMsg = '';
-        if (Global.feedList[i].name != newName) {
-          sMsg += 'Name: ' + Global.feedList[i].name + ' -> ' + newName;
+        if (GLB.feedList[i].name != newName) {
+          sMsg += 'Name: ' + GLB.feedList[i].name + ' -> ' + newName;
         }
-        if (Global.feedList[i].feedUrl != newUrl) {
-          sMsg += '\nUrl: ' + Global.feedList[i].feedUrl + ' -> ' + newUrl;
+        if (GLB.feedList[i].feedUrl != newUrl) {
+          sMsg += '\nUrl: ' + GLB.feedList[i].feedUrl + ' -> ' + newUrl;
         }
-        if (Global.feedList[i].folder != newFolder) {
-          sMsg += '\nFolder: ' + Global.feedList[i].folder + ' -> ' + newFolder;
+        if (GLB.feedList[i].folder != newFolder) {
+          sMsg += '\nFolder: ' + GLB.feedList[i].folder + ' -> ' + newFolder;
         }
         if (sMsg !== '') {
-          if (window.confirm("Apply changes for " + Global.feedList[i].name + '?\n' + sMsg)) {
-            if (Global.feedList[i].name != newName) {
+          if (window.confirm("Apply changes for " + GLB.feedList[i].name + '?\n' + sMsg)) {
+            if (GLB.feedList[i].name != newName) {
               var alreadyIncluded = false;
-              for (var j=0; j<Global.feedList.length; j++) {
-                if ((j != i) && (Global.feedList[j].name === newName)) {
+              for (var j=0; j<GLB.feedList.length; j++) {
+                if ((j != i) && (GLB.feedList[j].name === newName)) {
                   new Notice("Not changed: name already included.", 1000);
                   alreadyIncluded = True;
                   break;
@@ -630,9 +630,9 @@ class ManageFeedsModal extends Modal {
               }
               if (!alreadyIncluded) {
                 for (var j=0;;j++) {
-                  var fpath_old = [Global.feeds_reader_dir, Global.feeds_store_base,
-                                   makeFilename(Global.feedList[i].name, j)].join('/');
-                  var fpath_new = [Global.feeds_reader_dir, Global.feeds_store_base,
+                  var fpath_old = [GLB.feeds_reader_dir, GLB.feeds_store_base,
+                                   makeFilename(GLB.feedList[i].name, j)].join('/');
+                  var fpath_new = [GLB.feeds_reader_dir, GLB.feeds_store_base,
                                    makeFilename(newName, j)].join('/');
                   if (await app.vault.exists(fpath_old)) {
                     await app.vault.adapter.rename(fpath_old, fpath_new);
@@ -640,32 +640,32 @@ class ManageFeedsModal extends Modal {
                     break;
                   }
                 }
-                if (Global.currentFeedName === Global.feedList[i].name) {
-                  Global.currentFeedName = newName;
+                if (GLB.currentFeedName === GLB.feedList[i].name) {
+                  GLB.currentFeedName = newName;
                 }
-                Global.feedList[i].name = newName;
+                GLB.feedList[i].name = newName;
               }
             }
-            if (Global.feedList[i].feedUrl != newUrl) {
+            if (GLB.feedList[i].feedUrl != newUrl) {
               var alreadyIncluded = false;
-              for (var j=0; j<Global.feedList.length; j++) {
-                if ((j != i) && (Global.feedList[j].feedUrl === newUrl)) {
+              for (var j=0; j<GLB.feedList.length; j++) {
+                if ((j != i) && (GLB.feedList[j].feedUrl === newUrl)) {
                   new Notice("Not changed: url already included.", 1000);
                   alreadyIncluded = True;
                   break;
                 }
               }
               if (!alreadyIncluded) {
-                if (Global.currentFeed === Global.feedList[i].feedUrl) {
-                  Global.currentFeed = newUrl;
+                if (GLB.currentFeed === GLB.feedList[i].feedUrl) {
+                  GLB.currentFeed = newUrl;
                 }
-                Global.feedsStore[newUrl] = Global.feedsStore[Global.feedList[i].feedUrl];
-                delete Global.feedsStore[Global.feedList[i].feedUrl];
-                Global.feedList[i].feedUrl = newUrl;
+                GLB.feedsStore[newUrl] = GLB.feedsStore[GLB.feedList[i].feedUrl];
+                delete GLB.feedsStore[GLB.feedList[i].feedUrl];
+                GLB.feedList[i].feedUrl = newUrl;
               }
             }
-            if (Global.feedList[i].folder != newFolder) {
-              Global.feedList[i].folder = newFolder;
+            if (GLB.feedList[i].folder != newFolder) {
+              GLB.feedList[i].folder = newFolder;
             }
             await saveSubscriptions();
             sort_feed_list();
@@ -740,24 +740,24 @@ class ManageFeedsModal extends Modal {
 
     var tbody = form.createEl('tbody');
     var nTotal=0, nRead=0, nDeleted=0, nLength=0, nStoreSize=0;
-    for (var i=0; i<Global.feedList.length; i++) {
+    for (var i=0; i<GLB.feedList.length; i++) {
       var tr = tbody.createEl('tr');
       var cellNameContainer = tr.createEl('td');
       cellNameContainer.className = 'cellNameContainer';
-      const elName = cellNameContainer.createEl('input', {value: Global.feedList[i].name});
+      const elName = cellNameContainer.createEl('input', {value: GLB.feedList[i].name});
       elName.readOnly = false;
       elName.id = 'manageFdName' + i.toString();
-      const elUrl = cellNameContainer.createEl('input', {value: Global.feedList[i].feedUrl});
+      const elUrl = cellNameContainer.createEl('input', {value: GLB.feedList[i].feedUrl});
       elUrl.readOnly = false;
       elUrl.id = 'manageFdUrl' + i.toString();
       const cellFolderContainer = tr.createEl('td');
       cellFolderContainer.className = 'cellFolderContainer';
-      const elFolder = cellFolderContainer.createEl('input', {value: Global.feedList[i].folder});
+      const elFolder = cellFolderContainer.createEl('input', {value: GLB.feedList[i].folder});
       elFolder.readOnly = false;
       elFolder.id = 'manageFdFolder' + i.toString();
 
-      var stats = getFeedStats(Global.feedList[i].feedUrl);
-      var storeSizeInfo = getFeedStorageInfo(Global.feedList[i].feedUrl);
+      var stats = getFeedStats(GLB.feedList[i].feedUrl);
+      var storeSizeInfo = getFeedStorageInfo(GLB.feedList[i].feedUrl);
       tr.createEl('td', {text: stats.total.toString()});
       tr.createEl('td', {text: stats.read.toString()});
       tr.createEl('td', {text: stats.deleted.toString()});
@@ -766,8 +766,8 @@ class ManageFeedsModal extends Modal {
       const checkThis = tr.createEl('td').createEl('input');
       checkThis.type = 'checkBox';
       checkThis.className = 'checkThis';
-      checkThis.setAttribute('val', Global.feedList[i].feedUrl);
-      checkThis.setAttribute('fdName', Global.feedList[i].name);
+      checkThis.setAttribute('val', GLB.feedList[i].feedUrl);
+      checkThis.setAttribute('fdName', GLB.feedList[i].name);
 
       nTotal += stats.total;
       nRead += stats.read;
@@ -787,7 +787,7 @@ class ManageFeedsModal extends Modal {
 
 	async onClose() {
 		const {contentEl} = this;
-    if (Global.feedsStoreChange) {
+    if (GLB.feedsStoreChange) {
       await createFeedBar();
     }
 		contentEl.empty();
@@ -853,61 +853,61 @@ class SampleSettingTab extends PluginSettingTab {
 
 export async function saveFeedsData () {
   var nSaved = 0;
-  if (!Global.feedsStoreChange) {
+  if (!GLB.feedsStoreChange) {
     return nSaved;
   }
-  for (var i=0; i<Global.feedList.length; i++) {
-    key = Global.feedList[i].feedUrl;
-    if (!Global.feedsStoreChangeList.has(key)) {
+  for (var i=0; i<GLB.feedList.length; i++) {
+    key = GLB.feedList[i].feedUrl;
+    if (!GLB.feedsStoreChangeList.has(key)) {
       continue;
     }
-    if (!Global.feedsStore.hasOwnProperty(key)) {
+    if (!GLB.feedsStore.hasOwnProperty(key)) {
       continue;
     }
-    nSaved += (await saveStringSplitted(JSON.stringify(Global.feedsStore[key], null, 1),
-                Global.feeds_reader_dir + '/' + Global.feeds_store_base,
-                Global.feedList[i].name,
-                Global.lenStrPerFile, 0));
+    nSaved += (await saveStringSplitted(JSON.stringify(GLB.feedsStore[key], null, 1),
+                GLB.feeds_reader_dir + '/' + GLB.feeds_store_base,
+                GLB.feedList[i].name,
+                GLB.lenStrPerFile, 0));
   }
 
-  // if (! await this.app.vault.exists(Global.feeds_reader_dir)) {
-  //   await this.app.vault.createFolder(Global.feeds_reader_dir);
+  // if (! await this.app.vault.exists(GLB.feeds_reader_dir)) {
+  //   await this.app.vault.createFolder(GLB.feeds_reader_dir);
   // }
-  // var fpath: string = Global.feeds_reader_dir + '/' + Global.feeds_data_fname;
+  // var fpath: string = GLB.feeds_reader_dir + '/' + GLB.feeds_data_fname;
   // if (! await this.app.vault.exists(fpath)) {
-  //   await this.app.vault.create(fpath, JSON.stringify(Global.feedsStore, null, 1));
+  //   await this.app.vault.create(fpath, JSON.stringify(GLB.feedsStore, null, 1));
   // } else {
-  //   await this.app.vault.adapter.write(fpath, JSON.stringify(Global.feedsStore, null, 1));
+  //   await this.app.vault.adapter.write(fpath, JSON.stringify(GLB.feedsStore, null, 1));
   // }
 
-  Global.feedsStoreChange = false;
-  Global.feedsStoreChangeList.clear();
+  GLB.feedsStoreChange = false;
+  GLB.feedsStoreChangeList.clear();
   return nSaved;
 }
 
 export async function loadFeedsStoredData() {
   var noSplitFile = true;
-  Global.feedsStore = {};
-  for (var i=0; i<Global.feedList.length; i++) {
-    var res = await loadStringSplitted(Global.feeds_reader_dir + '/' + Global.feeds_store_base, Global.feedList[i].name);
+  GLB.feedsStore = {};
+  for (var i=0; i<GLB.feedList.length; i++) {
+    var res = await loadStringSplitted(GLB.feeds_reader_dir + '/' + GLB.feeds_store_base, GLB.feedList[i].name);
     if (res.length > 0) {
-      Global.feedsStore[Global.feedList[i].feedUrl] = JSON.parse(res);
+      GLB.feedsStore[GLB.feedList[i].feedUrl] = JSON.parse(res);
       noSplitFile = false;
     }
   }
   if (noSplitFile) {
-    if (! await this.app.vault.exists(Global.feeds_reader_dir)) {
-      await this.app.vault.createFolder(Global.feeds_reader_dir);
+    if (! await this.app.vault.exists(GLB.feeds_reader_dir)) {
+      await this.app.vault.createFolder(GLB.feeds_reader_dir);
     }
-    var fpath = Global.feeds_reader_dir+'/'+Global.feeds_data_fname;
+    var fpath = GLB.feeds_reader_dir+'/'+GLB.feeds_data_fname;
     if (await this.app.vault.exists(fpath)) {
-      Global.feedsStore = JSON.parse(await this.app.vault.adapter.read(fpath));
+      GLB.feedsStore = JSON.parse(await this.app.vault.adapter.read(fpath));
     }
   }
   // // Remove redundant properties saved in the json files.
-  // for (const k in Global.feedsStore) {
-  //   for (var i=0; i<Global.feedsStore[k].items.length; i++) {
-  //     const item = Global.feedsStore[k].items[i];
+  // for (const k in GLB.feedsStore) {
+  //   for (var i=0; i<GLB.feedsStore[k].items.length; i++) {
+  //     const item = GLB.feedsStore[k].items[i];
   //     var keys = Object.keys(item);
   //     var change = false;
   //     for (var j=0; j<keys.length; j++) {
@@ -917,8 +917,8 @@ export async function loadFeedsStoredData() {
   //       }
   //     }
   //     if (change) {
-  //       Global.feedsStoreChange = true;
-  //       Global.feedsStore[k].items[i] = item;
+  //       GLB.feedsStoreChange = true;
+  //       GLB.feedsStore[k].items[i] = item;
   //     }
   //   }
   // }
@@ -953,10 +953,10 @@ function unEscape(htmlStr) {
 }
 
 export function getFeedStats(feedUrl: string) {
-  if (!Global.feedsStore.hasOwnProperty(feedUrl)) {
+  if (!GLB.feedsStore.hasOwnProperty(feedUrl)) {
     return {total: 0, read: 0, deleted: 0, unread: 0};
   }
-  var fd = Global.feedsStore[feedUrl];
+  var fd = GLB.feedsStore[feedUrl];
   var nRead = 0, nDeleted = 0, nUnread = 0, nTotal = fd.items.length;
   for (var i=0; i<nTotal; i++) {
     if (fd.items[i].read != '') {
@@ -974,16 +974,16 @@ export function getFeedStats(feedUrl: string) {
 
 
 export function getFeedStorageInfo(feedUrl: string) {
-  if (!Global.feedsStore.hasOwnProperty(feedUrl)) {
+  if (!GLB.feedsStore.hasOwnProperty(feedUrl)) {
     return ['0', '0', 0, 0];
   }
-  if (Global.feedsStore[feedUrl].items.length == 0) {
+  if (GLB.feedsStore[feedUrl].items.length == 0) {
     return ['0', '0', 0, 0];
   }
-  const s = JSON.stringify(Global.feedsStore[feedUrl], null, 1);
+  const s = JSON.stringify(GLB.feedsStore[feedUrl], null, 1);
   const sz = (new Blob([s])).size;
   const szstr = getStoreSizeStr(sz);
-  return [Math.floor(s.length/Global.feedsStore[feedUrl].items.length).toString(), szstr, s.length, sz];
+  return [Math.floor(s.length/GLB.feedsStore[feedUrl].items.length).toString(), szstr, s.length, sz];
 }
 
 function getStoreSizeStr(sz: number) {
@@ -1005,83 +1005,83 @@ function getStoreSizeStr(sz: number) {
 
 function markAllRead(feedUrl: string) {
   var nowStr = nowdatetime();
-  for (var i=0; i<Global.feedsStore[feedUrl].items.length; i++) {
-    if (Global.feedsStore[feedUrl].items[i].read === "") {
-      Global.feedsStore[feedUrl].items[i].read = nowStr;
+  for (var i=0; i<GLB.feedsStore[feedUrl].items.length; i++) {
+    if (GLB.feedsStore[feedUrl].items[i].read === "") {
+      GLB.feedsStore[feedUrl].items[i].read = nowStr;
     }
   }
-  Global.feedsStoreChange = true;
-  Global.feedsStoreChangeList.add(feedUrl);
+  GLB.feedsStoreChange = true;
+  GLB.feedsStoreChangeList.add(feedUrl);
 }
 
 function purgeDeleted(feedUrl: string) {
-  Global.feedsStore[feedUrl].items = Global.feedsStore[feedUrl].items.filter(item => item.deleted === "");
-  Global.feedsStoreChange = true;
-  Global.feedsStoreChangeList.add(feedUrl);
+  GLB.feedsStore[feedUrl].items = GLB.feedsStore[feedUrl].items.filter(item => item.deleted === "");
+  GLB.feedsStoreChange = true;
+  GLB.feedsStoreChangeList.add(feedUrl);
 }
 
 function removeContent(feedUrl: string) {
-  for (var i=0; i<Global.feedsStore[feedUrl].items.length; i++) {
-    Global.feedsStore[feedUrl].items[i].content = '';
-    Global.feedsStore[feedUrl].items[i].creator = '';
+  for (var i=0; i<GLB.feedsStore[feedUrl].items.length; i++) {
+    GLB.feedsStore[feedUrl].items[i].content = '';
+    GLB.feedsStore[feedUrl].items[i].creator = '';
   }
-  Global.feedsStoreChange = true;
-  Global.feedsStoreChangeList.add(feedUrl);
+  GLB.feedsStoreChange = true;
+  GLB.feedsStoreChangeList.add(feedUrl);
 }
 
 function removeContentOld(feedUrl: string) {
-  var iDel = Math.floor(Global.feedsStore[feedUrl].items.length / 2);
-  for (var i=iDel; i<Global.feedsStore[feedUrl].items.length; i++) {
-    Global.feedsStore[feedUrl].items[i].content = '';
-    Global.feedsStore[feedUrl].items[i].creator = '';
+  var iDel = Math.floor(GLB.feedsStore[feedUrl].items.length / 2);
+  for (var i=iDel; i<GLB.feedsStore[feedUrl].items.length; i++) {
+    GLB.feedsStore[feedUrl].items[i].content = '';
+    GLB.feedsStore[feedUrl].items[i].creator = '';
   }
-  Global.feedsStoreChange = true;
-  Global.feedsStoreChangeList.add(feedUrl);
+  GLB.feedsStoreChange = true;
+  GLB.feedsStoreChangeList.add(feedUrl);
 }
 
 function purgeAll(feedUrl: string) {
-  Global.feedsStore[feedUrl].items.length = 0;
-  Global.feedsStoreChange = true;
-  Global.feedsStoreChangeList.add(feedUrl);
+  GLB.feedsStore[feedUrl].items.length = 0;
+  GLB.feedsStoreChange = true;
+  GLB.feedsStoreChangeList.add(feedUrl);
 }
 
 function purgeOldHalf(feedUrl: string) {
-  var iDel = Math.floor(Global.feedsStore[feedUrl].items.length / 2);
-  Global.feedsStore[feedUrl].items.splice(iDel);
-  Global.feedsStoreChange = true;
-  Global.feedsStoreChangeList.add(feedUrl);
+  var iDel = Math.floor(GLB.feedsStore[feedUrl].items.length / 2);
+  GLB.feedsStore[feedUrl].items.splice(iDel);
+  GLB.feedsStoreChange = true;
+  GLB.feedsStoreChangeList.add(feedUrl);
 }
 
 function deduplicate(feedUrl: string) {
-  var n = Global.feedsStore[feedUrl].items.length;
+  var n = GLB.feedsStore[feedUrl].items.length;
   const delete_mark = 'DELETE-NOW';
   for (var i=0; i<n; i++) {
     for (var j=0; j<i; j++) {
-      if (Global.feedsStore[feedUrl].items[i].link === Global.feedsStore[feedUrl].items[j].link) {
-        Global.feedsStore[feedUrl].items[j].deleted = delete_mark;
+      if (GLB.feedsStore[feedUrl].items[i].link === GLB.feedsStore[feedUrl].items[j].link) {
+        GLB.feedsStore[feedUrl].items[j].deleted = delete_mark;
       }
     }
   }
-  const nBefore = Global.feedsStore[feedUrl].items.length;
-  Global.feedsStore[feedUrl].items = Global.feedsStore[feedUrl].items.filter(item => item.deleted != delete_mark);
-  const nAfter = Global.feedsStore[feedUrl].items.length;
+  const nBefore = GLB.feedsStore[feedUrl].items.length;
+  GLB.feedsStore[feedUrl].items = GLB.feedsStore[feedUrl].items.filter(item => item.deleted != delete_mark);
+  const nAfter = GLB.feedsStore[feedUrl].items.length;
   if (nBefore > nAfter) {
-    Global.feedsStoreChange = true;
-    Global.feedsStoreChangeList.add(feedUrl);
+    GLB.feedsStoreChange = true;
+    GLB.feedsStoreChangeList.add(feedUrl);
   }
   return nBefore - nAfter;
 }
 
 async function removeFeed(feedUrl: string) {
-  for (var i=0; i<Global.feedList.length; i++) {
-    if (Global.feedList[i].feedUrl === feedUrl) {
-      if (Global.feedsStore.hasOwnProperty(feedUrl)) {
-        delete Global.feedsStore[feedUrl];
-        await removeFileFragments(Global.feeds_reader_dir + '/' + Global.feeds_store_base, Global.feedList[i].name);
+  for (var i=0; i<GLB.feedList.length; i++) {
+    if (GLB.feedList[i].feedUrl === feedUrl) {
+      if (GLB.feedsStore.hasOwnProperty(feedUrl)) {
+        delete GLB.feedsStore[feedUrl];
+        await removeFileFragments(GLB.feeds_reader_dir + '/' + GLB.feeds_store_base, GLB.feedList[i].name);
       }
-      Global.feedList.splice(i, 1);
-      Global.feedsStoreChange = true;
-      Global.feedsStoreChangeList.add(feedUrl);
+      GLB.feedList.splice(i, 1);
+      GLB.feedsStoreChange = true;
+      GLB.feedsStoreChangeList.add(feedUrl);
       await saveSubscriptions();
       break;
     }
@@ -1107,7 +1107,7 @@ function handle_tags(s: string) {
 }
 
 function sort_feed_list() {
-  Global.feedList.sort((n1,n2) => {
+  GLB.feedList.sort((n1,n2) => {
     if (n1.folder > n2.folder) {return 1;}
     if (n1.folder < n2.folder) {return -1;}
     return 0;
@@ -1115,20 +1115,20 @@ function sort_feed_list() {
 }
 
 function makeDisplayList() {
-  Global.displayIndices = [];
-  var fd = Global.feedsStore[Global.currentFeed];
+  GLB.displayIndices = [];
+  var fd = GLB.feedsStore[GLB.currentFeed];
   if (fd === undefined) {
     return;
   }
   for (var i=0; i<fd.items.length; i++) {
-    if ((Global.showAll) || ((fd.items[i].read === '') && (fd.items[i].deleted === ''))) {
-      Global.displayIndices.push(i);
+    if ((GLB.showAll) || ((fd.items[i].read === '') && (fd.items[i].deleted === ''))) {
+      GLB.displayIndices.push(i);
     }
   }
-  if (Global.itemOrder === 'Old to new') {
-    Global.displayIndices.reverse();
+  if (GLB.itemOrder === 'Old to new') {
+    GLB.displayIndices.reverse();
   }
-  if (Global.itemOrder === 'Random') {
+  if (GLB.itemOrder === 'Random') {
     // From: https://dev.to/codebubb/how-to-shuffle-an-array-in-javascript-2ikj
     (array => {
       for (let i = array.length - 1; i > 0; i--) {
@@ -1137,13 +1137,13 @@ function makeDisplayList() {
         array[i] = array[j];
         array[j] = temp;
       }
-    })(Global.displayIndices);
+    })(GLB.displayIndices);
   }
 }
 
 
 async function show_feed() {
-   if (Global.currentFeed === '') {
+   if (GLB.currentFeed === '') {
      return;
    }
    const feed_content = document.getElementById('feed_content');
@@ -1152,19 +1152,19 @@ async function show_feed() {
    const feedTitle = feed_content.createEl('h1');
    feedTitle.className = 'feedTitle';
 
-   if (!Global.feedsStore.hasOwnProperty(Global.currentFeed)) {
+   if (!GLB.feedsStore.hasOwnProperty(GLB.currentFeed)) {
      return;
    }
-   var fd = Global.feedsStore[Global.currentFeed];
+   var fd = GLB.feedsStore[GLB.currentFeed];
    feedTitle.createEl('a', {href: sanitizeHTMLToDom(fd.link).textContent}).appendChild(sanitizeHTMLToDom(fd.title));
    if (fd.pubDate != '') {
      feed_content.createEl('div', {text: fd.pubDate});
    }
    var nDisplayed = 0;
-   for (var i=Global.idxItemStart;
-        i<Math.min(Global.displayIndices.length, Global.idxItemStart+Global.nItemPerPage);
+   for (var i=GLB.idxItemStart;
+        i<Math.min(GLB.displayIndices.length, GLB.idxItemStart+GLB.nItemPerPage);
         i++) {
-     idx = Global.displayIndices[i];
+     idx = GLB.displayIndices[i];
      item = fd.items[idx];
      const itemEl = feed_content.createEl('div');
      itemEl.className = 'oneFeedItem';
@@ -1203,7 +1203,7 @@ async function show_feed() {
      const toggleDelete = tr.createEl('td').createEl('div', {text: t_delete});
      toggleDelete.className = 'toggleDelete';
      toggleDelete.id = 'toggleDelete' + idx;
-     if (!Global.titleOnly) {
+     if (!GLB.titleOnly) {
        const elContent = itemEl.createEl('div');
        elContent.className = 'itemContent';
        elContent.appendChild(sanitizeHTMLToDom(item.content.replace(/<img src="\/\//g,"<img src=\"https://")));
@@ -1217,27 +1217,27 @@ async function show_feed() {
    }
    feed_content.createEl('hr');
    const next_prev = feed_content.createEl('div');
-   if (Global.nPage > 1) {
+   if (GLB.nPage > 1) {
      const prevPage = next_prev.createEl('span', {text: "Prev"});
      prevPage.className = "next_prev";
      prevPage.id = "prevPage";
    }
-   if (Global.idxItemStart+Global.nItemPerPage < Global.displayIndices.length) {
+   if (GLB.idxItemStart+GLB.nItemPerPage < GLB.displayIndices.length) {
      const nextPage = next_prev.createEl('span', {text: "Next"});
      nextPage.className = "next_prev";
      nextPage.id = "nextPage";
    }
-   var stats = getFeedStats(Global.currentFeed);
-   //  Global.elUnreadCount = document.getElementById('unreadCount' + Global.currentFeed);
-   Global.elTotalCount = document.getElementById('totalCount' + Global.currentFeed);
-   Global.elSepUnreadTotal = document.getElementById('sepUnreadTotal' + Global.currentFeed);
-   Global.elUnreadCount.innerText = stats.unread.toString();
-   if (fd.items.length < Global.maxTotalnumDisplayed) {
-     Global.elTotalCount.innerText = fd.items.length.toString();
-     Global.elSepUnreadTotal.innerText = '/';
+   var stats = getFeedStats(GLB.currentFeed);
+   //  GLB.elUnreadCount = document.getElementById('unreadCount' + GLB.currentFeed);
+   GLB.elTotalCount = document.getElementById('totalCount' + GLB.currentFeed);
+   GLB.elSepUnreadTotal = document.getElementById('sepUnreadTotal' + GLB.currentFeed);
+   GLB.elUnreadCount.innerText = stats.unread.toString();
+   if (fd.items.length < GLB.maxTotalnumDisplayed) {
+     GLB.elTotalCount.innerText = fd.items.length.toString();
+     GLB.elSepUnreadTotal.innerText = '/';
    } else {
-     Global.elTotalCount.innerText = '';
-     Global.elSepUnreadTotal.innerText = '';
+     GLB.elTotalCount.innerText = '';
+     GLB.elSepUnreadTotal.innerText = '';
    }
 }
 
@@ -1259,13 +1259,13 @@ function sanitize(s: string) {
 }
 
 export async function loadSubscriptions() {
-  var fpath_feedList = Global.feeds_reader_dir+'/'+Global.subscriptions_fname;
-  Global.feedList = [];
+  var fpath_feedList = GLB.feeds_reader_dir+'/'+GLB.subscriptions_fname;
+  GLB.feedList = [];
   if (await this.app.vault.exists(fpath_feedList)) {
-    Global.feedList = await JSON.parse(await
+    GLB.feedList = await JSON.parse(await
       this.app.vault.adapter.read(fpath_feedList));
   }
-  if (Global.feedList.length == 0) {
+  if (GLB.feedList.length == 0) {
     new Notice('No feed yet. Use "Add feed".', 5000);
   }
   sort_feed_list();
@@ -1273,14 +1273,14 @@ export async function loadSubscriptions() {
 
 
 async function saveSubscriptions() {
-  if (! await this.app.vault.exists(Global.feeds_reader_dir)) {
-    await this.app.vault.createFolder(Global.feeds_reader_dir);
+  if (! await this.app.vault.exists(GLB.feeds_reader_dir)) {
+    await this.app.vault.createFolder(GLB.feeds_reader_dir);
   }
-  var fpath_feedList = Global.feeds_reader_dir+'/'+Global.subscriptions_fname;
+  var fpath_feedList = GLB.feeds_reader_dir+'/'+GLB.subscriptions_fname;
   if (! await this.app.vault.exists(fpath_feedList)) {
-      await this.app.vault.create(fpath_feedList, JSON.stringify(Global.feedList, null, 1));
+      await this.app.vault.create(fpath_feedList, JSON.stringify(GLB.feedList, null, 1));
   } else {
-      await this.app.vault.adapter.write(fpath_feedList, JSON.stringify(Global.feedList, null, 1));
+      await this.app.vault.adapter.write(fpath_feedList, JSON.stringify(GLB.feedList, null, 1));
   }
 }
 

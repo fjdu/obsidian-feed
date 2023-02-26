@@ -1,5 +1,5 @@
 import { ItemView, WorkspaceLeaf } from "obsidian";
-import { Global } from "./globals"
+import { GLB } from "./globals"
 import { saveFeedsData, loadSubscriptions, loadFeedsStoredData, getFeedStats } from "./main"
 
 export const VIEW_TYPE_FEEDS_READER = "feeds-reader-view";
@@ -61,7 +61,7 @@ export class FRView extends ItemView {
     showAll.id = 'showAll';
     const titleOnly = manage.createEl('div').createEl('span', {text: "Title only"});
     titleOnly.id = 'titleOnly';
-    const toggleOrder = manage.createEl('div').createEl('span', {text: Global.itemOrder});
+    const toggleOrder = manage.createEl('div').createEl('span', {text: GLB.itemOrder});
     toggleOrder.id = 'toggleOrder';
     const saveFeedsData = manage.createEl('div').createEl('span', {text: "Save data"});
     saveFeedsData.id = 'saveFeedsData';
@@ -83,9 +83,9 @@ export class FRView extends ItemView {
       await createFeedBar();
     });
 
-    if (Global.feedList.length > 2) {
-      if (Global.feedList.length < Global.nThanksSep) {
-        var nVertSep = Global.nThanksSep-Global.feedList.length;
+    if (GLB.feedList.length > 2) {
+      if (GLB.feedList.length < GLB.nThanksSep) {
+        var nVertSep = GLB.nThanksSep-GLB.feedList.length;
         for (var i=0; i<nVertSep; i++) {
           feedTableDiv.createEl('br');
         }
@@ -114,7 +114,7 @@ export async function createFeedBar() {
   var feedTable = document.getElementById('feedTable');
   await feedTable.empty();
   var thisFolder = "";
-  Global.feedList.forEach(async (item, idx) => {
+  GLB.feedList.forEach(async (item, idx) => {
     if (item.folder != thisFolder) {
       thisFolder = item.folder;
       if (thisFolder != "") {

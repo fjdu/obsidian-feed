@@ -1,4 +1,4 @@
-export namespace Global {
+export namespace GLB {
   var showAll: boolean;
   var titleOnly: boolean;
   var itemOrder: string;

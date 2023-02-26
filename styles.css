@@ -114,6 +114,10 @@ td.showFeed {
   font-style: italic;
 }
 
+.manage :hover {
+  font-weight: bold;
+}
+
 .feedTableDiv :is(table,tr,td) {
   border: none;
   border-spacing: 0 0.5em;
