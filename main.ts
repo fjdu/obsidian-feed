@@ -206,7 +206,7 @@ export default class FeedsReader extends Plugin {
         Global.undoList.unshift(idx);
         if ((!Global.showAll) && Global.hideThisItem) {
           document.getElementById(
-            Global.feedsStore[Global.currentFeed].items[idx].link ).style.display = 'none';
+            Global.feedsStore[Global.currentFeed].items[idx].link ).className = 'hidedItem';
         }
       }
       if (evt.target.className === 'toggleDelete') {
@@ -236,7 +236,7 @@ export default class FeedsReader extends Plugin {
         Global.undoList.unshift(idx);
         if ((!Global.showAll) && Global.hideThisItem) {
           document.getElementById(
-            Global.feedsStore[Global.currentFeed].items[idx].link ).style.display = 'none';
+            Global.feedsStore[Global.currentFeed].items[idx].link ).className = 'hidedItem';
         }
       }
 
@@ -453,22 +453,21 @@ class SearchModal extends Modal {
 		const {contentEl} = this;
     this.titleEl.innerText = "Search";
     const form = contentEl.createEl('table');
-    form.style["width"] = "100%";
     form.className = "searchForm";
-    var tr = form.createEl('tr');
+    const colgroup = form.createEl('colgroup');
+    colgroup.createEl('col').className = 'searchCol1';
+    colgroup.createEl('col').className = 'searchCol2';
+    const tr = form.createEl('tr');
     tr.createEl('td', {text: 'Search terms'});
-    var td = tr.createEl('td');
-    td.style["width"] = "70%";
-    var inputBox = td.createEl('input');
+    const inputBox = tr.createEl('td').createEl('input');
     inputBox.id = 'searchTerms';
-    inputBox.style["width"] = "70%";
-    tr = form.createEl('tr');
-    tr.createEl('td', {text: "Wordwise"});
-    var checkBoxWordwise = tr.createEl('td').createEl('input');
+    inputBox.className = 'searchTerms';
+    const trWordwise = form.createEl('tr');
+    trWordwise.createEl('td', {text: "Wordwise"});
+    var checkBoxWordwise = trWordwise.createEl('td').createEl('input');
     checkBoxWordwise.id = 'checkBoxWordwise';
     checkBoxWordwise.type = 'checkBox';
-    tr = form.createEl('tr');
-    var searchButton = tr.createEl('td').createEl('button', {text: "Search"});
+    var searchButton = form.createEl('tr').createEl('td').createEl('button', {text: "Search"});
     searchButton.addEventListener("click", async () => {
       var wordWise = document.getElementById('checkBoxWordwise').checked;
       var searchTerms = ([...new Set(document.getElementById('searchTerms').value.toLowerCase().split(/[ ,;\t\n]+/))]
@@ -522,22 +521,25 @@ class AddFeedModal extends Modal {
 		const {contentEl} = this;
     this.titleEl.innerText = "Add feed";
     const form = contentEl.createEl('table');
-    form.className = "addFeedForm";
+    form.className = 'addFeedTable';
+    const colgroup = form.createEl('colgroup');
+    colgroup.createEl('col').className = 'addFeedCol1';
+    colgroup.createEl('col').className = 'addFeedCol2';
     var tr = form.createEl('tr');
     tr.createEl('td', {text: "Name"});
     var tdnewFeedName = tr.createEl('td').createEl('input');
-    tdnewFeedName.style["width"] = "70%";
+    tdnewFeedName.className = 'addFeedInput'
     tdnewFeedName.id = 'newFeedName';
     tr = form.createEl('tr');
     tr.createEl('td', {text: "URL"});
     var tdnewFeedUrl = tr.createEl('td').createEl('input');
-    tdnewFeedUrl.style["width"] = "70%";
+    tdnewFeedUrl.className = 'addFeedInput'
     tdnewFeedUrl.id = 'newFeedUrl';
     tr = form.createEl('tr');
     tr.createEl('td', {text: "Folder"});
     var tdnewFeedFolder = tr.createEl('td').createEl('input');
     tdnewFeedFolder.id = 'newFeedFolder';
-    tdnewFeedFolder.style["width"] = "70%";
+    tdnewFeedFolder.className = 'addFeedInput'
     tr = form.createEl('tr');
     var saveButton = tr.createEl('td').createEl('button', {text: "Save"});
     saveButton.addEventListener("click", async () => {

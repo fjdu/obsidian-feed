@@ -5,8 +5,8 @@
     user-select: text;
 }
 
-td {
-  padding: 4px 8px;
+.hidedItem {
+  display: none;
 }
 
 .navigation {
@@ -116,16 +116,16 @@ td.showFeed {
 
 .feedTableDiv :is(table,tr,td) {
   border: none;
-  border-spacing: 0;
+  border-spacing: 0 0.5em;
   padding-right: 3px;
   padding-left: 0;
-  border-collapse: collapse;
+  border-collapse: separate;
 }
 
 table.manageFeedsForm, table.manageFeedsForm :is(tbody, tr, th, td) {
   text-align: left;
   font-size: xx-small;
-  border: 3px solid #bbaaaa;
+  border: 1px solid #bbaaaa;
   border-collapse: collapse;
   padding: 0px 0px;
 }
@@ -218,12 +218,20 @@ table.manageFeedsForm, table.manageFeedsForm :is(tbody, tr, th, td) {
   color: #f15500;
 }
 
-.addFeedForm {
-  width: 90%;
+.searchForm, .addFeedTable {
+  width: 100%;
 }
 
-input[type=text] {
-  width: 90%;
+.searchCol1, .addFeedCol1 {
+  width: 30%;
+}
+
+.searchCol2, .addFeedCol2 {
+  width: 70%;
+}
+
+input.addFeedInput, input.searchTerms {
+  width: 100%;
 }
 
 .cellNameContainer {

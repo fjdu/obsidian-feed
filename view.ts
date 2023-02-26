@@ -79,8 +79,7 @@ export class FRView extends ItemView {
     feedTableDiv.className = 'feedTableDiv';
     const feedTable = feedTableDiv.createEl('table');
     feedTable.id = 'feedTable';
-    feedTable.className = 'feedTable';
-    waitForElm('.feedTable').then(async (elm) => {
+    waitForElm('#feedTable').then(async (elm) => {
       await createFeedBar();
     });
 
