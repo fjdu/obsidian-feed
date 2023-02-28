@@ -14,7 +14,7 @@ This plugin is mostly built for my own use.  Online services are good, but it is
 - `Save data` is for saving the feed data (after you have marking some items as `read/deleted`), so that your reading progress would not be accidentally lost.
 - `Update all` is for fetching new items for all the subscribed feeds.
 - `Undo` is for undoing recent `mark as read` and `mark as deleted` actions for the **selected feed**.
-- `Add feed` is for adding new feed subscriptions.  The first time you use this plugin, you will need to add subscriptions with this `Add`.  **Keep the feed name as short as possible, and it must be unique.**
+- `Add feed` is for adding new feed subscriptions.  The first time you use this plugin, you will need to add subscriptions with this `Add`.  **Shorter feed names are preferred, and they must be unique.**
    - *Be careful with the feed provider!  While sanitization is performed for the feed contents using the `sanitizeHTMLToDom` api, malicious content may still cause data loss!*
    - While it is true that meticulously crafted contents may sabotage your data, normal feed providers have no intention to do this (unless they are hacked).  So please only subscribe from legitimate websites.  I choose not to only show plain text for the contents, because that would ruin the reading experience (we need the outgoing links, images, etc.).  Thanks to the reviewer for letting me know of the `sanitizeHTMLToDom` api!
 - `Manage` is for managing your feeds, where you can mark all as read, purge those that are marked as deleted, and purge all (i.e. to permanently remove all items of a feed).  **Be cautious that these actions cannot be undone.**
