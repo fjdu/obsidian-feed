@@ -1083,7 +1083,7 @@ function deduplicate(feedUrl: string) {
   var n = GLB.feedsStore[feedUrl].items.length;
   const delete_mark = 'DELETE-NOW';
   for (var i=0; i<n; i++) {
-    for (var j=0; j<i; j++) {
+    for (var j=i+1; j<n; j++) {
       if (GLB.feedsStore[feedUrl].items[i].link === GLB.feedsStore[feedUrl].items[j].link) {
         GLB.feedsStore[feedUrl].items[j].deleted = delete_mark;
       }
