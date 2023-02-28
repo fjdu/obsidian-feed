@@ -363,7 +363,7 @@ export default class FeedsReader extends Plugin {
     GLB.itemOrder = 'New to old';
     GLB.currentFeed = '';
     GLB.currentFeedName = '';
-    GLB.nMergeLookback = 1000;
+    GLB.nMergeLookback = 10000;
     GLB.lenStrPerFile = 1024 * 1024;
     GLB.nItemPerPage = 100;
     GLB.feedsStoreChange = false;
@@ -709,12 +709,17 @@ class ManageFeedsModal extends Modal {
       [...document.getElementsByClassName('checkThis')]
       .filter(el => el.checked)
       .forEach(el => {var nRemoved = deduplicate(el.getAttribute('val'));
-                      new Notice(nRemoved + " removed for " + el.getAttribute('fdName'), 2000);});}});
+                      if (nRemoved>0) {
+                        new Notice(nRemoved + " removed for "
+                        + el.getAttribute('fdName'), 2000);
+                      }});}});
     btRemoveFeed.addEventListener('click', () => {
       if (window.confirm('Sure?')) {
       [...document.getElementsByClassName('checkThis')]
       .filter(el => el.checked)
       .forEach(el => {removeFeed(el.getAttribute('val'));});}});
+
+    contentEl.createEl('br');
 
     const formContainer = contentEl.createEl('div');
     const form = formContainer.createEl('table');
@@ -758,11 +763,11 @@ class ManageFeedsModal extends Modal {
 
       var stats = getFeedStats(GLB.feedList[i].feedUrl);
       var storeSizeInfo = getFeedStorageInfo(GLB.feedList[i].feedUrl);
-      tr.createEl('td', {text: stats.total.toString()});
-      tr.createEl('td', {text: stats.read.toString()});
-      tr.createEl('td', {text: stats.deleted.toString()});
-      tr.createEl('td', {text: storeSizeInfo[0]});
-      tr.createEl('td', {text: storeSizeInfo[1]});
+      tr.createEl('td', {text: stats.total.toString()}).setAttribute('sortBy', stats.total);
+      tr.createEl('td', {text: stats.read.toString()}).setAttribute('sortBy', stats.read);
+      tr.createEl('td', {text: stats.deleted.toString()}).setAttribute('sortBy', stats.deleted);
+      tr.createEl('td', {text: storeSizeInfo[0]}).setAttribute('sortBy', storeSizeInfo[2]/stats.total);
+      tr.createEl('td', {text: storeSizeInfo[1]}).setAttribute('sortBy', storeSizeInfo[3]);
       const checkThis = tr.createEl('td').createEl('input');
       checkThis.type = 'checkBox';
       checkThis.className = 'checkThis';
@@ -776,13 +781,35 @@ class ManageFeedsModal extends Modal {
       nStoreSize += storeSizeInfo[3];
     }
     var tr = tbody.createEl('tr');
-    tr.createEl('td');
+    tr.createEl('td', {text: 'Total: ' + GLB.feedList.length.toString()});
     tr.createEl('td');
     tr.createEl('td', {text: nTotal.toString()});
     tr.createEl('td', {text: nRead.toString()});
     tr.createEl('td', {text: nDeleted.toString()});
     tr.createEl('td', {text: Math.floor(nLength/nTotal).toString()});
     tr.createEl('td', {text: getStoreSizeStr(nStoreSize)});
+
+    // From: https://stackoverflow.com/questions/14267781/sorting-html-table-with-javascript
+    // https://stackoverflow.com/questions/14267781/sorting-html-table-with-javascript/53880407#53880407
+    const getCellValue = (tr, idx) => tr.children[idx].getAttribute('sortBy') || tr.children[idx].firstChild.value;
+    
+    const comparer = ((idx, asc) =>
+      (a, b) =>
+        ((v1, v2) =>
+         v1 !== '' && v2 !== '' && !isNaN(v1) && !isNaN(v2) ? v1 - v2 : v1.toString().localeCompare(v2)
+        )(getCellValue(asc ? a : b, idx), getCellValue(asc ? b : a, idx)));
+    
+    const rowSelectorStr ='tr:nth-child(-n+' + (GLB.feedList.length).toString() + ')';
+    console.log(rowSelectorStr);
+    document.querySelectorAll('.manageFeedsForm th:nth-child(n+1):nth-child(-n+7)')
+    .forEach(th => th.addEventListener('click', (() => {
+        const table = th.closest('table');
+        const tbody = table.querySelector('tbody');
+        Array.from(tbody.querySelectorAll(rowSelectorStr))
+            .sort(comparer(Array.from(th.parentNode.children).indexOf(th), this.asc = !this.asc))
+            .forEach(tr => tbody.insertBefore(tr, tbody.lastChild));
+    })));
+
 	}
 
 	async onClose() {

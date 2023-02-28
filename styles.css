@@ -134,6 +134,10 @@ table.manageFeedsForm, table.manageFeedsForm :is(tbody, tr, th, td) {
   padding: 0px 0px;
 }
 
+.manageFeedsForm th:nth-child(n+1):nth-child(-n+7) {
+  cursor: pointer;
+}
+
 .itemActions td {
   border: none;
   border-spacing: 0px;
@@ -245,6 +249,7 @@ input.addFeedInput, input.searchTerms {
 .cellNameContainer input {
   display: block;
   width: 100%;
+  border: 0;
 }
 
 .cellFolderContainer {
@@ -253,6 +258,7 @@ input.addFeedInput, input.searchTerms {
 
 .cellFolderContainer input {
   width: 100%;
+  border: 0;
 }
 
 .next_prev {
