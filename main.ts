@@ -788,6 +788,7 @@ class ManageFeedsModal extends Modal {
     tr.createEl('td', {text: nDeleted.toString()});
     tr.createEl('td', {text: Math.floor(nLength/nTotal).toString()});
     tr.createEl('td', {text: getStoreSizeStr(nStoreSize)});
+    tr.createEl('td');
 
     // From: https://stackoverflow.com/questions/14267781/sorting-html-table-with-javascript
     // https://stackoverflow.com/questions/14267781/sorting-html-table-with-javascript/53880407#53880407

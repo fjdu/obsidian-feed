@@ -5,6 +5,7 @@ This plugin is mostly built for my own use.  Online services are good, but it is
 ## How it works
 
 - It creates an icon in the left sidebar (for the mobile version the icon is located in the bottom right pop-up menu).
+- The first time you use it, you need to manually add RSS feed sources.
 - It creates nested folders `feeds-reader/feeds-store/` in the current vault.  All the saved items (`.md` files) are stored in `feeds-reader`, and all the feeds data (`.json.frag` files, i.e. json fragments.) are saved in `feeds-reader/feeds-store/`.
 - The top-left `>` is for toggling the navigation bar.  This is useful when reading on a small screen.
 - `Search` is for searching for one or more keywords (separated by space) in the current selected feed.

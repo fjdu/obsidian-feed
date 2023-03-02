@@ -141,7 +141,7 @@ table.manageFeedsForm, table.manageFeedsForm :is(tbody, tr, th, td) {
 .itemActions td {
   border: none;
   border-spacing: 0px;
-  padding-right: 5px;
+  padding-right: 1em;
   padding-left: 0px;
   font-style: italic;
 }
