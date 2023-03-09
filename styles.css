@@ -35,11 +35,6 @@
   }
 }
 
-hr.divider {
-  margin: 0em;
-  border-width: 2px;
-}
-
 .navigation .showFeed:hover {
   color: #f15500;
 }
@@ -140,11 +135,8 @@ table.manageFeedsForm, table.manageFeedsForm :is(tbody, tr, th, td) {
 
 .itemActions td {
   border: none;
-  border-spacing: 1em 0;
-  width: 4em;
-  padding-right: 0px;
-  padding-left: 0px;
-  font-style: italic;
+  padding: 0 0.5em 0 0;
+  width: auto !important;
 }
 
 .feedFolder {
@@ -172,36 +164,27 @@ table.manageFeedsForm, table.manageFeedsForm :is(tbody, tr, th, td) {
   font-weight: bold;
 }
 
-.toggleRead {
-  font-size: large;
-}
-
-.noteThis {
-  font-size: large;
-}
-
-.toggleDelete {
-  font-size: large;
-}
-
 .elPubDate {
   font-size: xx-small;
 }
 
-.noteThis:hover {
-  color: #f15500;
+.toggleRead, .noteThis, .saveSnippet, .toggleDelete {
+  font-size: normal;
+  font-style: italic;
+  border: 1px solid;
+  border-radius: 6px;
+  padding: 2px 4px;
 }
 
-.toggleRead:hover {
-  color: #f15500;
-}
-
-.toggleDelete:hover {
+.toggleRead:hover, .noteThis:hover, .saveSnippet:hover, .toggleDelete:hover {
   color: #f15500;
 }
 
 .showItemContent {
   font-size: large;
+  width: 100%;
+  height: 2em;
+  border: 1px solid black;
 }
 
 .showItemContent:hover {

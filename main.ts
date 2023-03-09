@@ -1,7 +1,7 @@
 import { App, Editor, MarkdownView, Menu, Modal, Notice, addIcon, Plugin, PluginSettingTab, Setting, sanitizeHTMLToDom } from 'obsidian';
 import { FRView, VIEW_TYPE_FEEDS_READER, createFeedBar, waitForElm } from "./view";
-import { getFeedItems, RssFeedContent, nowdatetime, itemKeys } from "./getFeed"
-import { GLB } from "./globals"
+import { getFeedItems, RssFeedContent, nowdatetime, itemKeys } from "./getFeed";
+import { GLB } from "./globals";
 
 // Remember to rename these classes and interfaces!
 
@@ -57,7 +57,7 @@ export default class FeedsReader extends Plugin {
       // menu.showAtMouseEvent(evt);
 		});
 
-    // this.addSettingTab(new SampleSettingTab(this.app, this));
+    // this.addSettingTab(new FeedReaderSettingTab(this.app, this));
 
 		// If the plugin hooks up any global DOM events (on parts of the app that doesn't belong to this plugin)
 		// Using this function will automatically remove the event listener when this plugin is disabled.
@@ -153,7 +153,7 @@ export default class FeedsReader extends Plugin {
           dt_str = nowdatetime();
         }
         dt_str = dt_str.substring(0, 10) + '-';
-        const fname: string = dt_str + 
+        const fname: string = dt_str +
                               str2filename(
                               (GLB.currentFeedName === ''? '' :
                                GLB.currentFeedName.replace(/(\s+)/g, '-') + '-') +
@@ -161,6 +161,10 @@ export default class FeedsReader extends Plugin {
                               .replace(/(<([^>]+)>)/g, " ")
                               .replace(/[:!?@#\*\^\$]+/g, '')) + '.md';
         const fpath: string = GLB.feeds_reader_dir + '/' + fname;
+        var author_text = the_item.creator.trim();
+        if (author_text !== '') {
+          author_text = '\n<small>' + author_text + '</small>';
+        }
         if (! await this.app.vault.exists(fpath)) {
           await this.app.vault.create(fpath,
             '\n> [!abstract]+ [' +
@@ -173,10 +177,57 @@ export default class FeedsReader extends Plugin {
             //   the_item.content.replace(/\n/g, ' '))))
             // .replace(/(<([^>]+)>)/gi, " ")
             // .trim() +
-            '\n<small>' + the_item.creator.trim() + '</small>');
+            author_text);
           new Notice(fpath + " saved.", 1000);
         } else {
           new Notice(fpath + " already exists.", 1000);
+        }
+      }
+      if (evt.target.className === 'saveSnippet') {
+        if (! await this.app.vault.exists(GLB.feeds_reader_dir)) {
+          await this.app.vault.createFolder(GLB.feeds_reader_dir);
+        }
+
+        var idx = this.getNumFromId(evt.target.id, 'saveSnippet');
+        const the_item = GLB.feedsStore[GLB.currentFeed].items[idx];
+        const fpath: string = GLB.feeds_reader_dir + '/' + GLB.saved_snippets_fname;
+        const link_text = sanitizeHTMLToDom(the_item.link).textContent;
+        var author_text = the_item.creator.trim();
+        if (author_text !== '') {
+          author_text = '\n<small>' + author_text + '</small>';
+        }
+        var dt_str: string = nowdatetime();
+        if (the_item.pubDate != '') {
+          dt_str = the_item.pubDate;
+        } else if (GLB.feedsStore[GLB.currentFeed].pubDate != '') {
+          dt_str = GLB.feedsStore[GLB.currentFeed].pubDate;
+        }
+        if (dt_str !== '') {
+          dt_str = '\n<small>' + dt_str + '</small>';
+        }
+        var feedNameStr = GLB.currentFeedName;
+        if (feedNameStr !== '') {
+          feedNameStr = '\n<small>' + feedNameStr + '</small>';
+        }
+        const snippet_content: string = (
+            '\n> [!abstract]+ [' +
+            the_item.title.trim().replace(/(<([^>]+)>)/gi, " ").replace(/\n/g, " ") +
+            '](' + link_text + ')\n> ' +
+            unEscape(handle_tags(handle_a_tag(handle_img_tag(the_item.content.replace(/\n/g, ' '))))
+            .replace(/ +/g, ' ')
+            .replace(/\s+$/g, '').replace(/^\s+/g, '')) +
+            author_text + dt_str + feedNameStr);
+        if (! await this.app.vault.exists(fpath)) {
+          await this.app.vault.create(fpath, snippet_content);
+          new Notice(fpath + " saved.", 1000);
+        } else {
+          const prevContent: string = (await this.app.vault.adapter.read(fpath));
+          if (prevContent.includes(link_text)) {
+            new Notice("Snippet url already exists.", 1000);
+          } else {
+            await this.app.vault.adapter.append(fpath, '\n\n<hr>\n\n' + snippet_content);
+            new Notice("Snippet saved to " + fpath + ".", 1000);
+          }
         }
       }
       if (evt.target.className === 'toggleRead') {
@@ -357,6 +408,7 @@ export default class FeedsReader extends Plugin {
     GLB.feeds_reader_dir = 'feeds-reader';
     GLB.feeds_data_fname = 'feeds-data.json';
     GLB.feeds_store_base = 'feeds-store';
+    GLB.saved_snippets_fname = 'snippets.md';
     GLB.subscriptions_fname = 'subscriptions.json';
     GLB.showAll = false;
     GLB.titleOnly = true;
@@ -528,18 +580,18 @@ class AddFeedModal extends Modal {
     var tr = form.createEl('tr');
     tr.createEl('td', {text: "Name"});
     var tdnewFeedName = tr.createEl('td').createEl('input');
-    tdnewFeedName.className = 'addFeedInput'
+    tdnewFeedName.className = 'addFeedInput';
     tdnewFeedName.id = 'newFeedName';
     tr = form.createEl('tr');
     tr.createEl('td', {text: "URL"});
     var tdnewFeedUrl = tr.createEl('td').createEl('input');
-    tdnewFeedUrl.className = 'addFeedInput'
+    tdnewFeedUrl.className = 'addFeedInput';
     tdnewFeedUrl.id = 'newFeedUrl';
     tr = form.createEl('tr');
     tr.createEl('td', {text: "Folder"});
     var tdnewFeedFolder = tr.createEl('td').createEl('input');
     tdnewFeedFolder.id = 'newFeedFolder';
-    tdnewFeedFolder.className = 'addFeedInput'
+    tdnewFeedFolder.className = 'addFeedInput';
     tr = form.createEl('tr');
     var saveButton = tr.createEl('td').createEl('button', {text: "Save"});
     saveButton.addEventListener("click", async () => {
@@ -823,61 +875,61 @@ class ManageFeedsModal extends Modal {
 }
 
 
-class SampleSettingTab extends PluginSettingTab {
-	plugin: FeedsReader;
-
-	constructor(app: App, plugin: FeedsReader) {
-		super(app, plugin);
-		this.plugin = plugin;
-	}
-
-	display(): void {
-		const {containerEl} = this;
-
-		containerEl.empty();
-
-		containerEl.createEl('h2', {text: 'Settings for RSS Feed Reader.'});
-
-		new Setting(containerEl)
-			.setName('Folder name')
-			.setDesc('This is the folder in the vault where to save the feeds data.')
-			.addText(text => text
-				.setPlaceholder('feeds-reader')
-				.setValue(this.plugin.settings.feeds_reader_dir)
-				.onChange(async (value) => {
-					this.plugin.settings.feeds_reader_dir = value;
-					await this.plugin.saveSettings();
-				}));
-		new Setting(containerEl)
-			.setName('Subscription file name')
-			.setDesc('This is the file name for the subscriptions.')
-			.addText(text => text
-				.setPlaceholder('subscriptions.json')
-				.setValue(this.plugin.settings.subscriptions_fname)
-				.onChange(async (value) => {
-					this.plugin.settings.subscriptions_fname = value;
-					await this.plugin.saveSettings();
-				}));
-		new Setting(containerEl)
-			.setName('Feeds data file name')
-			.setDesc('This is the file name for the feeds items.')
-			.addText(text => text
-				.setPlaceholder('feeds-data.json')
-				.setValue(this.plugin.settings.feeds_data_fname)
-				.onChange(async (value) => {
-					this.plugin.settings.feeds_data_fname = value;
-					await this.plugin.saveSettings();
-				}));
-		new Setting(containerEl)
-			.setName('Show all by default')
-			.setDesc('Show all items or only unread items.')
-			.addToggle(cb => cb
-        .setValue(this.plugin.settings.showAll)
-        .onChange(async (val) => {
-        this.plugin.settings.showAll = val;
-        await this.plugin.saveSettings();}));
-	}
-}
+// class FeedReaderSettingTab extends PluginSettingTab {
+// 	plugin: FeedsReader;
+// 
+// 	constructor(app: App, plugin: FeedsReader) {
+// 		super(app, plugin);
+// 		this.plugin = plugin;
+// 	}
+// 
+// 	display(): void {
+// 		const {containerEl} = this;
+// 
+// 		containerEl.empty();
+// 
+// 		containerEl.createEl('h2', {text: 'Settings for RSS Feed Reader.'});
+// 
+// 		new Setting(containerEl)
+// 			.setName('Folder name')
+// 			.setDesc('This is the folder in the vault where to save the feeds data.')
+// 			.addText(text => text
+// 				.setPlaceholder('feeds-reader')
+// 				.setValue(this.plugin.settings.feeds_reader_dir)
+// 				.onChange(async (value) => {
+// 					this.plugin.settings.feeds_reader_dir = value;
+// 					await this.plugin.saveSettings();
+// 				}));
+// 		new Setting(containerEl)
+// 			.setName('Subscription file name')
+// 			.setDesc('This is the file name for the subscriptions.')
+// 			.addText(text => text
+// 				.setPlaceholder('subscriptions.json')
+// 				.setValue(this.plugin.settings.subscriptions_fname)
+// 				.onChange(async (value) => {
+// 					this.plugin.settings.subscriptions_fname = value;
+// 					await this.plugin.saveSettings();
+// 				}));
+// 		new Setting(containerEl)
+// 			.setName('Feeds data file name')
+// 			.setDesc('This is the file name for the feeds items.')
+// 			.addText(text => text
+// 				.setPlaceholder('feeds-data.json')
+// 				.setValue(this.plugin.settings.feeds_data_fname)
+// 				.onChange(async (value) => {
+// 					this.plugin.settings.feeds_data_fname = value;
+// 					await this.plugin.saveSettings();
+// 				}));
+// 		new Setting(containerEl)
+// 			.setName('Show all by default')
+// 			.setDesc('Show all items or only unread items.')
+// 			.addToggle(cb => cb
+//         .setValue(this.plugin.settings.showAll)
+//         .onChange(async (val) => {
+//         this.plugin.settings.showAll = val;
+//         await this.plugin.saveSettings();}));
+// 	}
+// }
 
 export async function saveFeedsData () {
   var nSaved = 0;
@@ -1221,9 +1273,12 @@ async function show_feed() {
      const toggleRead = tr.createEl('td').createEl('div', {text: t_read});
      toggleRead.className = 'toggleRead';
      toggleRead.id = 'toggleRead' + idx;
-     const noteThis = tr.createEl('td').createEl('div', {text: "Save"});
+     const noteThis = tr.createEl('td').createEl('div', {text: "Markdown"});
      noteThis.className = 'noteThis';
      noteThis.id = 'noteThis' + idx;
+     const saveSnippet = tr.createEl('td').createEl('div', {text: "Snippet"});
+     saveSnippet.className = 'saveSnippet';
+     saveSnippet.id = 'saveSnippet' + idx;
      var t_delete = "Delete";
      if (item.deleted != '') {
        t_delete = 'Undelete';

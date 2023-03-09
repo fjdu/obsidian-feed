@@ -6,6 +6,7 @@ export namespace GLB {
   var feeds_data_fname: string;
   var feeds_store_base: string;
   var subscriptions_fname: string;
+  var saved_snippets_fname: string;
   var currentFeed: string;
   var currentFeedName: string;
   var elUnreadCount, elTotalCount, elSepUnreadTotal;
