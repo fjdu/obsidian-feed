@@ -22,8 +22,8 @@ This plugin is mostly built for my own use.  Online services are good, but it is
 - All the subscribed sources are listed under their respective folders.
 - The number of unread and total items are displayed after the feed name.
 - To retrieve new items, click on the `unread/total` number.
-- For each displayed item, you can click `Read` to mark it as read, `Markdown` to create a standalone `.md` note for it, `Snippet` to append the content to a `snippets` file, and `Delete` to mark it as deleted.  All these must be done manually (instead of automatically by the plugin itself).  Click on the title to show the item content (if `Title only` is set), or to open the link (if `Show content is set`).
-  - If you would like to add notes to an item, you have to first use `Save` to create the `.md` file, then edit that file directly.
+- For each displayed item, you can click `Read` to mark it as read, `Markdown` to create a standalone `.md` note for it, `Snippet` to append the content to a `snippets` file, and `Delete` to mark it as deleted.  All these must be done manually (instead of automatically by the plugin itself).  Click on the title to show the item content (if `Title only` is set), or to open the link (if `Show content` is set).
+  - If you would like to add notes to an item, you need to edit the created `.md` file for it, or edit the `snippets.md` file containing it.
 - The items are paginated with 100 items per page.
 - The feeds data are saved as fragmented `.json` files.  They are intentionally fragmented so that when new items come, old files do not need to be updated (hence do not need to be synced).
 
