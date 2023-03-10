@@ -124,17 +124,19 @@ export default class FeedsReader extends Plugin {
       }
       if (evt.target.className === 'showItemContent') {
         var idx = evt.target.getAttribute('_idx');
-        if (evt.target.innerText === '>>> >>>') {
+        if (evt.target.getAttribute('showContent') === '0') {
           var elID = evt.target.getAttribute('_link');
           var item = GLB.feedsStore[GLB.currentFeed].items[idx];
           var elContent = document.getElementById(elID).createEl('div');
           elContent.className = 'itemContent';
+          elContent.createEl('span').createEl('a', {href: sanitizeHTMLToDom(item.link).textContent, text: "Link"});
           elContent.appendChild(sanitizeHTMLToDom(item.content.replace(/<img src="\/\//g,"<img src=\"https://")));
+          elContent.createEl('hr');
           elContent.id = 'toggleContent' + idx;
-          evt.target.innerText = '<<< <<<';
+          evt.target.setAttribute('showContent', '1');
         } else {
           document.getElementById('toggleContent' + idx).remove();
-          evt.target.innerText = '>>> >>>';
+          evt.target.setAttribute('showContent', '0');
         }
       }
       if (evt.target.className === 'noteThis') {
@@ -1229,7 +1231,7 @@ async function show_feed() {
    const feed_content = document.getElementById('feed_content');
    feed_content.empty();
 
-   const feedTitle = feed_content.createEl('h1');
+   const feedTitle = feed_content.createEl('h2');
    feedTitle.className = 'feedTitle';
 
    if (!GLB.feedsStore.hasOwnProperty(GLB.currentFeed)) {
@@ -1240,6 +1242,7 @@ async function show_feed() {
    if (fd.pubDate != '') {
      feed_content.createEl('div', {text: fd.pubDate});
    }
+   feed_content.createEl('div').className = 'divAsSep';
    var nDisplayed = 0;
    for (var i=GLB.idxItemStart;
         i<Math.min(GLB.displayIndices.length, GLB.idxItemStart+GLB.nItemPerPage);
@@ -1249,11 +1252,19 @@ async function show_feed() {
      const itemEl = feed_content.createEl('div');
      itemEl.className = 'oneFeedItem';
      itemEl.id = item.link;
-     itemEl.createEl('hr');
      const itemTitle = itemEl.createEl('div');
      itemTitle.className = 'itemTitle';
-     itemTitle.createEl('a', {href: sanitizeHTMLToDom(item.link).textContent})
-              .appendChild(sanitizeHTMLToDom(item.title));
+     if (!GLB.titleOnly) {
+       itemTitle.createEl('a', {href: sanitizeHTMLToDom(item.link).textContent})
+                .appendChild(sanitizeHTMLToDom(item.title));
+     } else {
+       const elTitle = itemTitle.createEl('div');
+       elTitle.appendChild(sanitizeHTMLToDom(item.title));
+       elTitle.className = 'showItemContent';
+       elTitle.setAttribute('_link', item.link);
+       elTitle.setAttribute('_idx', idx);
+       elTitle.setAttribute('showContent', '0');
+     }
      const elCreator = itemEl.createEl('div');
      elCreator.className = 'itemCreator';
      elCreator.appendChild(sanitizeHTMLToDom(item.creator));
@@ -1290,24 +1301,18 @@ async function show_feed() {
        const elContent = itemEl.createEl('div');
        elContent.className = 'itemContent';
        elContent.appendChild(sanitizeHTMLToDom(item.content.replace(/<img src="\/\//g,"<img src=\"https://")));
-     } else {
-       const showItemContent = itemEl.createEl('div', {text: '>>> >>>'});
-       showItemContent.className = 'showItemContent';
-       showItemContent.setAttribute('_link', item.link);
-       showItemContent.setAttribute('_idx', idx);
+       elContent.createEl('hr');
      }
      nDisplayed += 1;
    }
-   feed_content.createEl('hr');
    const next_prev = feed_content.createEl('div');
+   next_prev.className = 'next_prev';
    if (GLB.nPage > 1) {
      const prevPage = next_prev.createEl('span', {text: "Prev"});
-     prevPage.className = "next_prev";
      prevPage.id = "prevPage";
    }
    if (GLB.idxItemStart+GLB.nItemPerPage < GLB.displayIndices.length) {
      const nextPage = next_prev.createEl('span', {text: "Next"});
-     nextPage.className = "next_prev";
      nextPage.id = "nextPage";
    }
    var stats = getFeedStats(GLB.currentFeed);
