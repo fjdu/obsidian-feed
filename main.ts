@@ -621,8 +621,8 @@ class AddFeedModal extends Modal {
         unread: 0,
         updated: 0
       });
-      await saveSubscriptions();
       sort_feed_list();
+      await saveSubscriptions();
       await createFeedBar();
     });
 	}
@@ -657,6 +657,7 @@ class ManageFeedsModal extends Modal {
     const btRemoveFeed = actions.createEl('button', {text: 'Remove feed'});
 
     btApplyChanges.addEventListener('click', async () => {
+      var changed = false;
       for (var i=0; i<GLB.feedList.length; i++) {
         var newName = document.getElementById('manageFdName' + i.toString()).value;
         var newUrl = document.getElementById('manageFdUrl' + i.toString()).value;
@@ -673,6 +674,7 @@ class ManageFeedsModal extends Modal {
         }
         if (sMsg !== '') {
           if (window.confirm("Apply changes for " + GLB.feedList[i].name + '?\n' + sMsg)) {
+            changed = true;
             if (GLB.feedList[i].name != newName) {
               var alreadyIncluded = false;
               for (var j=0; j<GLB.feedList.length; j++) {
@@ -721,11 +723,13 @@ class ManageFeedsModal extends Modal {
             if (GLB.feedList[i].folder != newFolder) {
               GLB.feedList[i].folder = newFolder;
             }
-            await saveSubscriptions();
-            sort_feed_list();
-            await createFeedBar();
           }
         }
+      }
+      if (changed) {
+        sort_feed_list();
+        await saveSubscriptions();
+        await createFeedBar();
       }
     });
     btMarkAllRead.addEventListener('click', () => {
