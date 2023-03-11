@@ -163,6 +163,13 @@ table.manageFeedsForm, table.manageFeedsForm :is(tbody, tr, th, td) {
   text-decoration: none;
 }
 
+.oneFeedItem {
+  display: block;
+  width: 100%;
+  margin-top: 0.5em;
+  margin-bottom: 0.5em;
+}
+
 .oneFeedItem a {
   text-decoration: none;
 }
@@ -177,6 +184,7 @@ table.manageFeedsForm, table.manageFeedsForm :is(tbody, tr, th, td) {
 
 .itemTitle {
   font-weight: bold;
+  color: var(--link-color);
 }
 
 .elPubDate {
@@ -196,18 +204,14 @@ table.manageFeedsForm, table.manageFeedsForm :is(tbody, tr, th, td) {
 }
 
 .itemContent, .itemTitle {
-  margin-top: 1em;
+  margin-top: 0;
   margin-bottom: 0;
 }
 
 .showItemContent {
   display: block;
   width: 100%;
-}
-
-.showItemContent:hover {
   cursor: default;
-  opacity: 0.8;
 }
 
 .divAsSep {
@@ -217,6 +221,8 @@ table.manageFeedsForm, table.manageFeedsForm :is(tbody, tr, th, td) {
 
 .itemCreator {
   font-size: xx-small;
+  max-height: 3em;
+  overflow-y: auto;
 }
 
 .unreadCount {
@@ -269,9 +275,9 @@ input.addFeedInput, input.searchTerms {
   border: 0;
 }
 
-.next_prev {
+.next_prev, .next_prev span {
   font-weight: bold;
-  padding-right: 5px;
+  margin-right: 1em;
   margin-top: 1em;
 }
 
