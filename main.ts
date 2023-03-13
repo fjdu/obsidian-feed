@@ -129,15 +129,45 @@ export default class FeedsReader extends Plugin {
           var item = GLB.feedsStore[GLB.currentFeed].items[idx];
           var elContent = document.getElementById(elID).createEl('div');
           elContent.className = 'itemContent';
+          elContent.id = 'toggleContent' + idx;
+          var itemLink = sanitizeHTMLToDom(item.link).textContent;
+          const elEmbedButton = elContent.createEl('span', {text: "Embed"});
+          elEmbedButton.setAttribute('url', itemLink);
+          elEmbedButton.setAttribute('_idx', idx);
+          elEmbedButton.setAttribute('_link', elID);
+          elEmbedButton.className = 'elEmbedButton';
           elContent.createEl('span').createEl('a', {href: sanitizeHTMLToDom(item.link).textContent, text: "Link"});
           elContent.appendChild(sanitizeHTMLToDom(item.content.replace(/<img src="\/\//g,"<img src=\"https://")));
           elContent.createEl('hr');
-          elContent.id = 'toggleContent' + idx;
           evt.target.setAttribute('showContent', '1');
         } else {
-          document.getElementById('toggleContent' + idx).remove();
+          var elContent = document.getElementById('toggleContent' + idx);
+          if (elContent !== null) {
+            elContent.remove();
+          }
           evt.target.setAttribute('showContent', '0');
+          var elEmbed = document.getElementById('embeddedIframe' + idx);
+          if (elEmbed !== null) {
+            elEmbed.remove();
+          }
         }
+      }
+      if (evt.target.className === 'elEmbedButton') {
+        var idx = evt.target.getAttribute('_idx');
+        if (document.getElementById('embeddedIframe' + idx) !== null) {
+          return;
+        }
+        var elContent = document.getElementById('toggleContent' + idx);
+        if (elContent !== null) {
+          elContent.remove();
+        }
+        var elID = evt.target.getAttribute('_link');
+        const url = evt.target.getAttribute('url');
+        const elEmbed = document.getElementById(elID).createEl('div');
+        const elEmbedIfram = elEmbed.createEl('iframe');
+        elEmbed.id = 'embeddedIframe' + idx;
+        elEmbedIfram.src = url;
+        elEmbedIfram.className = 'embeddedIframe';
       }
       if (evt.target.className === 'noteThis') {
         if (! await this.app.vault.exists(GLB.feeds_reader_dir)) {
