@@ -197,9 +197,14 @@ export default class FeedsReader extends Plugin {
         if (author_text !== '') {
           author_text = '\n<small>' + author_text + '</small>';
         }
+        var shortNoteContent = '';
+        const elShortNote = document.getElementById('shortNote' + idx);
+        if (elShortNote !== null) {
+          shortNoteContent = elShortNote.value;
+        }
         if (! await this.app.vault.exists(fpath)) {
           await this.app.vault.create(fpath,
-            '\n> [!abstract]+ [' +
+            shortNoteContent + '\n> [!abstract]+ [' +
             the_item.title.trim().replace(/(<([^>]+)>)/gi, " ").replace(/\n/g, " ") +
             '](' + sanitizeHTMLToDom(the_item.link).textContent + ')\n> ' +
             unEscape(handle_tags(handle_a_tag(handle_img_tag(the_item.content.replace(/\n/g, ' '))))
@@ -224,6 +229,11 @@ export default class FeedsReader extends Plugin {
         const the_item = GLB.feedsStore[GLB.currentFeed].items[idx];
         const fpath: string = GLB.feeds_reader_dir + '/' + GLB.saved_snippets_fname;
         const link_text = sanitizeHTMLToDom(the_item.link).textContent;
+        var shortNoteContent = '';
+        const elShortNote = document.getElementById('shortNote' + idx);
+        if (elShortNote !== null) {
+          shortNoteContent = elShortNote.value;
+        }
         var author_text = the_item.creator.trim();
         if (author_text !== '') {
           author_text = '\n<small>' + author_text + '</small>';
@@ -242,7 +252,7 @@ export default class FeedsReader extends Plugin {
           feedNameStr = '\n<small>' + feedNameStr + '</small>';
         }
         const snippet_content: string = (
-            '\n> [!abstract]+ [' +
+            shortNoteContent + '\n> [!abstract]+ [' +
             the_item.title.trim().replace(/(<([^>]+)>)/gi, " ").replace(/\n/g, " ") +
             '](' + link_text + ')\n> ' +
             unEscape(handle_tags(handle_a_tag(handle_img_tag(the_item.content.replace(/\n/g, ' '))))
@@ -1331,6 +1341,11 @@ async function show_feed() {
      const toggleDelete = tr.createEl('td').createEl('div', {text: t_delete});
      toggleDelete.className = 'toggleDelete';
      toggleDelete.id = 'toggleDelete' + idx;
+     const shortNote = itemEl.createEl('div').createEl('textarea');
+     shortNote.className = 'shortNote';
+     shortNote.id = 'shortNote' + idx;
+     shortNote.rows = 2;
+     shortNote.placeholder = 'Enter notes here to be saved in the markdown or the snippets file.';
      if (!GLB.titleOnly) {
        const elContent = itemEl.createEl('div');
        elContent.className = 'itemContent';

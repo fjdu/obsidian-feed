@@ -219,6 +219,10 @@ table.manageFeedsForm, table.manageFeedsForm :is(tbody, tr, th, td) {
   color: #f15500;
 }
 
+.shortNote {
+  width: 100%;
+}
+
 .itemContent, .itemTitle {
   margin-top: 0;
   margin-bottom: 0;
