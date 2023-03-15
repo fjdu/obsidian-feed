@@ -203,9 +203,13 @@ export default class FeedsReader extends Plugin {
         if (elShortNote !== null) {
           shortNoteContent = elShortNote.value;
         }
+        var abstractOpen = '+';
+        if (shortNoteContent !== '') {
+          abstractOpen = '-';
+        }
         if (! await this.app.vault.exists(fpath)) {
           await this.app.vault.create(fpath,
-            shortNoteContent + '\n> [!abstract]+ [' +
+            shortNoteContent + '\n> [!abstract]' + abstractOpen + ' [' +
             the_item.title.trim().replace(/(<([^>]+)>)/gi, " ").replace(/\n/g, " ") +
             '](' + sanitizeHTMLToDom(the_item.link).textContent + ')\n> ' +
             unEscape(handle_tags(handle_a_tag(handle_img_tag(the_item.content.replace(/\n/g, ' '))))
@@ -235,6 +239,10 @@ export default class FeedsReader extends Plugin {
         if (elShortNote !== null) {
           shortNoteContent = elShortNote.value;
         }
+        var abstractOpen = '+';
+        if (shortNoteContent !== '') {
+          abstractOpen = '-';
+        }
         var author_text = the_item.creator.trim();
         if (author_text !== '') {
           author_text = '\n<small>' + author_text + '</small>';
@@ -253,7 +261,7 @@ export default class FeedsReader extends Plugin {
           feedNameStr = '\n<small>' + feedNameStr + '</small>';
         }
         const snippet_content: string = (
-            shortNoteContent + '\n> [!abstract]+ [' +
+            shortNoteContent + '\n> [!abstract]' + abstractOpen + ' [' +
             the_item.title.trim().replace(/(<([^>]+)>)/gi, " ").replace(/\n/g, " ") +
             '](' + link_text + ')\n> ' +
             unEscape(handle_tags(handle_a_tag(handle_img_tag(the_item.content.replace(/\n/g, ' '))))
@@ -273,6 +281,84 @@ export default class FeedsReader extends Plugin {
           }
         }
       }
+      if ((evt.target.className === 'markPageRead') ||
+          (evt.target.className === 'markPageDeleted')) {
+        if (!GLB.feedsStore.hasOwnProperty(GLB.currentFeed)) {
+          return;
+        }
+        var fd = GLB.feedsStore[GLB.currentFeed];
+        const nowStr = nowdatetime();
+        var changed = false;
+        var nMarked = 0;
+
+        for (var i=GLB.idxItemStart;
+             i<Math.min(GLB.displayIndices.length, GLB.idxItemStart+GLB.nItemPerPage);
+             i++) {
+          const idx = GLB.displayIndices[i];
+          const item = fd.items[idx];
+          if ((item.read !== '') || (item.deleted !== '')) {
+            continue;
+          }
+          changed = true;
+          nMarked += 1;
+          if (evt.target.className === 'markPageRead') {
+            item.read = nowStr;
+            const elToggleRead = document.getElementById('toggleRead' + idx);
+            elToggleRead.innerText = 'Unread';
+          } else {
+            item.deleted = nowStr;
+            const elToggleDeleted = document.getElementById('toggleDelete' + idx);
+            elToggleDeleted.innerText = 'Undelete';
+          }
+
+          const idxOf = GLB.undoList.indexOf(idx);
+          if (idxOf > -1) {
+            GLB.undoList.splice(idxOf, 1);
+          }
+          GLB.undoList.unshift(idx);
+
+          GLB.hideThisItem = true;
+          if ((!GLB.showAll) && GLB.hideThisItem) {
+            document.getElementById(item.link).className = 'hidedItem';
+          }
+        }
+        if (changed) {
+          GLB.feedsStoreChange = true;
+          GLB.feedsStoreChangeList.add(GLB.currentFeed);
+          GLB.elUnreadCount.innerText = parseInt(GLB.elUnreadCount.innerText) - nMarked;
+          if (!GLB.showAll) {
+            [...document.getElementsByClassName('pageActions')].forEach(el => {el.remove();});
+          }
+        }
+      }
+      if (evt.target.className === 'removePageContent') {
+        if (!GLB.feedsStore.hasOwnProperty(GLB.currentFeed)) {
+          return;
+        }
+        var fd = GLB.feedsStore[GLB.currentFeed];
+        var changed = false;
+        var nMarked = 0;
+
+        for (var i=GLB.idxItemStart;
+             i<Math.min(GLB.displayIndices.length, GLB.idxItemStart+GLB.nItemPerPage);
+             i++) {
+          const idx = GLB.displayIndices[i];
+          const item = fd.items[idx];
+          if (item.read !== '') {
+            continue;
+          }
+          changed = true;
+          nMarked += 1;
+          item.content = '';
+          item.creator = '';
+        }
+        if (changed) {
+          GLB.feedsStoreChange = true;
+          GLB.feedsStoreChangeList.add(GLB.currentFeed);
+          show_feed();
+        }
+      }
+
       if (evt.target.className === 'toggleRead') {
         var idx = this.getNumFromId(evt.target.id, 'toggleRead');
         GLB.feedsStoreChange = true;
@@ -1309,12 +1395,21 @@ async function show_feed() {
    }
    feed_content.createEl('div').className = 'divAsSep';
 
+   const elPageAction = feed_content.createEl('div');
+   elPageAction.className = 'pageActions';
+   const markPageRead = elPageAction.createEl('span', {text: 'Mark all as read'});
+   markPageRead.className = 'markPageRead';
+   const markPageDeleted = elPageAction.createEl('span', {text: 'Mark all as deleted'});
+   markPageDeleted.className = 'markPageDeleted';
+   const removePageContent = elPageAction.createEl('span', {text: 'Remove all content'});
+   removePageContent.className = 'removePageContent';
+
    var nDisplayed = 0;
    for (var i=GLB.idxItemStart;
         i<Math.min(GLB.displayIndices.length, GLB.idxItemStart+GLB.nItemPerPage);
         i++) {
-     idx = GLB.displayIndices[i];
-     item = fd.items[idx];
+     const idx = GLB.displayIndices[i];
+     const item = fd.items[idx];
      const itemEl = feed_content.createEl('div');
      itemEl.className = 'oneFeedItem';
      itemEl.id = item.link;
@@ -1359,7 +1454,7 @@ async function show_feed() {
      noteThis.id = 'noteThis' + idx;
 
      var t_read = "Read";
-     if (item.read != '') {
+     if (item.read !== '') {
        t_read = 'Unread';
      }
      const toggleRead = tr.createEl('td').createEl('div', {text: t_read});
@@ -1367,7 +1462,7 @@ async function show_feed() {
      toggleRead.id = 'toggleRead' + idx;
 
      var t_delete = "Delete";
-     if (item.deleted != '') {
+     if (item.deleted !== '') {
        t_delete = 'Undelete';
      }
      const toggleDelete = tr.createEl('td').createEl('div', {text: t_delete});
@@ -1382,6 +1477,14 @@ async function show_feed() {
      }
      nDisplayed += 1;
    }
+
+   if (nDisplayed == 0) {
+     elPageAction.remove();
+   }
+   if (nDisplayed > 10) {
+     feed_content.appendChild(elPageAction.cloneNode(true));
+   }
+
    const next_prev = feed_content.createEl('div');
    next_prev.className = 'next_prev';
    if (GLB.nPage > 1) {

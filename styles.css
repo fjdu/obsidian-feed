@@ -144,6 +144,10 @@ table.manageFeedsForm, table.manageFeedsForm :is(tbody, tr, th, td) {
   cursor: pointer;
 }
 
+.pageActions span {
+  margin-right: 1em;
+}
+
 .itemActions td {
   border: none;
   padding: 0 0.5mm 0 0;
@@ -197,6 +201,12 @@ table.manageFeedsForm, table.manageFeedsForm :is(tbody, tr, th, td) {
   margin: 1em 0;
 }
 
+.activeItem {
+  border: 1px solid;
+  border-radius: 6px;
+  padding: 2px 4px;
+}
+
 .refreshFeed:hover {
   color: #f15500;
 }
@@ -210,14 +220,14 @@ table.manageFeedsForm, table.manageFeedsForm :is(tbody, tr, th, td) {
   font-size: xx-small;
 }
 
-.toggleRead, .noteThis, .saveSnippet, .toggleDelete, .jotNotes {
+.markPageRead, .markPageDeleted, .removePageContent, .toggleRead, .noteThis, .saveSnippet, .toggleDelete, .jotNotes {
   font-size: x-small;
   border: 1px solid;
   border-radius: 6px;
   padding: 2px 4px;
 }
 
-.toggleRead:hover, .noteThis:hover, .saveSnippet:hover, .toggleDelete:hover, .jotNotes:hover {
+.markPageRead:hover, .markPageDeleted:hover, .removePageContent:hover, .toggleRead:hover, .noteThis:hover, .saveSnippet:hover, .toggleDelete:hover, .jotNotes:hover {
   color: #f15500;
 }
 
