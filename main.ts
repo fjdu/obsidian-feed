@@ -146,15 +146,15 @@ export default class FeedsReader extends Plugin {
             elContent.remove();
           }
           evt.target.setAttribute('showContent', '0');
-          var elEmbed = document.getElementById('embeddedIframe' + idx);
-          if (elEmbed !== null) {
-            elEmbed.remove();
+          var elEmbedContainer = document.getElementById('embeddedContainer' + idx);
+          if (elEmbedContainer !== null) {
+            elEmbedContainer.remove();
           }
         }
       }
       if (evt.target.className === 'elEmbedButton') {
         var idx = evt.target.getAttribute('_idx');
-        if (document.getElementById('embeddedIframe' + idx) !== null) {
+        if (document.getElementById('embeddedContainer' + idx) !== null) {
           return;
         }
         var elContent = document.getElementById('toggleContent' + idx);
@@ -163,11 +163,12 @@ export default class FeedsReader extends Plugin {
         }
         var elID = evt.target.getAttribute('_link');
         const url = evt.target.getAttribute('url');
-        const elEmbed = document.getElementById(elID).createEl('div');
-        const elEmbedIfram = elEmbed.createEl('iframe');
-        elEmbed.id = 'embeddedIframe' + idx;
-        elEmbedIfram.src = url;
-        elEmbedIfram.className = 'embeddedIframe';
+        const elEmbedContainer = document.getElementById(elID).createEl('div');
+        elEmbedContainer.className = 'embeddedContainer';
+        elEmbedContainer.id = 'embeddedContainer' + idx;
+        const elEmbedIframe = elEmbedContainer.createEl('iframe');
+        elEmbedIframe.src = url;
+        elEmbedIframe.className = 'embeddedIframe';
       }
       if (evt.target.className === 'noteThis') {
         if (! await this.app.vault.exists(GLB.feeds_reader_dir)) {
@@ -331,6 +332,26 @@ export default class FeedsReader extends Plugin {
           document.getElementById(
             GLB.feedsStore[GLB.currentFeed].items[idx].link ).className = 'hidedItem';
         }
+      }
+
+      if (evt.target.className === 'jotNotes') {
+        var idx = this.getNumFromId(evt.target.id, 'jotNotes');
+        const el = document.getElementById('shortNoteContainer' + idx);
+        if (el !== null) {
+          el.remove();
+          return;
+        }
+        const elActionContainer = document.getElementById('actionContainer' + idx);
+        if (elActionContainer === null) {
+          return;
+        }
+        const shortNoteContainer = elActionContainer.createEl('div');
+        const shortNote = shortNoteContainer.createEl('textarea');
+        shortNoteContainer.id = 'shortNoteContainer' + idx;
+        shortNote.className = 'shortNote';
+        shortNote.id = 'shortNote' + idx;
+        shortNote.rows = 2;
+        shortNote.placeholder = 'Enter notes here to be saved in the markdown or the snippets file.';
       }
 
       if (evt.target.id === 'showAll') {
@@ -1287,6 +1308,7 @@ async function show_feed() {
      feed_content.createEl('div', {text: fd.pubDate});
    }
    feed_content.createEl('div').className = 'divAsSep';
+
    var nDisplayed = 0;
    for (var i=GLB.idxItemStart;
         i<Math.min(GLB.displayIndices.length, GLB.idxItemStart+GLB.nItemPerPage);
@@ -1319,8 +1341,23 @@ async function show_feed() {
        elPubDate = itemEl.createEl('div', {text: item.downloaded});
      }
      elPubDate.className = 'elPubDate';
-     let tr = itemEl.createEl('table').createEl('tr');
+     const elActionContainer = itemEl.createEl('div');
+     elActionContainer.id = 'actionContainer' + idx;
+     let tr = elActionContainer.createEl('table').createEl('tr');
      tr.className = 'itemActions';
+
+     const jot = tr.createEl('td').createEl('div', {text: 'Jot'});
+     jot.className = 'jotNotes';
+     jot.id = 'jotNotes' + idx;
+
+     const saveSnippet = tr.createEl('td').createEl('div', {text: "Snippet"});
+     saveSnippet.className = 'saveSnippet';
+     saveSnippet.id = 'saveSnippet' + idx;
+
+     const noteThis = tr.createEl('td').createEl('div', {text: "Markdown"});
+     noteThis.className = 'noteThis';
+     noteThis.id = 'noteThis' + idx;
+
      var t_read = "Read";
      if (item.read != '') {
        t_read = 'Unread';
@@ -1328,12 +1365,7 @@ async function show_feed() {
      const toggleRead = tr.createEl('td').createEl('div', {text: t_read});
      toggleRead.className = 'toggleRead';
      toggleRead.id = 'toggleRead' + idx;
-     const noteThis = tr.createEl('td').createEl('div', {text: "Markdown"});
-     noteThis.className = 'noteThis';
-     noteThis.id = 'noteThis' + idx;
-     const saveSnippet = tr.createEl('td').createEl('div', {text: "Snippet"});
-     saveSnippet.className = 'saveSnippet';
-     saveSnippet.id = 'saveSnippet' + idx;
+
      var t_delete = "Delete";
      if (item.deleted != '') {
        t_delete = 'Undelete';
@@ -1341,11 +1373,7 @@ async function show_feed() {
      const toggleDelete = tr.createEl('td').createEl('div', {text: t_delete});
      toggleDelete.className = 'toggleDelete';
      toggleDelete.id = 'toggleDelete' + idx;
-     const shortNote = itemEl.createEl('div').createEl('textarea');
-     shortNote.className = 'shortNote';
-     shortNote.id = 'shortNote' + idx;
-     shortNote.rows = 2;
-     shortNote.placeholder = 'Enter notes here to be saved in the markdown or the snippets file.';
+
      if (!GLB.titleOnly) {
        const elContent = itemEl.createEl('div');
        elContent.className = 'itemContent';
