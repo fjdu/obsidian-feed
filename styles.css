@@ -84,32 +84,29 @@ td.showFeed {
   top: 2.3em;
   left: 1.5mm;
   z-index: 2;
-  font-size: large;
+  font-size: medium;
   font-weight: bold;
 }
 
+#toggleNavi, .save_data_toggling, .unreadcountWhileToggling {
+  border: 1px solid;
+  border-radius: 6px;
+  padding: 0.1em 0.2em;
+  margin-right: 0.2em;
+}
+
+#toggleNavi {
+  padding-right: 1em;
+}
+
 .toggleNaviContainerExpanded {
-  background-color: #bc90a1;
   opacity: 0.7
 }
 
 .toggleNaviContainerFolded {
 }
 
-.toggleNavi {
-  padding-right: 1em;
-}
-
-.toggleNavi:hover {
-  color: #f15500;
-}
-
-.toggleNaviAux .save_data_toggling {
-  font-size: medium;
-  padding-left: 2mm;
-}
-
-.save_data_toggling:hover {
+.toggleNavi:hover, .save_data_toggling:hover {
   color: #f15500;
 }
 
@@ -220,14 +217,14 @@ table.manageFeedsForm, table.manageFeedsForm :is(tbody, tr, th, td) {
   font-size: xx-small;
 }
 
-.markPageRead, .markPageDeleted, .removePageContent, .toggleRead, .noteThis, .saveSnippet, .toggleDelete, .jotNotes {
+.markPageRead, .markPageDeleted, .removePageContent, .toggleRead, .noteThis, .renderMath, .saveSnippet, .toggleDelete, .jotNotes {
   font-size: x-small;
   border: 1px solid;
   border-radius: 6px;
   padding: 2px 4px;
 }
 
-.markPageRead:hover, .markPageDeleted:hover, .removePageContent:hover, .toggleRead:hover, .noteThis:hover, .saveSnippet:hover, .toggleDelete:hover, .jotNotes:hover {
+.markPageRead:hover, .markPageDeleted:hover, .removePageContent:hover, .toggleRead:hover, .noteThis:hover, .renderMath:hover, .saveSnippet:hover, .toggleDelete:hover, .jotNotes:hover {
   color: #f15500;
 }
 

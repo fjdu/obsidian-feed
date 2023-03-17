@@ -140,21 +140,6 @@ function getContent(element: Element | Document, names: string[]): string {
             const data = getElementByName(element, name);
             if (data) {
                 value = getElPossibleText(data).reduce((a, b) => {return a.length > b.length ? a : b;});
-                // //@ts-ignore
-                // if(data.innerHTML && data.innerHTML.length > 0) {
-                //     //@ts-ignore
-                //     value = data.innerHTML;
-                // }
-
-                // //@ts-ignore
-                // if (!value && data.nodeValue && data.nodeValue.length > 0) {
-                //     value = data.nodeValue;
-                // }
-                // //@ts-ignore
-                // if (!value && data.wholeText && data.wholeText.length > 0) {
-                //     //@ts-ignore
-                //     value = data.wholeText;
-                // }
             }
         }
         if (value === undefined) {
@@ -167,13 +152,13 @@ function getContent(element: Element | Document, names: string[]): string {
 
 function buildItem(element: Element): RssFeedItem {
     return {
-        title: getContent(element, ["title"]),
+        title: getContent(element, ["title", "rss:title"]),
         // description: getContent(element, ["content", "content:encoded", "itunes:summary", "description", "summary", "media:description"]),
-        content: getContent(element, ["itunes:summary", "description", "summary", "media:description", "ns0:encoded", "abstract", "content", "content:encoded"]),
+        content: getContent(element, ["itunes:summary", "description", "summary", "media:description", "ns0:encoded", "abstract", "content", "content:encoded", "rss:description"]),
         category: getContent(element, ["category"]),
-        link: getContent(element, ["link", "link#href"]),
+        link: getContent(element, ["link", "link#href", "rss:link"]),
         creator: getContent(element, ["creator", "dc:creator", "author", "author.name"]),
-        pubDate: getContent(element, ["pubDate", "published", "updated", "dc:date"]),
+        pubDate: getContent(element, ["pubDate", "published", "updated", "dc:date", "prism:publicationDate"]),
         read: null,
         deleted: null,
         downloaded: null
@@ -183,17 +168,19 @@ function buildItem(element: Element): RssFeedItem {
 function getAllItems(doc: Document): Element[] {
     const items: Element[] = [];
 
-    if (doc.getElementsByTagName("item")) {
-        for (const elementsByTagNameKey in doc.getElementsByTagName("item")) {
-            const entry = doc.getElementsByTagName("item")[elementsByTagNameKey];
+    var elItems = doc.getElementsByTagName("item");
+    if ((elItems === null) || (elItems.length ===0)) {
+      elItems = doc.getElementsByTagName("entry");
+    }
+    if ((elItems === null) || (elItems.length ===0)) {
+      elItems = doc.getElementsByTagNameNS("http://purl.org/rss/1.0/", "item");
+    }
+    console.log(elItems);
+    if (elItems) {
+        for (const elementsByTagNameKey in elItems) {
+            const entry = elItems[elementsByTagNameKey];
             items.push(entry);
 
-        }
-    }
-    if (doc.getElementsByTagName("entry")) {
-        for (const elementsByTagNameKey in doc.getElementsByTagName("entry")) {
-            const entry = doc.getElementsByTagName("entry")[elementsByTagNameKey];
-            items.push(entry);
         }
     }
     return items;
@@ -243,7 +230,7 @@ export async function getFeedItems(feedUrl: string): Promise<RssFeedContent> {
         title: getContent(data, ["title"]),
         subtitle: getContent(data, ["subtitle"]),
         link: getContent(data, ["link"]),
-        pubDate: getContent(data, ["pubDate", 'dc:date', 'published', 'updated']),
+        pubDate: getContent(data, ["pubDate", 'dc:date', 'published', 'updated', 'sy:updateBase']),
         //we don't want any leading or trailing slashes in image urls(i.e. reddit does that)
         image: image ? image.replace(/^\/|\/$/g, '') : null,
         description: getContent(data, ["description"]),

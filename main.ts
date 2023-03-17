@@ -1,4 +1,4 @@
-import { App, Editor, MarkdownView, Menu, Modal, Notice, addIcon, Plugin, PluginSettingTab, Setting, sanitizeHTMLToDom } from 'obsidian';
+import { App, MarkdownPreviewView, htmlToMarkdown, Modal, Notice, addIcon, Plugin, PluginSettingTab, Setting, sanitizeHTMLToDom } from 'obsidian';
 import { FRView, VIEW_TYPE_FEEDS_READER, createFeedBar, waitForElm } from "./view";
 import { getFeedItems, RssFeedContent, nowdatetime, itemKeys } from "./getFeed";
 import { GLB } from "./globals";
@@ -126,10 +126,15 @@ export default class FeedsReader extends Plugin {
         var idx = evt.target.getAttribute('_idx');
         if (evt.target.getAttribute('showContent') === '0') {
           var elID = evt.target.getAttribute('_link');
+          var elContent = document.getElementById('itemContent' + idx);
+          if (elContent !== null) {
+            elContent.empty();
+          } else {
+            elContent = document.getElementById(elID).createEl('div');
+            elContent.className = 'itemContent';
+            elContent.id = 'itemContent' + idx;
+          }
           var item = GLB.feedsStore[GLB.currentFeed].items[idx];
-          var elContent = document.getElementById(elID).createEl('div');
-          elContent.className = 'itemContent';
-          elContent.id = 'toggleContent' + idx;
           var itemLink = sanitizeHTMLToDom(item.link).textContent;
           const elEmbedButton = elContent.createEl('span', {text: "Embed"});
           elEmbedButton.setAttribute('url', itemLink);
@@ -141,7 +146,7 @@ export default class FeedsReader extends Plugin {
           elContent.createEl('hr');
           evt.target.setAttribute('showContent', '1');
         } else {
-          var elContent = document.getElementById('toggleContent' + idx);
+          var elContent = document.getElementById('itemContent' + idx);
           if (elContent !== null) {
             elContent.remove();
           }
@@ -157,18 +162,31 @@ export default class FeedsReader extends Plugin {
         if (document.getElementById('embeddedContainer' + idx) !== null) {
           return;
         }
-        var elContent = document.getElementById('toggleContent' + idx);
+        var elContent = document.getElementById('itemContent' + idx);
         if (elContent !== null) {
-          elContent.remove();
+          elContent.empty();
         }
         var elID = evt.target.getAttribute('_link');
         const url = evt.target.getAttribute('url');
-        const elEmbedContainer = document.getElementById(elID).createEl('div');
+        const elEmbedContainer = elContent.createEl('div');
         elEmbedContainer.className = 'embeddedContainer';
         elEmbedContainer.id = 'embeddedContainer' + idx;
         const elEmbedIframe = elEmbedContainer.createEl('iframe');
         elEmbedIframe.src = url;
         elEmbedIframe.className = 'embeddedIframe';
+      }
+      if (evt.target.className === 'renderMath') {
+        var idx = this.getNumFromId(evt.target.id, 'renderMath');
+        var elContent = document.getElementById('itemContent' + idx);
+        const item = GLB.feedsStore[GLB.currentFeed].items[idx];
+        const elID = item.link;
+        if (elContent !== null) {
+          elContent.empty();
+        } else {
+          elContent = document.getElementById(elID).createEl('div');
+          elContent.id = 'itemContent' + idx;
+        }
+        MarkdownPreviewView.renderMarkdown(htmlToMarkdown(item.content), elContent);
       }
       if (evt.target.className === 'noteThis') {
         if (! await this.app.vault.exists(GLB.feeds_reader_dir)) {
@@ -484,8 +502,10 @@ export default class FeedsReader extends Plugin {
         if (toggle.innerText === '>') {
           toggle.innerText = '<';
           var toggleNaviAux = document.getElementById('toggleNaviAux');
-          GLB.elUnreadCount = toggleNaviAux.createEl('span', {text: GLB.elUnreadCount.innerText});
-          var save_data_toggling = toggleNaviAux.createEl('span', {text: 'Save'});
+          const elUnreadcountWhileToggling = toggleNaviAux.createEl('span', {text: GLB.elUnreadCount.innerText});
+          elUnreadcountWhileToggling.className = 'unreadcountWhileToggling';
+          GLB.elUnreadCount = elUnreadcountWhileToggling;
+          var save_data_toggling = toggleNaviAux.createEl('span', {text: 'Save progress'});
           save_data_toggling.id = 'save_data_toggling';
           save_data_toggling.className = 'save_data_toggling';
           document.getElementById('naviBar').className = 'navigation naviBarHidden';
@@ -877,6 +897,7 @@ class ManageFeedsModal extends Modal {
         sort_feed_list();
         await saveSubscriptions();
         await createFeedBar();
+        this.close();
       }
     });
     btMarkAllRead.addEventListener('click', () => {
@@ -1449,10 +1470,6 @@ async function show_feed() {
      saveSnippet.className = 'saveSnippet';
      saveSnippet.id = 'saveSnippet' + idx;
 
-     const noteThis = tr.createEl('td').createEl('div', {text: "Markdown"});
-     noteThis.className = 'noteThis';
-     noteThis.id = 'noteThis' + idx;
-
      var t_read = "Read";
      if (item.read !== '') {
        t_read = 'Unread';
@@ -1460,6 +1477,14 @@ async function show_feed() {
      const toggleRead = tr.createEl('td').createEl('div', {text: t_read});
      toggleRead.className = 'toggleRead';
      toggleRead.id = 'toggleRead' + idx;
+
+     const noteThis = tr.createEl('td').createEl('div', {text: "Save"});
+     noteThis.className = 'noteThis';
+     noteThis.id = 'noteThis' + idx;
+
+     const renderMath = tr.createEl('td').createEl('div', {text: "Math"});
+     renderMath.className = 'renderMath';
+     renderMath.id = 'renderMath' + idx;
 
      var t_delete = "Delete";
      if (item.deleted !== '') {
@@ -1472,6 +1497,7 @@ async function show_feed() {
      if (!GLB.titleOnly) {
        const elContent = itemEl.createEl('div');
        elContent.className = 'itemContent';
+       elContent.id = 'itemContent' + idx;
        elContent.appendChild(sanitizeHTMLToDom(item.content.replace(/<img src="\/\//g,"<img src=\"https://")));
        elContent.createEl('hr');
      }
