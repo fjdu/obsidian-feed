@@ -510,7 +510,7 @@ export default class FeedsReader extends Plugin {
           save_data_toggling.className = 'save_data_toggling';
           document.getElementById('naviBar').className = 'navigation naviBarHidden';
           document.getElementById('contentBox').className = 'content contentBoxFullpage';
-          document.getElementById('toggleNaviContainer').className = 'toggleNaviContainer toggleNaviContainerExpanded';
+          document.getElementById('toggleNaviContainer').className = 'toggleNaviContainer';
         } else {
           toggle.innerText = '>';
           var s = GLB.elUnreadCount.innerText;
@@ -519,7 +519,7 @@ export default class FeedsReader extends Plugin {
           document.getElementById('toggleNaviAux').empty();
           document.getElementById('naviBar').className = 'navigation naviBarShown';
           document.getElementById('contentBox').className = 'content contentBoxRightpage';
-          document.getElementById('toggleNaviContainer').className = 'toggleNaviContainer toggleNaviContainerFolded';
+          document.getElementById('toggleNaviContainer').className = 'toggleNaviContainer';
         }
       }
       if (evt.target.id === 'search') {
@@ -1284,7 +1284,8 @@ function removeContent(feedUrl: string) {
 }
 
 function removeContentOld(feedUrl: string) {
-  var iDel = Math.floor(GLB.feedsStore[feedUrl].items.length / 2);
+  var iDel = Math.floor(GLB.feedsStore[feedUrl].items.length / 3);
+  iDel = Math.min(iDel, 200);
   for (var i=iDel; i<GLB.feedsStore[feedUrl].items.length; i++) {
     GLB.feedsStore[feedUrl].items[i].content = '';
     GLB.feedsStore[feedUrl].items[i].creator = '';

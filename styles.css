@@ -81,7 +81,7 @@ td.showFeed {
 
 .toggleNaviContainer {
   position:absolute;
-  top: 2.3em;
+  top: 2.5em;
   left: 1.5mm;
   z-index: 2;
   font-size: medium;
@@ -91,19 +91,14 @@ td.showFeed {
 #toggleNavi, .save_data_toggling, .unreadcountWhileToggling {
   border: 1px solid;
   border-radius: 6px;
-  padding: 0.1em 0.2em;
+  padding: 1px 0.2em;
   margin-right: 0.2em;
+  opacity: 0.6;
+  background-color: #777777;
 }
 
 #toggleNavi {
   padding-right: 1em;
-}
-
-.toggleNaviContainerExpanded {
-  opacity: 0.7
-}
-
-.toggleNaviContainerFolded {
 }
 
 .toggleNavi:hover, .save_data_toggling:hover {
