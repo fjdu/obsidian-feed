@@ -13,10 +13,6 @@ interface FeedsReaderSettings {
 }
 
 const DEFAULT_SETTINGS: FeedsReaderSettings = {
-	feeds_reader_dir: 'feeds-reader',
-  subscriptions_fname: 'subscriptions.json',
-  feeds_data_fname: 'feeds-data.json',
-  showAll: false
 }
 
 export default class FeedsReader extends Plugin {
@@ -57,7 +53,7 @@ export default class FeedsReader extends Plugin {
       // menu.showAtMouseEvent(evt);
 		});
 
-    // this.addSettingTab(new FeedReaderSettingTab(this.app, this));
+    this.addSettingTab(new FeedReaderSettingTab(this.app, this));
 
 		// If the plugin hooks up any global DOM events (on parts of the app that doesn't belong to this plugin)
 		// Using this function will automatically remove the event listener when this plugin is disabled.
@@ -187,6 +183,41 @@ export default class FeedsReader extends Plugin {
           elContent.id = 'itemContent' + idx;
         }
         MarkdownPreviewView.renderMarkdown(htmlToMarkdown(item.content), elContent);
+      }
+      if (evt.target.className === 'askChatGPT') {
+        var idx = this.getNumFromId(evt.target.id, 'askChatGPT');
+        const item = GLB.feedsStore[GLB.currentFeed].items[idx];
+        const elID = item.link;
+        const el = document.getElementById('shortNoteContainer' + idx);
+        if (el === null) {
+          const elActionContainer = document.getElementById('actionContainer' + idx);
+          if (elActionContainer === null) {
+            return;
+          }
+          const shortNoteContainer = elActionContainer.createEl('div');
+          shortNoteContainer.id = 'shortNoteContainer' + idx;
+          var shortNote = shortNoteContainer.createEl('textarea');
+          shortNote.className = 'shortNote';
+          shortNote.id = 'shortNote' + idx;
+          shortNote.rows = 2;
+          shortNote.placeholder = 'Waiting for ChatGPT to reply...';
+        }
+        var apiKey = this.settings.chatGPTAPIKey;
+        var promptText = this.settings.chatGPTPrompt;
+        try {
+          var replyByGPT = await fetchChatGPT(apiKey, 0.0,
+            promptText + '\n' + item.content);
+          replyByGPT = replyByGPT.trim();
+          if (replyByGPT !== '') {
+            var shortNote = doc.getElementById('shortNote' + idx);
+            var existingNote = shortNote.value;
+            if (existingNote !== '') {
+              existingNote = existingNote + '\n\n';
+            }
+            shortNote.value = existingNote + replyByGPT;
+          }
+        } catch (e) {
+        };
       }
       if (evt.target.className === 'noteThis') {
         if (! await this.app.vault.exists(GLB.feeds_reader_dir)) {
@@ -1027,7 +1058,6 @@ class ManageFeedsModal extends Modal {
         )(getCellValue(asc ? a : b, idx), getCellValue(asc ? b : a, idx)));
     
     const rowSelectorStr ='tr:nth-child(-n+' + (GLB.feedList.length).toString() + ')';
-    console.log(rowSelectorStr);
     document.querySelectorAll('.manageFeedsForm th:nth-child(n+1):nth-child(-n+7)')
     .forEach(th => th.addEventListener('click', (() => {
         const table = th.closest('table');
@@ -1049,61 +1079,43 @@ class ManageFeedsModal extends Modal {
 }
 
 
-// class FeedReaderSettingTab extends PluginSettingTab {
-// 	plugin: FeedsReader;
-// 
-// 	constructor(app: App, plugin: FeedsReader) {
-// 		super(app, plugin);
-// 		this.plugin = plugin;
-// 	}
-// 
-// 	display(): void {
-// 		const {containerEl} = this;
-// 
-// 		containerEl.empty();
-// 
-// 		containerEl.createEl('h2', {text: 'Settings for RSS Feed Reader.'});
-// 
-// 		new Setting(containerEl)
-// 			.setName('Folder name')
-// 			.setDesc('This is the folder in the vault where to save the feeds data.')
-// 			.addText(text => text
-// 				.setPlaceholder('feeds-reader')
-// 				.setValue(this.plugin.settings.feeds_reader_dir)
-// 				.onChange(async (value) => {
-// 					this.plugin.settings.feeds_reader_dir = value;
-// 					await this.plugin.saveSettings();
-// 				}));
-// 		new Setting(containerEl)
-// 			.setName('Subscription file name')
-// 			.setDesc('This is the file name for the subscriptions.')
-// 			.addText(text => text
-// 				.setPlaceholder('subscriptions.json')
-// 				.setValue(this.plugin.settings.subscriptions_fname)
-// 				.onChange(async (value) => {
-// 					this.plugin.settings.subscriptions_fname = value;
-// 					await this.plugin.saveSettings();
-// 				}));
-// 		new Setting(containerEl)
-// 			.setName('Feeds data file name')
-// 			.setDesc('This is the file name for the feeds items.')
-// 			.addText(text => text
-// 				.setPlaceholder('feeds-data.json')
-// 				.setValue(this.plugin.settings.feeds_data_fname)
-// 				.onChange(async (value) => {
-// 					this.plugin.settings.feeds_data_fname = value;
-// 					await this.plugin.saveSettings();
-// 				}));
-// 		new Setting(containerEl)
-// 			.setName('Show all by default')
-// 			.setDesc('Show all items or only unread items.')
-// 			.addToggle(cb => cb
-//         .setValue(this.plugin.settings.showAll)
-//         .onChange(async (val) => {
-//         this.plugin.settings.showAll = val;
-//         await this.plugin.saveSettings();}));
-// 	}
-// }
+class FeedReaderSettingTab extends PluginSettingTab {
+	plugin: FeedsReader;
+
+	constructor(app: App, plugin: FeedsReader) {
+		super(app, plugin);
+		this.plugin = plugin;
+	}
+
+	display(): void {
+		const {containerEl} = this;
+
+		containerEl.empty();
+
+		containerEl.createEl('h2', {text: 'Settings for RSS Feed Reader.'});
+
+		new Setting(containerEl)
+			.setName('ChatGPT API Key')
+			.setDesc('Enter the API Key for ChatGPT')
+			.addText(text => text
+				.setPlaceholder('')
+				.setValue(this.plugin.settings.chatGPTAPIKey)
+				.onChange(async (value) => {
+					this.plugin.settings.chatGPTAPIKey = value;
+					await this.plugin.saveSettings();
+				}));
+		new Setting(containerEl)
+			.setName('ChatGPT Prompt')
+			.setDesc('Prompt text for ChatGPT')
+			.addText(text => text
+				.setPlaceholder('')
+				.setValue(this.plugin.settings.chatGPTPrompt)
+				.onChange(async (value) => {
+					this.plugin.settings.chatGPTPrompt = value;
+					await this.plugin.saveSettings();
+				}));
+	}
+}
 
 export async function saveFeedsData () {
   var nSaved = 0;
@@ -1487,6 +1499,10 @@ async function show_feed() {
      renderMath.className = 'renderMath';
      renderMath.id = 'renderMath' + idx;
 
+     const askChatGPT = tr.createEl('td').createEl('div', {text: "GPT"});
+     askChatGPT.className = 'askChatGPT';
+     askChatGPT.id = 'askChatGPT' + idx;
+
      var t_delete = "Delete";
      if (item.deleted !== '') {
        t_delete = 'Undelete';
@@ -1648,4 +1664,21 @@ async function removeFileFragments(folder: string, fname_base: string) {
     await app.vault.adapter.remove(fpath);
     new Notice(fpath + ' removed.', 2000);
   }
+}
+
+async function fetchChatGPT(apiKey, temperature, text) {
+  var res = await
+    fetch('https://api.openai.com/v1/chat/completions',
+          {method: 'POST',
+           mode: 'cors',
+           headers: {
+              Authorization: 'Bearer ' + apiKey,
+              'Content-Type': 'application/json'},
+           body: JSON.stringify({
+              model: 'gpt-3.5-turbo',
+              temperature: temperature,
+              messages: [{role: "user",
+                          content: text}]})});
+  res = (await res.json());
+  return res['choices'][0].message.content;
 }

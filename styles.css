@@ -212,14 +212,14 @@ table.manageFeedsForm, table.manageFeedsForm :is(tbody, tr, th, td) {
   font-size: xx-small;
 }
 
-.markPageRead, .markPageDeleted, .removePageContent, .toggleRead, .noteThis, .renderMath, .saveSnippet, .toggleDelete, .jotNotes {
+.markPageRead, .markPageDeleted, .removePageContent, .toggleRead, .noteThis, .renderMath, .askChatGPT, .saveSnippet, .toggleDelete, .jotNotes {
   font-size: x-small;
   border: 1px solid;
   border-radius: 6px;
   padding: 2px 4px;
 }
 
-.markPageRead:hover, .markPageDeleted:hover, .removePageContent:hover, .toggleRead:hover, .noteThis:hover, .renderMath:hover, .saveSnippet:hover, .toggleDelete:hover, .jotNotes:hover {
+.markPageRead:hover, .markPageDeleted:hover, .removePageContent:hover, .toggleRead:hover, .noteThis:hover, .renderMath:hover, .askChatGPT:hover, .saveSnippet:hover, .toggleDelete:hover, .jotNotes:hover {
   color: #f15500;
 }
 
