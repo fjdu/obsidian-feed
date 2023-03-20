@@ -175,7 +175,6 @@ function getAllItems(doc: Document): Element[] {
     if ((elItems === null) || (elItems.length ===0)) {
       elItems = doc.getElementsByTagNameNS("http://purl.org/rss/1.0/", "item");
     }
-    console.log(elItems);
     if (elItems) {
         for (const elementsByTagNameKey in elItems) {
             const entry = elItems[elementsByTagNameKey];
