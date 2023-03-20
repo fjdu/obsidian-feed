@@ -33,4 +33,5 @@ This plugin is mostly built for my own use.  Online services are good, but it is
 
 ## Known issues:
 
-- I would like the LaTeX equations in the contents to be properly displayed with something like MathJax, but I have not figured out how to do this yet.
+- Some item urls cannot be embedded in the mobile, but I have not figured out the reason yet.
+- The math rendering sometimes show redundant blank spaces.
