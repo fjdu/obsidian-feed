@@ -22,7 +22,7 @@ This plugin is mostly built for my own use.  Online services are good, but it is
 - All the subscribed sources are listed under their respective folders.
 - The number of unread and total items are displayed after the feed name.
 - To retrieve new items, click on the `unread/total` number.
-- For each displayed item, you can click `Jot` to write a short note to it (to be saved in the `.md` file or the snippet file), `Read` to mark it as read, `Save` to create a standalone `.md` note for it, `Snippet` to append the content to a `snippets` file, `Math` to render the LaTeX equations`, `GPT` to ask ChatGPT to summarize the content, and `Delete` to mark it as deleted.  All these must be done manually (instead of automatically by the plugin itself).  Click on the title to show the item content (if `Title only` is set), or to open the link (if `Show content` is set).
+- For each displayed item, you can click `Jot` to write a short note to it (to be saved in the `.md` file or the snippet file), `Read` to mark it as read, `Save` to create a standalone `.md` note for it, `Snippet` to append the content to a `snippets` file, `Math` to render the LaTeX equations, `GPT` to ask `ChatGPT` to summarize the content, and `Delete` to mark it as deleted.  All these must be done manually (instead of automatically by the plugin itself).  Click on the title to show the item content (if `Title only` is set), or to open the link (if `Show content` is set).
   - For summarizing with ChatGPT, you need to provide your own ChatGPT API Key and prompt words in the `settings` tab.
   - Click on `Embed`  to embed the page pointed to by the item URL as an `iframe` element.
 - The items are paginated with 100 items per page.
