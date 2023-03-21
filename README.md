@@ -33,5 +33,4 @@ This plugin is mostly built for my own use.  Online services are good, but it is
 
 ## Known issues:
 
-- Some item urls cannot be embedded in the mobile, but I have not figured out the reason yet.
-- The math rendering sometimes show redundant blank spaces.
+- Some item URLs cannot be embedded in the mobile, which I understand as a limitation of the current mobile implementation of Obsidian.

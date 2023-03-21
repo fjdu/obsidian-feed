@@ -137,7 +137,7 @@ export default class FeedsReader extends Plugin {
           elEmbedButton.setAttribute('_idx', idx);
           elEmbedButton.setAttribute('_link', elID);
           elEmbedButton.className = 'elEmbedButton';
-          elContent.createEl('span').createEl('a', {href: sanitizeHTMLToDom(item.link).textContent, text: "Link"});
+          elContent.createEl('a', {href: sanitizeHTMLToDom(item.link).textContent, text: "Link"});
           elContent.appendChild(sanitizeHTMLToDom(item.content.replace(/<img src="\/\//g,"<img src=\"https://")));
           elContent.createEl('hr');
           evt.target.setAttribute('showContent', '1');

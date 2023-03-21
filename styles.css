@@ -11,11 +11,6 @@
     margin-bottom: 0;
 }
 
-.itemContent span {
-    padding-left: 0;
-    padding-right: 1em;
-}
-
 .hidedItem {
   display: none;
 }
@@ -150,6 +145,8 @@ table.manageFeedsForm, table.manageFeedsForm :is(tbody, tr, th, td) {
   cursor: default;
   font-weight: bold;
   color: var(--link-color);
+  padding-left: 0;
+  padding-right: 1em;
 }
 
 .elEmbedButton:hover {
