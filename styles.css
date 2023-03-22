@@ -135,9 +135,9 @@ table.manageFeedsForm, table.manageFeedsForm :is(tbody, tr, th, td) {
   margin-right: 1em;
 }
 
-.itemActions td {
-  border: none;
-  padding: 0 0.5mm 0 0;
+.itemActions div {
+  display: inline;
+  margin-right: 0.5mm;
   width: auto !important;
 }
 
@@ -228,6 +228,11 @@ table.manageFeedsForm, table.manageFeedsForm :is(tbody, tr, th, td) {
 .itemContent, .itemTitle {
   margin-top: 0;
   margin-bottom: 0;
+}
+
+.itemContent {
+  max-height: 60vh;
+  overflow: auto;
 }
 
 .showItemContent {

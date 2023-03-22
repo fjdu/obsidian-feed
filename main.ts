@@ -139,7 +139,6 @@ export default class FeedsReader extends Plugin {
           elEmbedButton.className = 'elEmbedButton';
           elContent.createEl('a', {href: sanitizeHTMLToDom(item.link).textContent, text: "Link"});
           elContent.appendChild(sanitizeHTMLToDom(item.content.replace(/<img src="\/\//g,"<img src=\"https://")));
-          elContent.createEl('hr');
           evt.target.setAttribute('showContent', '1');
         } else {
           var elContent = document.getElementById('itemContent' + idx);
@@ -1472,14 +1471,15 @@ async function show_feed() {
      elPubDate.className = 'elPubDate';
      const elActionContainer = itemEl.createEl('div');
      elActionContainer.id = 'actionContainer' + idx;
-     let tr = elActionContainer.createEl('table').createEl('tr');
-     tr.className = 'itemActions';
+     const itemActionTable = elActionContainer.createEl('table');
+     let itemActionOneRow = itemActionTable.createEl('tr').createEl('td');
+     itemActionOneRow.className = 'itemActions';
 
-     const jot = tr.createEl('td').createEl('div', {text: 'Jot'});
+     const jot = itemActionOneRow.createEl('div', {text: 'Jot'});
      jot.className = 'jotNotes';
      jot.id = 'jotNotes' + idx;
 
-     const saveSnippet = tr.createEl('td').createEl('div', {text: "Snippet"});
+     const saveSnippet = itemActionOneRow.createEl('div', {text: "Snippet"});
      saveSnippet.className = 'saveSnippet';
      saveSnippet.id = 'saveSnippet' + idx;
 
@@ -1487,27 +1487,39 @@ async function show_feed() {
      if (item.read !== '') {
        t_read = 'Unread';
      }
-     const toggleRead = tr.createEl('td').createEl('div', {text: t_read});
+     const toggleRead = itemActionOneRow.createEl('div', {text: t_read});
      toggleRead.className = 'toggleRead';
      toggleRead.id = 'toggleRead' + idx;
 
-     const noteThis = tr.createEl('td').createEl('div', {text: "Save"});
+     const noteThis = itemActionOneRow.createEl('div', {text: "Save"});
      noteThis.className = 'noteThis';
      noteThis.id = 'noteThis' + idx;
 
-     const renderMath = tr.createEl('td').createEl('div', {text: "Math"});
+     const renderMath = itemActionOneRow.createEl('div', {text: "Math"});
      renderMath.className = 'renderMath';
      renderMath.id = 'renderMath' + idx;
 
-     const askChatGPT = tr.createEl('td').createEl('div', {text: "GPT"});
+     const askChatGPT = itemActionOneRow.createEl('div', {text: "GPT"});
      askChatGPT.className = 'askChatGPT';
      askChatGPT.id = 'askChatGPT' + idx;
+
+     // const embed = itemActionOneRow.createEl('div', {text: "Embed"});
+     // embed.setAttribute('url', item.link);
+     // embed.setAttribute('_idx', idx);
+     // embed.setAttribute('_link', item.link);
+     // embed.className = 'elEmbedButton';
+
+     // const fetch = itemActionOneRow.createEl('div', {text: "Fetch"});
+     // fetch.setAttribute('url', item.link);
+     // fetch.setAttribute('_idx', idx);
+     // fetch.setAttribute('_link', item.link);
+     // fetch.className = 'fetchContent';
 
      var t_delete = "Delete";
      if (item.deleted !== '') {
        t_delete = 'Undelete';
      }
-     const toggleDelete = tr.createEl('td').createEl('div', {text: t_delete});
+     const toggleDelete = itemActionOneRow.createEl('div', {text: t_delete});
      toggleDelete.className = 'toggleDelete';
      toggleDelete.id = 'toggleDelete' + idx;
 
@@ -1516,7 +1528,6 @@ async function show_feed() {
        elContent.className = 'itemContent';
        elContent.id = 'itemContent' + idx;
        elContent.appendChild(sanitizeHTMLToDom(item.content.replace(/<img src="\/\//g,"<img src=\"https://")));
-       elContent.createEl('hr');
      }
      nDisplayed += 1;
    }
