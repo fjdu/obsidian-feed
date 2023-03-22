@@ -132,12 +132,20 @@ export default class FeedsReader extends Plugin {
           }
           var item = GLB.feedsStore[GLB.currentFeed].items[idx];
           var itemLink = sanitizeHTMLToDom(item.link).textContent;
+
           const elEmbedButton = elContent.createEl('span', {text: "Embed"});
           elEmbedButton.setAttribute('url', itemLink);
           elEmbedButton.setAttribute('_idx', idx);
           elEmbedButton.setAttribute('_link', elID);
           elEmbedButton.className = 'elEmbedButton';
-          elContent.createEl('a', {href: sanitizeHTMLToDom(item.link).textContent, text: "Link"});
+
+          const elFetch = elContent.createEl('span', {text: "Fetch"});
+          elFetch.setAttribute('url', itemLink);
+          elFetch.setAttribute('_idx', idx);
+          elFetch.setAttribute('_link', elID);
+          elFetch.className = 'elFetch';
+
+          elContent.createEl('span').createEl('a', {href: itemLink, text: "Link"}).parentElement.className = 'elLink';
           elContent.appendChild(sanitizeHTMLToDom(item.content.replace(/<img src="\/\//g,"<img src=\"https://")));
           evt.target.setAttribute('showContent', '1');
         } else {
@@ -146,15 +154,15 @@ export default class FeedsReader extends Plugin {
             elContent.remove();
           }
           evt.target.setAttribute('showContent', '0');
-          var elEmbedContainer = document.getElementById('embeddedContainer' + idx);
-          if (elEmbedContainer !== null) {
-            elEmbedContainer.remove();
+          var embeddedIframe = document.getElementById('embeddedIframe' + idx);
+          if (embeddedIframe !== null) {
+            embeddedIframe.remove();
           }
         }
       }
       if (evt.target.className === 'elEmbedButton') {
         var idx = evt.target.getAttribute('_idx');
-        if (document.getElementById('embeddedContainer' + idx) !== null) {
+        if (document.getElementById('embeddedIframe' + idx) !== null) {
           return;
         }
         var elContent = document.getElementById('itemContent' + idx);
@@ -163,12 +171,37 @@ export default class FeedsReader extends Plugin {
         }
         var elID = evt.target.getAttribute('_link');
         const url = evt.target.getAttribute('url');
-        const elEmbedContainer = elContent.createEl('div');
-        elEmbedContainer.className = 'embeddedContainer';
-        elEmbedContainer.id = 'embeddedContainer' + idx;
-        const elEmbedIframe = elEmbedContainer.createEl('iframe');
-        elEmbedIframe.src = url;
-        elEmbedIframe.className = 'embeddedIframe';
+        const embeddedIframe = elContent.createEl('iframe');
+        embeddedIframe.className = 'embeddedIframe';
+        embeddedIframe.id = 'embeddedIframe' + idx;
+        embeddedIframe.src = url;
+        // const embeddedIframe = elContent.createEl('object');
+        // embeddedIframe.className = 'embeddedIframe';
+        // embeddedIframe.id = 'embeddedIframe' + idx;
+        // embeddedIframe.data = url;
+      }
+      if (evt.target.className === 'elFetch') {
+        var idx = evt.target.getAttribute('_idx');
+        var elID = evt.target.getAttribute('_link');
+        const url = evt.target.getAttribute('url');
+        if (document.getElementById('fetchContainer' + idx) !== null) {
+          return;
+        }
+        var pageSrc = '';
+        try {
+          pageSrc = await request({url: url, method: "GET"});
+        } catch (e) {
+          new Notice('Fail to fetch ' + url, 1000);
+          return;
+        }
+        var elContent = document.getElementById('itemContent' + idx);
+        if (elContent !== null) {
+          elContent.empty();
+        }
+        const fetchContainer = elContent.createEl('div');
+        fetchContainer.className = 'fetchContainer';
+        fetchContainer.id = 'fetchContainer' + idx;
+        fetchContainer.appendChild(sanitizeHTMLToDom(pageSrc));
       }
       if (evt.target.className === 'renderMath') {
         var idx = this.getNumFromId(evt.target.id, 'renderMath');

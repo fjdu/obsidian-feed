@@ -141,7 +141,7 @@ table.manageFeedsForm, table.manageFeedsForm :is(tbody, tr, th, td) {
   width: auto !important;
 }
 
-.elEmbedButton {
+.elEmbedButton, .elFetch, .elLink {
   cursor: default;
   font-weight: bold;
   color: var(--link-color);
@@ -149,12 +149,8 @@ table.manageFeedsForm, table.manageFeedsForm :is(tbody, tr, th, td) {
   padding-right: 1em;
 }
 
-.elEmbedButton:hover {
+.elEmbedButton:hover, .elFetch:hover {
   opacity: 80%
-}
-
-.embeddedContainer {
-  width: 100%;
 }
 
 .embeddedIframe {
@@ -231,7 +227,7 @@ table.manageFeedsForm, table.manageFeedsForm :is(tbody, tr, th, td) {
 }
 
 .itemContent {
-  max-height: 60vh;
+  max-height: 61vh;
   overflow: auto;
 }
 

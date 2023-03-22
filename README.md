@@ -24,7 +24,8 @@ This plugin is mostly built for my own use.  Online services are good, but it is
 - To retrieve new items, click on the `unread/total` number.
 - For each displayed item, you can click `Jot` to write a short note to it (to be saved in the `.md` file or the snippet file), `Read` to mark it as read, `Save` to create a standalone `.md` note for it, `Snippet` to append the content to a `snippets` file, `Math` to render the LaTeX equations, `GPT` to ask `ChatGPT` to summarize the content, and `Delete` to mark it as deleted.  All these must be done manually (instead of automatically by the plugin itself).  Click on the title to show the item content (if `Title only` is set), or to open the link (if `Show content` is set).
   - For summarizing with ChatGPT, you need to provide your own ChatGPT API Key and prompt words in the `settings` tab.
-  - Click on `Embed`  to embed the page pointed to by the item URL as an `iframe` element.
+  - Click on `Embed` to embed the page pointed to by the item URL as an `iframe` element.
+  - Click on `Fetch` to fetch the URL and display it.  This is for pages that cannot be embedded.  Better than nothing.
 - The items are paginated with 100 items per page.
 - The feeds data are saved as fragmented `.json` files.  They are intentionally fragmented so that when new items come, old files do not need to be updated (hence do not need to be synced).
 
