@@ -226,11 +226,6 @@ table.manageFeedsForm, table.manageFeedsForm :is(tbody, tr, th, td) {
   margin-bottom: 0;
 }
 
-.itemContent {
-  max-height: 61vh;
-  overflow: auto;
-}
-
 .showItemContent {
   display: block;
   width: 100%;

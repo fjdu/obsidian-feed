@@ -214,7 +214,8 @@ export default class FeedsReader extends Plugin {
           elContent = document.getElementById(elID).createEl('div');
           elContent.id = 'itemContent' + idx;
         }
-        MarkdownPreviewView.renderMarkdown(htmlToMarkdown(item.content), elContent);
+        MarkdownPreviewView.renderMarkdown(
+          remedyLatex(htmlToMarkdown(item.content)), elContent);
       }
       if (evt.target.className === 'askChatGPT') {
         var idx = this.getNumFromId(evt.target.id, 'askChatGPT');
@@ -277,7 +278,7 @@ export default class FeedsReader extends Plugin {
         const fpath: string = GLB.feeds_reader_dir + '/' + fname;
         var author_text = the_item.creator.trim();
         if (author_text !== '') {
-          author_text = '\n<small>' + author_text + '</small>';
+          author_text = '\n> ' + htmlToMarkdown(author_text);
         }
         var shortNoteContent = '';
         const elShortNote = document.getElementById('shortNote' + idx);
@@ -293,9 +294,9 @@ export default class FeedsReader extends Plugin {
             shortNoteContent + '\n> [!abstract]' + abstractOpen + ' [' +
             the_item.title.trim().replace(/(<([^>]+)>)/gi, " ").replace(/\n/g, " ") +
             '](' + sanitizeHTMLToDom(the_item.link).textContent + ')\n> ' +
-            unEscape(handle_tags(handle_a_tag(handle_img_tag(the_item.content.replace(/\n/g, ' '))))
+            htmlToMarkdown(unEscape(handle_tags(handle_a_tag(handle_img_tag(the_item.content.replace(/\n/g, ' '))))
             .replace(/ +/g, ' ')
-            .replace(/\s+$/g, '').replace(/^\s+/g, '')) +
+            .replace(/\s+$/g, '').replace(/^\s+/g, ''))) +
             // handle_a_tag(handle_img_tag(unEscape(
             //   the_item.content.replace(/\n/g, ' '))))
             // .replace(/(<([^>]+)>)/gi, " ")
@@ -326,7 +327,7 @@ export default class FeedsReader extends Plugin {
         }
         var author_text = the_item.creator.trim();
         if (author_text !== '') {
-          author_text = '\n<small>' + author_text + '</small>';
+          author_text = '\n> ' + htmlToMarkdown(author_text);
         }
         var dt_str: string = nowdatetime();
         if (the_item.pubDate != '') {
@@ -335,19 +336,19 @@ export default class FeedsReader extends Plugin {
           dt_str = GLB.feedsStore[GLB.currentFeed].pubDate;
         }
         if (dt_str !== '') {
-          dt_str = '\n<small>' + dt_str + '</small>';
+          dt_str = '\n> <small>' + dt_str + '</small>';
         }
         var feedNameStr = GLB.currentFeedName;
         if (feedNameStr !== '') {
-          feedNameStr = '\n<small>' + feedNameStr + '</small>';
+          feedNameStr = '\n> <small>' + feedNameStr + '</small>';
         }
         const snippet_content: string = (
             shortNoteContent + '\n> [!abstract]' + abstractOpen + ' [' +
             the_item.title.trim().replace(/(<([^>]+)>)/gi, " ").replace(/\n/g, " ") +
             '](' + link_text + ')\n> ' +
-            unEscape(handle_tags(handle_a_tag(handle_img_tag(the_item.content.replace(/\n/g, ' '))))
+            htmlToMarkdown(unEscape(handle_tags(handle_a_tag(handle_img_tag(the_item.content.replace(/\n/g, ' '))))
             .replace(/ +/g, ' ')
-            .replace(/\s+$/g, '').replace(/^\s+/g, '')) +
+            .replace(/\s+$/g, '').replace(/^\s+/g, ''))) +
             author_text + dt_str + feedNameStr);
         if (! await this.app.vault.exists(fpath)) {
           await this.app.vault.create(fpath, snippet_content);
@@ -647,14 +648,14 @@ export default class FeedsReader extends Plugin {
     GLB.itemOrder = 'New to old';
     GLB.currentFeed = '';
     GLB.currentFeedName = '';
-    GLB.nMergeLookback = 10000;
+    GLB.nMergeLookback = 100000;
     GLB.lenStrPerFile = 1024 * 1024;
     GLB.nItemPerPage = 100;
     GLB.feedsStoreChange = false;
     GLB.feedsStoreChangeList = new Set<string>();
     GLB.elUnreadCount = undefined;
-    GLB.maxTotalnumDisplayed = 1e4;
-    GLB.nThanksSep = 20;
+    GLB.maxTotalnumDisplayed = 1e5;
+    GLB.nThanksSep = 16;
 
 		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
 	}
@@ -1725,4 +1726,12 @@ async function fetchChatGPT(apiKey, temperature, text) {
                           content: text}]})});
   res = (await res.json());
   return res['choices'][0].message.content;
+}
+
+function remedyLatex(s: string) {
+  return s.replace(/\$\\sim\$([0-9+-.]+)/, '\${\\sim}$1\$')
+          .replace(/\\micron/, '\\mu{}m')
+          .replace(/\\Msun/, 'M_\\odot')
+          .replace(/\\Mstar/, 'M_\\ast')
+          .replace(/\*/, '\\*');
 }
