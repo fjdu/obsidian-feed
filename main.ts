@@ -242,7 +242,7 @@ export default class FeedsReader extends Plugin {
             promptText + '\n' + item.content);
           replyByGPT = replyByGPT.trim();
           if (replyByGPT !== '') {
-            var shortNote = doc.getElementById('shortNote' + idx);
+            var shortNote = document.getElementById('shortNote' + idx);
             var existingNote = shortNote.value;
             if (existingNote !== '') {
               existingNote = existingNote + '\n\n';
@@ -250,6 +250,7 @@ export default class FeedsReader extends Plugin {
             shortNote.value = existingNote + replyByGPT;
           }
         } catch (e) {
+          console.log(e);
         };
       }
       if (evt.target.className === 'noteThis') {
@@ -1724,8 +1725,8 @@ async function fetchChatGPT(apiKey, temperature, text) {
               temperature: temperature,
               messages: [{role: "user",
                           content: text}]})});
-  res = (await res.json());
-  return res['choices'][0].message.content;
+  var msg = (await res.json())['choices'][0].message;
+  return msg.content;
 }
 
 function remedyLatex(s: string) {
@@ -1733,5 +1734,7 @@ function remedyLatex(s: string) {
           .replace(/\\micron/, '\\mu{}m')
           .replace(/\\Msun/, 'M_\\odot')
           .replace(/\\Mstar/, 'M_\\ast')
+          .replace(/_\*/, '_\\ast')
+          .replace(/_{\*}/, '_{\\ast}')
           .replace(/\*/, '\\*');
 }
