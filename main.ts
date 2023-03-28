@@ -13,6 +13,7 @@ interface FeedsReaderSettings {
 }
 
 const DEFAULT_SETTINGS: FeedsReaderSettings = {
+  nItemPerPage: 20
 }
 
 export default class FeedsReader extends Plugin {
@@ -411,6 +412,16 @@ export default class FeedsReader extends Plugin {
           GLB.elUnreadCount.innerText = parseInt(GLB.elUnreadCount.innerText) - nMarked;
           if (!GLB.showAll) {
             [...document.getElementsByClassName('pageActions')].forEach(el => {el.remove();});
+            if (GLB.idxItemStart+GLB.nItemPerPage < GLB.displayIndices.length) {
+              GLB.idxItemStart += GLB.nItemPerPage;
+              GLB.nPage += 1;
+              show_feed();
+            } else {
+              GLB.idxItemStart = 0;
+              GLB.nPage = 1;
+              makeDisplayList();
+              show_feed();
+            }
           }
         }
       }
@@ -639,6 +650,10 @@ export default class FeedsReader extends Plugin {
   }
 
 	async loadSettings() {
+		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+
+    GLB.nItemPerPage = this.settings.nItemPerPage;
+
     GLB.feeds_reader_dir = 'feeds-reader';
     GLB.feeds_data_fname = 'feeds-data.json';
     GLB.feeds_store_base = 'feeds-store';
@@ -651,14 +666,11 @@ export default class FeedsReader extends Plugin {
     GLB.currentFeedName = '';
     GLB.nMergeLookback = 100000;
     GLB.lenStrPerFile = 1024 * 1024;
-    GLB.nItemPerPage = 100;
     GLB.feedsStoreChange = false;
     GLB.feedsStoreChangeList = new Set<string>();
     GLB.elUnreadCount = undefined;
     GLB.maxTotalnumDisplayed = 1e5;
     GLB.nThanksSep = 16;
-
-		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
 	}
 
 	async saveSettings() {
@@ -1126,8 +1138,9 @@ class FeedReaderSettingTab extends PluginSettingTab {
 
 		containerEl.empty();
 
-		containerEl.createEl('h2', {text: 'Settings for RSS Feed Reader.'});
+		containerEl.createEl('h2', {text: 'Settings for RSS Feed Reader'});
 
+		containerEl.createEl('h3', {text: 'ChatGPT'});
 		new Setting(containerEl)
 			.setName('ChatGPT API Key')
 			.setDesc('Enter the API Key for ChatGPT')
@@ -1141,11 +1154,23 @@ class FeedReaderSettingTab extends PluginSettingTab {
 		new Setting(containerEl)
 			.setName('ChatGPT Prompt')
 			.setDesc('Prompt text for ChatGPT')
-			.addText(text => text
+			.addTextArea(text => text
 				.setPlaceholder('')
 				.setValue(this.plugin.settings.chatGPTPrompt)
 				.onChange(async (value) => {
 					this.plugin.settings.chatGPTPrompt = value;
+					await this.plugin.saveSettings();
+				}));
+		containerEl.createEl('h3', {text: 'Appearance'});
+		new Setting(containerEl)
+			.setName('Items per page')
+			.setDesc('Number of items to display per page')
+			.addText(text => text
+				.setPlaceholder('')
+				.setValue(this.plugin.settings.nItemPerPage.toString())
+				.onChange(async (value) => {
+          GLB.nItemPerPage = parseInt(value);
+					this.plugin.settings.nItemPerPage = GLB.nItemPerPage;
 					await this.plugin.saveSettings();
 				}));
 	}
@@ -1570,7 +1595,7 @@ async function show_feed() {
    if (nDisplayed == 0) {
      elPageAction.remove();
    }
-   if (nDisplayed > 10) {
+   if (nDisplayed >= 5) {
      feed_content.appendChild(elPageAction.cloneNode(true));
    }
 
@@ -1731,6 +1756,7 @@ async function fetchChatGPT(apiKey, temperature, text) {
 
 function remedyLatex(s: string) {
   return s.replace(/\$\\sim\$([0-9+-.]+)/, '\${\\sim}$1\$')
+          .replace(/\$\\times\$([0-9+-.]+)/, '\${\\times}$1\$')
           .replace(/\\micron/, '\\mu{}m')
           .replace(/\\Msun/, 'M_\\odot')
           .replace(/\\Mstar/, 'M_\\ast')

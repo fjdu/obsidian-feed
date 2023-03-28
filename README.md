@@ -26,7 +26,7 @@ This plugin is mostly built for my own use.  Online services are good, but it is
   - For summarizing with ChatGPT, you need to provide your own ChatGPT API Key and prompt words in the `settings` tab.
   - Click on `Embed` to embed the page pointed to by the item URL as an `iframe` element.
   - Click on `Fetch` to fetch the URL and display it.  This is for pages that cannot be embedded.  Better than nothing.
-- The items are paginated with 100 items per page.
+- The items are paginated with 20 items per page, which can be changed in the settings.
 - The feeds data are saved as fragmented `.json` files.  They are intentionally fragmented so that when new items come, old files do not need to be updated (hence do not need to be synced).
 
 ## Acknowledgment
