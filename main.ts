@@ -296,9 +296,9 @@ export default class FeedsReader extends Plugin {
             shortNoteContent + '\n> [!abstract]' + abstractOpen + ' [' +
             the_item.title.trim().replace(/(<([^>]+)>)/gi, " ").replace(/\n/g, " ") +
             '](' + sanitizeHTMLToDom(the_item.link).textContent + ')\n> ' +
-            htmlToMarkdown(unEscape(handle_tags(handle_a_tag(handle_img_tag(the_item.content.replace(/\n/g, ' '))))
+            remedyLatex(htmlToMarkdown(unEscape(handle_tags(handle_a_tag(handle_img_tag(the_item.content.replace(/\n/g, ' '))))
             .replace(/ +/g, ' ')
-            .replace(/\s+$/g, '').replace(/^\s+/g, ''))) +
+            .replace(/\s+$/g, '').replace(/^\s+/g, '')))) +
             // handle_a_tag(handle_img_tag(unEscape(
             //   the_item.content.replace(/\n/g, ' '))))
             // .replace(/(<([^>]+)>)/gi, " ")
@@ -348,9 +348,9 @@ export default class FeedsReader extends Plugin {
             shortNoteContent + '\n> [!abstract]' + abstractOpen + ' [' +
             the_item.title.trim().replace(/(<([^>]+)>)/gi, " ").replace(/\n/g, " ") +
             '](' + link_text + ')\n> ' +
-            htmlToMarkdown(unEscape(handle_tags(handle_a_tag(handle_img_tag(the_item.content.replace(/\n/g, ' '))))
+            remedyLatex(htmlToMarkdown(unEscape(handle_tags(handle_a_tag(handle_img_tag(the_item.content.replace(/\n/g, ' '))))
             .replace(/ +/g, ' ')
-            .replace(/\s+$/g, '').replace(/^\s+/g, ''))) +
+            .replace(/\s+$/g, '').replace(/^\s+/g, '')))) +
             author_text + dt_str + feedNameStr);
         if (! await this.app.vault.exists(fpath)) {
           await this.app.vault.create(fpath, snippet_content);
@@ -1216,8 +1216,13 @@ export async function loadFeedsStoredData() {
   for (var i=0; i<GLB.feedList.length; i++) {
     var res = await loadStringSplitted(GLB.feeds_reader_dir + '/' + GLB.feeds_store_base, GLB.feedList[i].name);
     if (res.length > 0) {
-      GLB.feedsStore[GLB.feedList[i].feedUrl] = JSON.parse(res);
-      noSplitFile = false;
+      try {
+        GLB.feedsStore[GLB.feedList[i].feedUrl] = JSON.parse(res);
+        noSplitFile = false;
+      } catch (e) {
+        console.log(e);
+        console.log(GLB.feedList[i].feedUrl);
+      }
     }
   }
   if (noSplitFile) {
@@ -1229,24 +1234,6 @@ export async function loadFeedsStoredData() {
       GLB.feedsStore = JSON.parse(await this.app.vault.adapter.read(fpath));
     }
   }
-  // // Remove redundant properties saved in the json files.
-  // for (const k in GLB.feedsStore) {
-  //   for (var i=0; i<GLB.feedsStore[k].items.length; i++) {
-  //     const item = GLB.feedsStore[k].items[i];
-  //     var keys = Object.keys(item);
-  //     var change = false;
-  //     for (var j=0; j<keys.length; j++) {
-  //       if (!(itemKeys.includes(keys[j]))) {
-  //         delete item[keys[j]];
-  //         change = true;
-  //       }
-  //     }
-  //     if (change) {
-  //       GLB.feedsStoreChange = true;
-  //       GLB.feedsStore[k].items[i] = item;
-  //     }
-  //   }
-  // }
 }
 
 function str2filename(s: string) {
@@ -1755,12 +1742,12 @@ async function fetchChatGPT(apiKey, temperature, text) {
 }
 
 function remedyLatex(s: string) {
-  return s.replace(/\$\\sim\$([0-9+-.]+)/, '\${\\sim}$1\$')
-          .replace(/\$\\times\$([0-9+-.]+)/, '\${\\times}$1\$')
-          .replace(/\\micron/, '\\mu{}m')
-          .replace(/\\Msun/, 'M_\\odot')
-          .replace(/\\Mstar/, 'M_\\ast')
-          .replace(/_\*/, '_\\ast')
-          .replace(/_{\*}/, '_{\\ast}')
-          .replace(/\*/, '\\*');
+  return s.replace(/\$\\sim\$([0-9+-.]+)/g, '\${\\sim}$1\$')
+          .replace(/\$\\times\$([0-9+-.]+)/g, '\${\\times}$1\$')
+          .replace(/\\micron/g, '\\mu{}m')
+          .replace(/\\Msun/g, 'M_\\odot')
+          .replace(/\\Mstar/g, 'M_\\ast')
+          .replace(/_\*/g, '_\\ast')
+          .replace(/_{\*}/g, '_{\\ast}')
+          .replace(/\*/g, '\\*');
 }
