@@ -287,10 +287,10 @@ export default class FeedsReader extends Plugin {
         if (elShortNote !== null) {
           shortNoteContent = elShortNote.value;
         }
-        var abstractOpen = '+';
-        if (shortNoteContent !== '') {
-          abstractOpen = '-';
-        }
+        var abstractOpen = '-';
+        // if (shortNoteContent !== '') {
+        //   abstractOpen = '-';
+        // }
         if (! await this.app.vault.exists(fpath)) {
           await this.app.vault.create(fpath,
             shortNoteContent + '\n> [!abstract]' + abstractOpen + ' [' +
@@ -323,10 +323,10 @@ export default class FeedsReader extends Plugin {
         if (elShortNote !== null) {
           shortNoteContent = elShortNote.value;
         }
-        var abstractOpen = '+';
-        if (shortNoteContent !== '') {
-          abstractOpen = '-';
-        }
+        var abstractOpen = '-';
+        // if (shortNoteContent !== '') {
+        //   abstractOpen = '-';
+        // }
         var author_text = the_item.creator.trim();
         if (author_text !== '') {
           author_text = '\n> ' + htmlToMarkdown(author_text);
