@@ -19,6 +19,7 @@ export namespace GLB {
   var lenStrPerFile: number;
   var undoList: number [];
   var nItemPerPage: number;
+  var saveContent: boolean;
   var nPage: number;
   var idxItemStart: number;
   var displayIndices: number [];

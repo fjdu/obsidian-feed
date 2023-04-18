@@ -13,7 +13,8 @@ interface FeedsReaderSettings {
 }
 
 const DEFAULT_SETTINGS: FeedsReaderSettings = {
-  nItemPerPage: 20
+  nItemPerPage: 20,
+  saveContent: false
 }
 
 export default class FeedsReader extends Plugin {
@@ -278,32 +279,33 @@ export default class FeedsReader extends Plugin {
                               .replace(/(<([^>]+)>)/g, " ")
                               .replace(/[:!?@#\*\^\$]+/g, '')) + '.md';
         const fpath: string = GLB.feeds_reader_dir + '/' + fname;
-        var author_text = the_item.creator.trim();
-        if (author_text !== '') {
-          author_text = '\n> ' + htmlToMarkdown(author_text);
-        }
         var shortNoteContent = '';
         const elShortNote = document.getElementById('shortNote' + idx);
         if (elShortNote !== null) {
           shortNoteContent = elShortNote.value;
         }
         var abstractOpen = '-';
-        // if (shortNoteContent !== '') {
-        //   abstractOpen = '-';
-        // }
+        var theContent = '';
+        if (GLB.saveContent) {
+          var author_text = the_item.creator.trim();
+          if (author_text !== '') {
+            author_text = '\n> ' + htmlToMarkdown(author_text);
+          }
+          theContent = remedyLatex(
+                          htmlToMarkdown(unEscape(
+                            handle_tags(
+                            handle_a_tag(
+                            handle_img_tag(
+                            the_item.content.replace(/\n/g, ' '))))
+                            .replace(/ +/g, ' ')
+                            .replace(/\s+$/g, '')
+                            .replace(/^\s+/g, '')))) + author_text;
+        }
         if (! await this.app.vault.exists(fpath)) {
           await this.app.vault.create(fpath,
             shortNoteContent + '\n> [!abstract]' + abstractOpen + ' [' +
             the_item.title.trim().replace(/(<([^>]+)>)/gi, " ").replace(/\n/g, " ") +
-            '](' + sanitizeHTMLToDom(the_item.link).textContent + ')\n> ' +
-            remedyLatex(htmlToMarkdown(unEscape(handle_tags(handle_a_tag(handle_img_tag(the_item.content.replace(/\n/g, ' '))))
-            .replace(/ +/g, ' ')
-            .replace(/\s+$/g, '').replace(/^\s+/g, '')))) +
-            // handle_a_tag(handle_img_tag(unEscape(
-            //   the_item.content.replace(/\n/g, ' '))))
-            // .replace(/(<([^>]+)>)/gi, " ")
-            // .trim() +
-            author_text);
+            '](' + sanitizeHTMLToDom(the_item.link).textContent + ')\n> ' + theContent);
           new Notice(fpath + " saved.", 1000);
         } else {
           new Notice(fpath + " already exists.", 1000);
@@ -327,10 +329,6 @@ export default class FeedsReader extends Plugin {
         // if (shortNoteContent !== '') {
         //   abstractOpen = '-';
         // }
-        var author_text = the_item.creator.trim();
-        if (author_text !== '') {
-          author_text = '\n> ' + htmlToMarkdown(author_text);
-        }
         var dt_str: string = nowdatetime();
         if (the_item.pubDate != '') {
           dt_str = the_item.pubDate;
@@ -344,14 +342,26 @@ export default class FeedsReader extends Plugin {
         if (feedNameStr !== '') {
           feedNameStr = '\n> <small>' + feedNameStr + '</small>';
         }
+        var theContent = '';
+        if (GLB.saveContent) {
+          var author_text = the_item.creator.trim();
+          if (author_text !== '') {
+            author_text = '\n> ' + htmlToMarkdown(author_text);
+          }
+          theContent = remedyLatex(
+                          htmlToMarkdown(unEscape(
+                            handle_tags(
+                            handle_a_tag(
+                            handle_img_tag(
+                            the_item.content.replace(/\n/g, ' '))))
+                            .replace(/ +/g, ' ')
+                            .replace(/\s+$/g, '')
+                            .replace(/^\s+/g, '')))) + author_text;
+        }
         const snippet_content: string = (
             shortNoteContent + '\n> [!abstract]' + abstractOpen + ' [' +
             the_item.title.trim().replace(/(<([^>]+)>)/gi, " ").replace(/\n/g, " ") +
-            '](' + link_text + ')\n> ' +
-            remedyLatex(htmlToMarkdown(unEscape(handle_tags(handle_a_tag(handle_img_tag(the_item.content.replace(/\n/g, ' '))))
-            .replace(/ +/g, ' ')
-            .replace(/\s+$/g, '').replace(/^\s+/g, '')))) +
-            author_text + dt_str + feedNameStr);
+            '](' + link_text + ')\n> ' + theContent + dt_str + feedNameStr);
         if (! await this.app.vault.exists(fpath)) {
           await this.app.vault.create(fpath, snippet_content);
           new Notice(fpath + " saved.", 1000);
@@ -653,6 +663,7 @@ export default class FeedsReader extends Plugin {
 		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
 
     GLB.nItemPerPage = this.settings.nItemPerPage;
+    GLB.saveContent = this.settings.saveContent;
 
     GLB.feeds_reader_dir = 'feeds-reader';
     GLB.feeds_data_fname = 'feeds-data.json';
@@ -1172,6 +1183,18 @@ class FeedReaderSettingTab extends PluginSettingTab {
           GLB.nItemPerPage = parseInt(value);
 					this.plugin.settings.nItemPerPage = GLB.nItemPerPage;
 					await this.plugin.saveSettings();
+				}));
+		containerEl.createEl('h3', {text: 'Saving'});
+		new Setting(containerEl)
+			.setName('Include content')
+			.setDesc('Whether to include the content when saving')
+			.addToggle(text => text
+				.setValue(this.plugin.settings.saveContent)
+				.onChange(async (value) => {
+          GLB.saveContent = value;
+					this.plugin.settings.saveContent = GLB.saveContent;
+					await this.plugin.saveSettings();
+          console.log(value, GLB.saveContent);
 				}));
 	}
 }
