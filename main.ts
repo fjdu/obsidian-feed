@@ -135,19 +135,6 @@ export default class FeedsReader extends Plugin {
           var item = GLB.feedsStore[GLB.currentFeed].items[idx];
           var itemLink = sanitizeHTMLToDom(item.link).textContent;
 
-          const elEmbedButton = elContent.createEl('span', {text: "Embed"});
-          elEmbedButton.setAttribute('url', itemLink);
-          elEmbedButton.setAttribute('_idx', idx);
-          elEmbedButton.setAttribute('_link', elID);
-          elEmbedButton.className = 'elEmbedButton';
-
-          const elFetch = elContent.createEl('span', {text: "Fetch"});
-          elFetch.setAttribute('url', itemLink);
-          elFetch.setAttribute('_idx', idx);
-          elFetch.setAttribute('_link', elID);
-          elFetch.className = 'elFetch';
-
-          elContent.createEl('span').createEl('a', {href: itemLink, text: "Link"}).parentElement.className = 'elLink';
           elContent.appendChild(sanitizeHTMLToDom(item.content.replace(/<img src="\/\//g,"<img src=\"https://")));
           evt.target.setAttribute('showContent', '1');
         } else {
@@ -164,14 +151,19 @@ export default class FeedsReader extends Plugin {
       }
       if (evt.target.className === 'elEmbedButton') {
         var idx = evt.target.getAttribute('_idx');
+        var elID = evt.target.getAttribute('_link');
         if (document.getElementById('embeddedIframe' + idx) !== null) {
           return;
         }
         var elContent = document.getElementById('itemContent' + idx);
         if (elContent !== null) {
           elContent.empty();
+        } else {
+          const itemEl = document.getElementById(elID);
+          elContent = itemEl.createEl('div');
+          elContent.className = 'itemContent';
+          elContent.id = 'itemContent' + idx;
         }
-        var elID = evt.target.getAttribute('_link');
         const url = evt.target.getAttribute('url');
         const embeddedIframe = elContent.createEl('iframe');
         embeddedIframe.className = 'embeddedIframe';
@@ -199,11 +191,17 @@ export default class FeedsReader extends Plugin {
         var elContent = document.getElementById('itemContent' + idx);
         if (elContent !== null) {
           elContent.empty();
+        } else {
+          const itemEl = document.getElementById(elID);
+          elContent = itemEl.createEl('div');
+          elContent.className = 'itemContent';
+          elContent.id = 'itemContent' + idx;
         }
         const fetchContainer = elContent.createEl('div');
         fetchContainer.className = 'fetchContainer';
         fetchContainer.id = 'fetchContainer' + idx;
         fetchContainer.appendChild(sanitizeHTMLToDom(pageSrc));
+        //MarkdownPreviewView.renderMarkdown(htmlToMarkdown(pageSrc), fetchContainer);
       }
       if (evt.target.className === 'renderMath') {
         var idx = this.getNumFromId(evt.target.id, 'renderMath');
@@ -1542,6 +1540,7 @@ async function show_feed() {
      const elActionContainer = itemEl.createEl('div');
      elActionContainer.id = 'actionContainer' + idx;
      const itemActionTable = elActionContainer.createEl('table');
+     itemActionTable.className = 'actionTable';
      let itemActionOneRow = itemActionTable.createEl('tr').createEl('td');
      itemActionOneRow.className = 'itemActions';
 
@@ -1569,21 +1568,31 @@ async function show_feed() {
      renderMath.className = 'renderMath';
      renderMath.id = 'renderMath' + idx;
 
+     //  itemActionOneRow = itemActionTable.createEl('tr').createEl('td');
+     //  itemActionOneRow.className = 'itemActions';
+
      const askChatGPT = itemActionOneRow.createEl('div', {text: "GPT"});
      askChatGPT.className = 'askChatGPT';
      askChatGPT.id = 'askChatGPT' + idx;
 
-     // const embed = itemActionOneRow.createEl('div', {text: "Embed"});
-     // embed.setAttribute('url', item.link);
-     // embed.setAttribute('_idx', idx);
-     // embed.setAttribute('_link', item.link);
-     // embed.className = 'elEmbedButton';
+     const embed = itemActionOneRow.createEl('div', {text: "Embed"});
+     embed.setAttribute('url', item.link);
+     embed.setAttribute('_idx', idx);
+     embed.setAttribute('_link', item.link);
+     embed.className = 'elEmbedButton';
 
-     // const fetch = itemActionOneRow.createEl('div', {text: "Fetch"});
-     // fetch.setAttribute('url', item.link);
-     // fetch.setAttribute('_idx', idx);
-     // fetch.setAttribute('_link', item.link);
-     // fetch.className = 'fetchContent';
+     const fetch = itemActionOneRow.createEl('div', {text: "Fetch"});
+     fetch.setAttribute('url', item.link);
+     fetch.setAttribute('_idx', idx);
+     fetch.setAttribute('_link', item.link);
+     fetch.className = 'elFetch';
+
+     const elLink = itemActionOneRow.createEl('div');
+     elLink.setAttribute('url', item.link);
+     elLink.setAttribute('_idx', idx);
+     elLink.setAttribute('_link', item.link);
+     elLink.className = 'elLink';
+     elLink.createEl('a', {text: "Link", href: item.link});
 
      var t_delete = "Delete";
      if (item.deleted !== '') {
@@ -1765,8 +1774,7 @@ async function fetchChatGPT(apiKey, temperature, text) {
 }
 
 function remedyLatex(s: string) {
-  return s.replace(/\$\\sim\$([0-9+-.]+)/g, '\${\\sim}$1\$')
-          .replace(/\$\\times\$([0-9+-.]+)/g, '\${\\times}$1\$')
+  return s.replace(/\$(\\[a-zA-Z]+)\$([0-9+-.]+)/g, '\${\$1}$2\$')
           .replace(/\\micron/g, '\\mu{}m')
           .replace(/\\Msun/g, 'M_\\odot')
           .replace(/\\Mstar/g, 'M_\\ast')

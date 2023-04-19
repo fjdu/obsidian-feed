@@ -1,4 +1,4 @@
-.itemContent, .itemTitle, .embeddedIframe {
+.itemContent, .itemTitle, .embeddedIframe, .fetchContainer {
     -moz-user-select: text;
     -webkit-user-select: text;
     -ms-user-select: text;
@@ -141,16 +141,22 @@ table.manageFeedsForm, table.manageFeedsForm :is(tbody, tr, th, td) {
   width: auto !important;
 }
 
-.elEmbedButton, .elFetch, .elLink {
+td.itemActions {
+  word-wrap: break-word;
+  word-break: break-all;
+}
+
+table.actionTable {
+  table-layout: fixed;
+  width: 100%;
+}
+
+.elLink {
   cursor: default;
   font-weight: bold;
   color: var(--link-color);
   padding-left: 0;
   padding-right: 1em;
-}
-
-.elEmbedButton:hover, .elFetch:hover {
-  opacity: 80%
 }
 
 .embeddedIframe {
@@ -205,14 +211,14 @@ table.manageFeedsForm, table.manageFeedsForm :is(tbody, tr, th, td) {
   font-size: xx-small;
 }
 
-.markPageRead, .markPageDeleted, .removePageContent, .toggleRead, .noteThis, .renderMath, .askChatGPT, .saveSnippet, .toggleDelete, .jotNotes {
+.markPageRead, .markPageDeleted, .removePageContent, .toggleRead, .elEmbedButton, .elFetch, .elLink, .noteThis, .renderMath, .askChatGPT, .saveSnippet, .toggleDelete, .jotNotes {
   font-size: x-small;
   border: 1px solid;
   border-radius: 6px;
   padding: 2px 4px;
 }
 
-.markPageRead:hover, .markPageDeleted:hover, .removePageContent:hover, .toggleRead:hover, .noteThis:hover, .renderMath:hover, .askChatGPT:hover, .saveSnippet:hover, .toggleDelete:hover, .jotNotes:hover {
+.markPageRead:hover, .markPageDeleted:hover, .removePageContent:hover, .toggleRead:hover, .elFetch:hover, .elLink:hover, .elEmbedButton:hover, .noteThis:hover, .renderMath:hover, .askChatGPT:hover, .saveSnippet:hover, .toggleDelete:hover, .jotNotes:hover {
   color: #f15500;
 }
 
