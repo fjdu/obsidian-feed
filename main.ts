@@ -135,7 +135,9 @@ export default class FeedsReader extends Plugin {
           var item = GLB.feedsStore[GLB.currentFeed].items[idx];
           var itemLink = sanitizeHTMLToDom(item.link).textContent;
 
-          elContent.appendChild(sanitizeHTMLToDom(item.content.replace(/<img src="\/\//g,"<img src=\"https://")));
+          if (item.content) {
+            elContent.appendChild(sanitizeHTMLToDom(item.content.replace(/<img src="\/\//g,"<img src=\"https://")));
+          }
           evt.target.setAttribute('showContent', '1');
         } else {
           var elContent = document.getElementById('itemContent' + idx);
@@ -201,25 +203,29 @@ export default class FeedsReader extends Plugin {
         fetchContainer.className = 'fetchContainer';
         fetchContainer.id = 'fetchContainer' + idx;
         fetchContainer.appendChild(sanitizeHTMLToDom(pageSrc));
-        //MarkdownPreviewView.renderMarkdown(htmlToMarkdown(pageSrc), fetchContainer);
       }
       if (evt.target.className === 'renderMath') {
-        var idx = this.getNumFromId(evt.target.id, 'renderMath');
-        var elContent = document.getElementById('itemContent' + idx);
-        const item = GLB.feedsStore[GLB.currentFeed].items[idx];
-        const elID = item.link;
-        if (elContent !== null) {
-          elContent.empty();
-        } else {
-          elContent = document.getElementById(elID).createEl('div');
-          elContent.id = 'itemContent' + idx;
-        }
-        MarkdownPreviewView.renderMarkdown(
-          remedyLatex(htmlToMarkdown(item.content)), elContent);
+          var idx = this.getNumFromId(evt.target.id, 'renderMath');
+          var elContent = document.getElementById('itemContent' + idx);
+          const item = GLB.feedsStore[GLB.currentFeed].items[idx];
+        if (item.content) {
+            const elID = item.link;
+            if (elContent !== null) {
+              elContent.empty();
+            } else {
+              elContent = document.getElementById(elID).createEl('div');
+              elContent.id = 'itemContent' + idx;
+            }
+            MarkdownPreviewView.renderMarkdown(
+              remedyLatex(htmlToMarkdown(item.content)), elContent);
+          }
       }
       if (evt.target.className === 'askChatGPT') {
         var idx = this.getNumFromId(evt.target.id, 'askChatGPT');
         const item = GLB.feedsStore[GLB.currentFeed].items[idx];
+        if (!item.content) {
+          return;
+        }
         const elID = item.link;
         const el = document.getElementById('shortNoteContainer' + idx);
         if (el === null) {
@@ -289,12 +295,16 @@ export default class FeedsReader extends Plugin {
           if (author_text !== '') {
             author_text = '\n> ' + htmlToMarkdown(author_text);
           }
+          var ctt = '';
+          if (the_item.content) {
+            ctt = the_item.content;
+          }
           theContent = remedyLatex(
                           htmlToMarkdown(unEscape(
                             handle_tags(
                             handle_a_tag(
                             handle_img_tag(
-                            the_item.content.replace(/\n/g, ' '))))
+                            ctt.replace(/\n/g, ' '))))
                             .replace(/ +/g, ' ')
                             .replace(/\s+$/g, '')
                             .replace(/^\s+/g, '')))) + author_text;
@@ -346,12 +356,16 @@ export default class FeedsReader extends Plugin {
           if (author_text !== '') {
             author_text = '\n> ' + htmlToMarkdown(author_text);
           }
+          var ctt = '';
+          if (the_item.content) {
+            ctt = the_item.content;
+          }
           theContent = remedyLatex(
                           htmlToMarkdown(unEscape(
                             handle_tags(
                             handle_a_tag(
                             handle_img_tag(
-                            the_item.content.replace(/\n/g, ' '))))
+                            ctt.replace(/\n/g, ' '))))
                             .replace(/ +/g, ' ')
                             .replace(/\s+$/g, '')
                             .replace(/^\s+/g, '')))) + author_text;
@@ -451,8 +465,12 @@ export default class FeedsReader extends Plugin {
           }
           changed = true;
           nMarked += 1;
-          item.content = '';
-          item.creator = '';
+          if (item.content) {
+            delete item.content;
+          }
+          if (item.creator) {
+            delete item.creator;
+          }
         }
         if (changed) {
           GLB.feedsStoreChange = true;
@@ -789,13 +807,20 @@ class SearchModal extends Modal {
       for (let i=0; i<fd.length; i++) {
         let item = fd[i];
         var sItems;
+        var sCreator='', sContent='';
+        if (item.creator) {
+          sCreator = item.creator;
+        }
+        if (item.content) {
+          sContent = item.content;
+        }
         if (wordWise) {
           sItems = (item.title.toLowerCase().split(sep)
-              .concat(item.creator.toLowerCase().split(sep))
-              .concat(item.content.toLowerCase().split(sep)));
+              .concat(sCreator.toLowerCase().split(sep))
+              .concat(sContent.toLowerCase().split(sep)));
         } else {
-          sItems = [item.title.toLowerCase(), item.creator.toLowerCase(),
-                    item.content.toLowerCase()].join(' ');
+          sItems = [item.title.toLowerCase(), sCreator.toLowerCase(),
+                    sContent.toLowerCase()].join(' ');
         }
         let found = true;
         for (let j=0; j<searchTerms.length; j++) {
@@ -903,6 +928,7 @@ class ManageFeedsModal extends Modal {
     const btMarkAllRead = actions.createEl('button', {text: 'Mark all read'});
     const btPurgeDeleted = actions.createEl('button', {text: 'Purge deleted'});
     const btRemoveContent = actions.createEl('button', {text: 'Remove content'});
+    const btRemoveEmptyFields = actions.createEl('button', {text: 'Remove empty fields'});
     const btRemoveContentOld = actions.createEl('button', {text: 'Remove old content'});
     const btPurgeAll = actions.createEl('button', {text: 'Purge all'});
     const btPurgeOldHalf = actions.createEl('button', {text: 'Purge old'});
@@ -1001,6 +1027,11 @@ class ManageFeedsModal extends Modal {
       [...document.getElementsByClassName('checkThis')]
       .filter(el => el.checked)
       .forEach(el => {removeContent(el.getAttribute('val'));});}});
+    btRemoveEmptyFields.addEventListener('click', () => {
+      if (window.confirm('Sure?')) {
+      [...document.getElementsByClassName('checkThis')]
+      .filter(el => el.checked)
+      .forEach(el => {removeEmptyFields(el.getAttribute('val'));});}});
     btRemoveContentOld.addEventListener('click', () => {
       if (window.confirm('Sure?')) {
       [...document.getElementsByClassName('checkThis')]
@@ -1292,13 +1323,13 @@ export function getFeedStats(feedUrl: string) {
   var fd = GLB.feedsStore[feedUrl];
   var nRead = 0, nDeleted = 0, nUnread = 0, nTotal = fd.items.length;
   for (var i=0; i<nTotal; i++) {
-    if (fd.items[i].read != '') {
+    if (fd.items[i].read) {
       nRead += 1;
     }
-    if (fd.items[i].deleted != '') {
+    if (fd.items[i].deleted) {
       nDeleted += 1;
     }
-    if ((fd.items[i].read === '') && (fd.items[i].deleted === '')) {
+    if ((!fd.items[i].read) && (!fd.items[i].deleted)) {
       nUnread += 1;
     }
   }
@@ -1339,7 +1370,7 @@ function getStoreSizeStr(sz: number) {
 function markAllRead(feedUrl: string) {
   var nowStr = nowdatetime();
   for (var i=0; i<GLB.feedsStore[feedUrl].items.length; i++) {
-    if (GLB.feedsStore[feedUrl].items[i].read === "") {
+    if (!GLB.feedsStore[feedUrl].items[i].read) {
       GLB.feedsStore[feedUrl].items[i].read = nowStr;
     }
   }
@@ -1348,15 +1379,28 @@ function markAllRead(feedUrl: string) {
 }
 
 function purgeDeleted(feedUrl: string) {
-  GLB.feedsStore[feedUrl].items = GLB.feedsStore[feedUrl].items.filter(item => item.deleted === "");
+  GLB.feedsStore[feedUrl].items = GLB.feedsStore[feedUrl].items.filter(
+    item => !item.deleted);
   GLB.feedsStoreChange = true;
   GLB.feedsStoreChangeList.add(feedUrl);
 }
 
 function removeContent(feedUrl: string) {
   for (var i=0; i<GLB.feedsStore[feedUrl].items.length; i++) {
-    GLB.feedsStore[feedUrl].items[i].content = '';
-    GLB.feedsStore[feedUrl].items[i].creator = '';
+    delete GLB.feedsStore[feedUrl].items[i].content;
+    delete GLB.feedsStore[feedUrl].items[i].creator;
+  }
+  GLB.feedsStoreChange = true;
+  GLB.feedsStoreChangeList.add(feedUrl);
+}
+
+function removeEmptyFields(feedUrl: string) {
+  for (var i=0; i<GLB.feedsStore[feedUrl].items.length; i++) {
+    for (const [key, value] of Object.entries(GLB.feedsStore[feedUrl].items[i])) {
+      if (value === '') {
+        delete GLB.feedsStore[feedUrl].items[i][key];
+      }
+    }
   }
   GLB.feedsStoreChange = true;
   GLB.feedsStoreChangeList.add(feedUrl);
@@ -1455,7 +1499,9 @@ function makeDisplayList() {
     return;
   }
   for (var i=0; i<fd.items.length; i++) {
-    if ((GLB.showAll) || ((fd.items[i].read === '') && (fd.items[i].deleted === ''))) {
+    if (GLB.showAll) {
+      GLB.displayIndices.push(i);
+    } else if (!(fd.items[i].read || fd.items[i].deleted)) {
       GLB.displayIndices.push(i);
     }
   }
@@ -1527,11 +1573,13 @@ async function show_feed() {
        elTitle.setAttribute('_idx', idx);
        elTitle.setAttribute('showContent', '0');
      }
-     const elCreator = itemEl.createEl('div');
-     elCreator.className = 'itemCreator';
-     elCreator.appendChild(sanitizeHTMLToDom(item.creator));
+     if (item.creator) {
+       const elCreator = itemEl.createEl('div');
+       elCreator.className = 'itemCreator';
+       elCreator.appendChild(sanitizeHTMLToDom(item.creator));
+     }
      var elPubDate;
-     if (item.pubDate != "") {
+     if (item.pubDate) {
        elPubDate = itemEl.createEl('div', {text: item.pubDate});
      } else {
        elPubDate = itemEl.createEl('div', {text: item.downloaded});
@@ -1553,7 +1601,7 @@ async function show_feed() {
      saveSnippet.id = 'saveSnippet' + idx;
 
      var t_read = "Read";
-     if (item.read !== '') {
+     if (item.read && (item.read !== '')) {
        t_read = 'Unread';
      }
      const toggleRead = itemActionOneRow.createEl('div', {text: t_read});
@@ -1595,14 +1643,14 @@ async function show_feed() {
      elLink.createEl('a', {text: "Link", href: item.link});
 
      var t_delete = "Delete";
-     if (item.deleted !== '') {
+     if (item.deleted && (item.deleted !== '')) {
        t_delete = 'Undelete';
      }
      const toggleDelete = itemActionOneRow.createEl('div', {text: t_delete});
      toggleDelete.className = 'toggleDelete';
      toggleDelete.id = 'toggleDelete' + idx;
 
-     if (!GLB.titleOnly) {
+     if ((!GLB.titleOnly) && item.content) {
        const elContent = itemEl.createEl('div');
        elContent.className = 'itemContent';
        elContent.id = 'itemContent' + idx;
