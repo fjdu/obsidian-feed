@@ -216,6 +216,7 @@ export default class FeedsReader extends Plugin {
               elContent = document.getElementById(elID).createEl('div');
               elContent.id = 'itemContent' + idx;
             }
+            elContent.className = 'itemContent';
             MarkdownPreviewView.renderMarkdown(
               remedyLatex(htmlToMarkdown(item.content)), elContent);
           }
@@ -402,7 +403,7 @@ export default class FeedsReader extends Plugin {
              i++) {
           const idx = GLB.displayIndices[i];
           const item = fd.items[idx];
-          if ((item.read !== '') || (item.deleted !== '')) {
+          if ((item.read) || (item.deleted)) {
             continue;
           }
           changed = true;
@@ -460,7 +461,7 @@ export default class FeedsReader extends Plugin {
              i++) {
           const idx = GLB.displayIndices[i];
           const item = fd.items[idx];
-          if (item.read !== '') {
+          if (item.read) {
             continue;
           }
           changed = true;
@@ -488,14 +489,14 @@ export default class FeedsReader extends Plugin {
           GLB.feedsStore[GLB.currentFeed].items[idx].read = nowdatetime();
           el.innerText = 'Unread';
           GLB.hideThisItem = true;
-          if (GLB.feedsStore[GLB.currentFeed].items[idx].deleted === '') {
+          if (!GLB.feedsStore[GLB.currentFeed].items[idx].deleted) {
             GLB.elUnreadCount.innerText = parseInt(GLB.elUnreadCount.innerText) - 1;
           }
         } else {
           GLB.feedsStore[GLB.currentFeed].items[idx].read = '';
           el.innerText = 'Read';
           GLB.hideThisItem = false;
-          if (GLB.feedsStore[GLB.currentFeed].items[idx].deleted === '') {
+          if (!GLB.feedsStore[GLB.currentFeed].items[idx].deleted) {
             GLB.elUnreadCount.innerText = parseInt(GLB.elUnreadCount.innerText) + 1;
           }
         }
@@ -518,14 +519,14 @@ export default class FeedsReader extends Plugin {
           GLB.feedsStore[GLB.currentFeed].items[idx].deleted = nowdatetime();
           el.innerText = 'Undelete';
           GLB.hideThisItem = true;
-          if (GLB.feedsStore[GLB.currentFeed].items[idx].read === '') {
+          if (!GLB.feedsStore[GLB.currentFeed].items[idx].read) {
             GLB.elUnreadCount.innerText = parseInt(GLB.elUnreadCount.innerText) - 1;
           }
         } else {
           GLB.feedsStore[GLB.currentFeed].items[idx].deleted = '';
           el.innerText = 'Delete';
           GLB.hideThisItem = false;
-          if (GLB.feedsStore[GLB.currentFeed].items[idx].read === '') {
+          if (!GLB.feedsStore[GLB.currentFeed].items[idx].read) {
             GLB.elUnreadCount.innerText = parseInt(GLB.elUnreadCount.innerText) + 1;
           }
         }
@@ -1223,7 +1224,6 @@ class FeedReaderSettingTab extends PluginSettingTab {
           GLB.saveContent = value;
 					this.plugin.settings.saveContent = GLB.saveContent;
 					await this.plugin.saveSettings();
-          console.log(value, GLB.saveContent);
 				}));
 	}
 }
