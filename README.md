@@ -6,7 +6,7 @@ This plugin is mostly built for my own use.  Online services are good, but it is
 
 - It creates an icon in the left sidebar (for the mobile version the icon is located in the bottom right pop-up menu).
 - The first time you use it, you need to manually add RSS feed sources.
-- It creates nested folders `feeds-reader/feeds-store/` in the current vault.  All the saved items (`.md` files) are stored in `feeds-reader`, and all the feeds data (`.json.frag` files, i.e. json fragments.) are saved in `feeds-reader/feeds-store/`.
+- It creates nested folders `feeds-reader/feeds-store/` in the current vault.  All the saved items (`.md` files) are stored in `feeds-reader`, and all the feeds data (`.json.frag.gzip` files, i.e. gzipped json fragments.) are saved in `feeds-reader/feeds-store/`.
 - The top-left `>` is for toggling the navigation bar.  This is useful when reading on a small screen.
 - `Search` is for searching for one or more keywords (separated by space) in the current selected feed.
 - `Unread only`/`Show all` is for toggling displaying only unread items or all items (Note: all those marked as "read" or "deleted" are considered "read").
@@ -27,7 +27,7 @@ This plugin is mostly built for my own use.  Online services are good, but it is
   - Click on `Embed` to embed the page pointed to by the item URL as an `iframe` element.
   - Click on `Fetch` to fetch the URL and display it.  This is for pages that cannot be embedded.  Better than nothing.
 - The items are paginated with 20 items per page, which can be changed in the settings.
-- The feeds data are saved as fragmented `.json` files.  They are intentionally fragmented so that when new items come, old files do not need to be updated (hence do not need to be synced).
+- The feeds data are saved as gzipped fragmented `.json` files.  They are intentionally fragmented so that when new items come, old files do not need to be updated (hence do not need to be synced).
 
 ## Acknowledgment
 - This plugin makes use of the [rssParser](https://github.com/joethei/obsidian-rss/blob/master/src/parser/rssParser.ts) source code from the [RSS Reader](https://github.com/joethei/obsidian-rss) plugin written by [Johannes Theiner](https://github.com/joethei), with a few modifications.
