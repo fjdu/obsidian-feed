@@ -1241,7 +1241,7 @@ export async function saveFeedsData () {
     if (!GLB.feedsStore.hasOwnProperty(key)) {
       continue;
     }
-    nSaved += (await saveStringSplitted(JSON.stringify(GLB.feedsStore[key], null, 1),
+    nSaved += (await saveStringSplitted(JSON.stringify(GLB.feedsStore[key], null, 0),
                 GLB.feeds_reader_dir + '/' + GLB.feeds_store_base,
                 GLB.feedList[i].name,
                 GLB.lenStrPerFile, 0));
@@ -1266,7 +1266,15 @@ export async function loadFeedsStoredData() {
   var noSplitFile = true;
   GLB.feedsStore = {};
   for (var i=0; i<GLB.feedList.length; i++) {
-    var res = await loadStringSplitted(GLB.feeds_reader_dir + '/' + GLB.feeds_store_base, GLB.feedList[i].name);
+    var res = await loadStringSplitted_Gzip(GLB.feeds_reader_dir + '/' + GLB.feeds_store_base, GLB.feedList[i].name);
+    if (res === '') {
+      var res = await loadStringSplitted(GLB.feeds_reader_dir + '/' + GLB.feeds_store_base, GLB.feedList[i].name);
+      // Convert non-gzip files to gzip files.
+      if (res !== '') {
+        GLB.feedsStoreChange = true;
+        GLB.feedsStoreChangeList.add(GLB.feedList[i].feedUrl);
+      }
+    }
     if (res.length > 0) {
       try {
         GLB.feedsStore[GLB.feedList[i].feedUrl] = JSON.parse(res);
@@ -1733,6 +1741,38 @@ async function saveSubscriptions() {
   }
 }
 
+function isArrEqual(buf1, buf2)
+{
+// From: https://stackoverflow.com/questions/21553528/how-to-test-for-equality-in-arraybuffer-dataview-and-typedarray
+    if (buf1.byteLength != buf2.byteLength) return false;
+    var dv1 = new Int8Array(buf1);
+    var dv2 = new Int8Array(buf2);
+    for (var i = 0 ; i != buf1.byteLength ; i++)
+    {
+        if (dv1[i] != dv2[i]) return false;
+    }
+    return true;
+}
+
+async function saveStringToFileGzip(s: string, folder: string, fname: string) {
+  var written = 0;
+  if (! await app.vault.exists(folder)) {
+    await app.vault.createFolder(folder);
+  }
+  const s_gzipped = await compress(s, 'gzip');
+  var fpath = folder + "/" + fname + '.gzip';
+  if (! await app.vault.exists(fpath)) {
+    await app.vault.createBinary(fpath, s_gzipped);
+    written = 1;
+  } else {
+    if (!isArrEqual(await app.vault.adapter.readBinary(fpath), s_gzipped)) {
+      await app.vault.adapter.writeBinary(fpath, s_gzipped);
+      written = 1;
+    }
+  }
+  return written;
+}
+
 async function saveStringToFile(s: string, folder: string, fname: string) {
   var written = 0;
   if (! await app.vault.exists(folder)) {
@@ -1771,8 +1811,22 @@ async function saveStringSplitted(s: string, folder: string, fname_base: string,
     return 0;
   }
   var fname = makeFilename(fname_base, iPostfix);
-  return ((await saveStringToFile(s.substring(lenTotal-nCharPerFile), folder, fname)) +
+  return ((await saveStringToFileGzip(s.substring(lenTotal-nCharPerFile), folder, fname)) +
           + (await saveStringSplitted(s.substring(0, lenTotal-nCharPerFile), folder, fname_base, nCharPerFile, iPostfix+1)));
+}
+
+async function loadStringSplitted_Gzip(folder: string, fname_base: string) {
+  var res = '';
+  if (await app.vault.exists(folder)) {
+    for (var i=0;;i++) {
+      var fpath = folder + '/' + makeFilename(fname_base, i) + '.gzip';
+      if (! await app.vault.exists(fpath)) {
+        break;
+      }
+      res = (await decompress(await app.vault.adapter.readBinary(fpath), 'gzip')).concat('', res);
+    }
+  }
+  return res;
 }
 
 async function loadStringSplitted(folder: string, fname_base: string) {
@@ -1829,4 +1883,24 @@ function remedyLatex(s: string) {
           .replace(/_\*/g, '_\\ast')
           .replace(/_{\*}/g, '_{\\ast}')
           .replace(/\*/g, '\\*');
+}
+
+async function compress(string, encoding) {
+  // From: https://gist.github.com/Explosion-Scratch/357c2eebd8254f8ea5548b0e6ac7a61b
+  const byteArray = new TextEncoder().encode(string);
+  const cs = new CompressionStream(encoding);
+  const writer = cs.writable.getWriter();
+  writer.write(byteArray);
+  writer.close();
+  return new Response(cs.readable).arrayBuffer();
+}
+
+async function decompress(byteArray, encoding) {
+  const cs = new DecompressionStream(encoding);
+  const writer = cs.writable.getWriter();
+  writer.write(byteArray);
+  writer.close();
+  return new Response(cs.readable).arrayBuffer().then(function (arrayBuffer) {
+    return new TextDecoder().decode(arrayBuffer);
+  });
 }
