@@ -35,24 +35,6 @@ export default class FeedsReader extends Plugin {
 			// Called when the user clicks the icon.
       this.activateView();
 
-      // const menu = new Menu(this.app);
-      // menu.addItem((item) =>
-      //   item
-      //     .setTitle("Copy")
-      //     .setIcon("documents")
-      //     .onClick(() => {
-      //       new Notice("Copied");
-      //     })
-      // );
-      // menu.addItem((item) =>
-      //   item
-      //     .setTitle("Paste")
-      //     .setIcon("paste")
-      //     .onClick(() => {
-      //       new Notice("Pasted");
-      //     })
-      // );
-      // menu.showAtMouseEvent(evt);
 		});
 
     this.addSettingTab(new FeedReaderSettingTab(this.app, this));
