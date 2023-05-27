@@ -949,9 +949,9 @@ class ManageFeedsModal extends Modal {
               if (!alreadyIncluded) {
                 for (var j=0;;j++) {
                   var fpath_old = [GLB.feeds_reader_dir, GLB.feeds_store_base,
-                                   makeFilename(GLB.feedList[i].name, j)].join('/');
+                                   makeFilename(GLB.feedList[i].name, j)+'.gzip'].join('/');
                   var fpath_new = [GLB.feeds_reader_dir, GLB.feeds_store_base,
-                                   makeFilename(newName, j)].join('/');
+                                   makeFilename(newName, j)+'.gzip'].join('/');
                   if (await app.vault.exists(fpath_old)) {
                     await app.vault.adapter.rename(fpath_old, fpath_new);
                   } else {
@@ -1446,6 +1446,7 @@ async function removeFeed(feedUrl: string) {
       if (GLB.feedsStore.hasOwnProperty(feedUrl)) {
         delete GLB.feedsStore[feedUrl];
         await removeFileFragments(GLB.feeds_reader_dir + '/' + GLB.feeds_store_base, GLB.feedList[i].name);
+        await removeFileFragments_gzipped(GLB.feeds_reader_dir + '/' + GLB.feeds_store_base, GLB.feedList[i].name);
       }
       GLB.feedList.splice(i, 1);
       GLB.feedsStoreChange = true;
@@ -1779,7 +1780,7 @@ async function saveStringSplitted(s: string, folder: string, fname_base: string,
     if (lenTotal === 0) {
       // Remove redundant files with higher serial number.
       for (var i=0;;i++) {
-        var fpath_unneeded = folder + '/' + makeFilename(fname_base, iPostfix+i);
+        var fpath_unneeded = folder + '/' + makeFilename(fname_base, iPostfix+i) + '.gzip';
         if (await app.vault.exists(fpath_unneeded)) {
           await app.vault.adapter.remove(fpath_unneeded);
           new Notice('Redundant file ' + fpath_unneeded + ' removed.', 2000);
@@ -1832,6 +1833,17 @@ function makeFilename (fname_base: string, iPostfix: number) {
 async function removeFileFragments(folder: string, fname_base: string) {
   for (var i=0;;i++) {
     var fpath = folder + '/' + makeFilename(fname_base, i);
+    if (! await app.vault.exists(fpath)) {
+      break;
+    }
+    await app.vault.adapter.remove(fpath);
+    new Notice(fpath + ' removed.', 2000);
+  }
+}
+
+async function removeFileFragments_gzipped(folder: string, fname_base: string) {
+  for (var i=0;;i++) {
+    var fpath = folder + '/' + makeFilename(fname_base, i) + '.gzip';
     if (! await app.vault.exists(fpath)) {
       break;
     }
