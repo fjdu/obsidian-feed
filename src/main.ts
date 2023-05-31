@@ -14,7 +14,17 @@ interface FeedsReaderSettings {
 
 const DEFAULT_SETTINGS: FeedsReaderSettings = {
   nItemPerPage: 20,
-  saveContent: false
+  saveContent: false,
+  showJot: true,
+  showSnippet: true,
+  showRead: true,
+  showSave: true,
+  showMath: true,
+  showGPT: true,
+  showEmbed: true,
+  showFetch: true,
+  showLink: true,
+  showDelete: true
 }
 
 export default class FeedsReader extends Plugin {
@@ -681,6 +691,8 @@ export default class FeedsReader extends Plugin {
     GLB.elUnreadCount = undefined;
     GLB.maxTotalnumDisplayed = 1e5;
     GLB.nThanksSep = 16;
+
+    GLB.settings = this.settings;
 	}
 
 	async saveSettings() {
@@ -1196,6 +1208,106 @@ class FeedReaderSettingTab extends PluginSettingTab {
 					this.plugin.settings.nItemPerPage = GLB.nItemPerPage;
 					await this.plugin.saveSettings();
 				}));
+		new Setting(containerEl)
+			.setName('Show Jot')
+			.setDesc('Whether to show jot button')
+      .addToggle(t =>
+        t.setValue(this.plugin.settings.showJot)
+			   .onChange(async (value) => {
+            GLB.settings.showJot = value;
+			  		this.plugin.settings.showJot = value;
+			  		await this.plugin.saveSettings();
+			  	}));
+		new Setting(containerEl)
+			.setName('Show Snippet')
+			.setDesc('Whether to show snippet button')
+      .addToggle(t =>
+        t.setValue(this.plugin.settings.showSnippet)
+			   .onChange(async (value) => {
+            GLB.settings.showSnippet = value;
+			  		this.plugin.settings.showSnippet = value;
+			  		await this.plugin.saveSettings();
+			  	}));
+		new Setting(containerEl)
+			.setName('Show Read')
+			.setDesc('Whether to show read button')
+      .addToggle(t =>
+        t.setValue(this.plugin.settings.showRead)
+			   .onChange(async (value) => {
+            GLB.settings.showRead = value;
+			  		this.plugin.settings.showRead = value;
+			  		await this.plugin.saveSettings();
+			  	}));
+		new Setting(containerEl)
+			.setName('Show Save')
+			.setDesc('Whether to show save button')
+      .addToggle(t =>
+        t.setValue(this.plugin.settings.showSave)
+			   .onChange(async (value) => {
+            GLB.settings.showSave = value;
+			  		this.plugin.settings.showSave = value;
+			  		await this.plugin.saveSettings();
+			  	}));
+		new Setting(containerEl)
+			.setName('Show Math')
+			.setDesc('Whether to show math button')
+      .addToggle(t =>
+        t.setValue(this.plugin.settings.showMath)
+			   .onChange(async (value) => {
+            GLB.settings.showMath = value;
+			  		this.plugin.settings.showMath = value;
+			  		await this.plugin.saveSettings();
+			  	}));
+		new Setting(containerEl)
+			.setName('Show GPT')
+			.setDesc('Whether to show GPT button')
+      .addToggle(t =>
+        t.setValue(this.plugin.settings.showGPT)
+			   .onChange(async (value) => {
+            GLB.settings.showGPT = value;
+			  		this.plugin.settings.showGPT = value;
+			  		await this.plugin.saveSettings();
+			  	}));
+		new Setting(containerEl)
+			.setName('Show Embed')
+			.setDesc('Whether to show Embed button')
+      .addToggle(t =>
+        t.setValue(this.plugin.settings.showEmbed)
+			   .onChange(async (value) => {
+            GLB.settings.showEmbed = value;
+			  		this.plugin.settings.showEmbed = value;
+			  		await this.plugin.saveSettings();
+			  	}));
+		new Setting(containerEl)
+			.setName('Show Fetch')
+			.setDesc('Whether to show Fetch button')
+      .addToggle(t =>
+        t.setValue(this.plugin.settings.showFetch)
+			   .onChange(async (value) => {
+            GLB.settings.showFetch = value;
+			  		this.plugin.settings.showFetch = value;
+			  		await this.plugin.saveSettings();
+			  	}));
+		new Setting(containerEl)
+			.setName('Show Link')
+			.setDesc('Whether to show Link button')
+      .addToggle(t =>
+        t.setValue(this.plugin.settings.showLink)
+			   .onChange(async (value) => {
+            GLB.settings.showLink = value;
+			  		this.plugin.settings.showLink = value;
+			  		await this.plugin.saveSettings();
+			  	}));
+		new Setting(containerEl)
+			.setName('Show Delete')
+			.setDesc('Whether to show Delete button')
+      .addToggle(t =>
+        t.setValue(this.plugin.settings.showDelete)
+			   .onChange(async (value) => {
+            GLB.settings.showDelete = value;
+			  		this.plugin.settings.showDelete = value;
+			  		await this.plugin.saveSettings();
+			  	}));
 		containerEl.createEl('h3', {text: 'Saving'});
 		new Setting(containerEl)
 			.setName('Include content')
@@ -1226,7 +1338,7 @@ export async function saveFeedsData () {
     nSaved += (await saveStringSplitted(JSON.stringify(GLB.feedsStore[key], null, 0),
                 GLB.feeds_reader_dir + '/' + GLB.feeds_store_base,
                 GLB.feedList[i].name,
-                GLB.lenStrPerFile, 0));
+                GLB.lenStrPerFile));
   }
 
   // if (! await this.app.vault.exists(GLB.feeds_reader_dir)) {
@@ -1583,63 +1695,80 @@ async function show_feed() {
      let itemActionOneRow = itemActionTable.createEl('tr').createEl('td');
      itemActionOneRow.className = 'itemActions';
 
-     const jot = itemActionOneRow.createEl('div', {text: 'Jot'});
-     jot.className = 'jotNotes';
-     jot.id = 'jotNotes' + idx;
-
-     const saveSnippet = itemActionOneRow.createEl('div', {text: "Snippet"});
-     saveSnippet.className = 'saveSnippet';
-     saveSnippet.id = 'saveSnippet' + idx;
-
-     var t_read = "Read";
-     if (item.read && (item.read !== '')) {
-       t_read = 'Unread';
+     if (GLB.settings.showJot) {
+       const jot = itemActionOneRow.createEl('div', {text: 'Jot'});
+       jot.className = 'jotNotes';
+       jot.id = 'jotNotes' + idx;
      }
-     const toggleRead = itemActionOneRow.createEl('div', {text: t_read});
-     toggleRead.className = 'toggleRead';
-     toggleRead.id = 'toggleRead' + idx;
 
-     const noteThis = itemActionOneRow.createEl('div', {text: "Save"});
-     noteThis.className = 'noteThis';
-     noteThis.id = 'noteThis' + idx;
-
-     const renderMath = itemActionOneRow.createEl('div', {text: "Math"});
-     renderMath.className = 'renderMath';
-     renderMath.id = 'renderMath' + idx;
-
-     //  itemActionOneRow = itemActionTable.createEl('tr').createEl('td');
-     //  itemActionOneRow.className = 'itemActions';
-
-     const askChatGPT = itemActionOneRow.createEl('div', {text: "GPT"});
-     askChatGPT.className = 'askChatGPT';
-     askChatGPT.id = 'askChatGPT' + idx;
-
-     const embed = itemActionOneRow.createEl('div', {text: "Embed"});
-     embed.setAttribute('url', item.link);
-     embed.setAttribute('_idx', idx);
-     embed.setAttribute('_link', item.link);
-     embed.className = 'elEmbedButton';
-
-     const fetch = itemActionOneRow.createEl('div', {text: "Fetch"});
-     fetch.setAttribute('url', item.link);
-     fetch.setAttribute('_idx', idx);
-     fetch.setAttribute('_link', item.link);
-     fetch.className = 'elFetch';
-
-     const elLink = itemActionOneRow.createEl('div');
-     elLink.setAttribute('url', item.link);
-     elLink.setAttribute('_idx', idx);
-     elLink.setAttribute('_link', item.link);
-     elLink.className = 'elLink';
-     elLink.createEl('a', {text: "Link", href: item.link});
-
-     var t_delete = "Delete";
-     if (item.deleted && (item.deleted !== '')) {
-       t_delete = 'Undelete';
+     if (GLB.settings.showSnippet) {
+       const saveSnippet = itemActionOneRow.createEl('div', {text: "Snippet"});
+       saveSnippet.className = 'saveSnippet';
+       saveSnippet.id = 'saveSnippet' + idx;
      }
-     const toggleDelete = itemActionOneRow.createEl('div', {text: t_delete});
-     toggleDelete.className = 'toggleDelete';
-     toggleDelete.id = 'toggleDelete' + idx;
+
+     if (GLB.settings.showRead) {
+       var t_read = "Read";
+       if (item.read && (item.read !== '')) {
+         t_read = 'Unread';
+       }
+       const toggleRead = itemActionOneRow.createEl('div', {text: t_read});
+       toggleRead.className = 'toggleRead';
+       toggleRead.id = 'toggleRead' + idx;
+     }
+
+     if (GLB.settings.showSave) {
+       const noteThis = itemActionOneRow.createEl('div', {text: "Save"});
+       noteThis.className = 'noteThis';
+       noteThis.id = 'noteThis' + idx;
+     }
+
+     if (GLB.settings.showMath) {
+       const renderMath = itemActionOneRow.createEl('div', {text: "Math"});
+       renderMath.className = 'renderMath';
+       renderMath.id = 'renderMath' + idx;
+     }
+
+     if (GLB.settings.showGPT) {
+       const askChatGPT = itemActionOneRow.createEl('div', {text: "GPT"});
+       askChatGPT.className = 'askChatGPT';
+       askChatGPT.id = 'askChatGPT' + idx;
+     }
+
+     if (GLB.settings.showEmbed) {
+       const embed = itemActionOneRow.createEl('div', {text: "Embed"});
+       embed.setAttribute('url', item.link);
+       embed.setAttribute('_idx', idx);
+       embed.setAttribute('_link', item.link);
+       embed.className = 'elEmbedButton';
+     }
+
+     if (GLB.settings.showFetch) {
+       const fetch = itemActionOneRow.createEl('div', {text: "Fetch"});
+       fetch.setAttribute('url', item.link);
+       fetch.setAttribute('_idx', idx);
+       fetch.setAttribute('_link', item.link);
+       fetch.className = 'elFetch';
+     }
+
+     if (GLB.settings.showLink) {
+       const elLink = itemActionOneRow.createEl('div');
+       elLink.setAttribute('url', item.link);
+       elLink.setAttribute('_idx', idx);
+       elLink.setAttribute('_link', item.link);
+       elLink.className = 'elLink';
+       elLink.createEl('a', {text: "Link", href: item.link});
+     }
+
+     if (GLB.settings.showDelete) {
+       var t_delete = "Delete";
+       if (item.deleted && (item.deleted !== '')) {
+         t_delete = 'Undelete';
+       }
+       const toggleDelete = itemActionOneRow.createEl('div', {text: t_delete});
+       toggleDelete.className = 'toggleDelete';
+       toggleDelete.id = 'toggleDelete' + idx;
+     }
 
      if ((!GLB.titleOnly) && item.content) {
        const elContent = itemEl.createEl('div');
@@ -1724,18 +1853,18 @@ async function saveSubscriptions() {
   }
 }
 
-function isArrEqual(buf1, buf2)
-{
-// From: https://stackoverflow.com/questions/21553528/how-to-test-for-equality-in-arraybuffer-dataview-and-typedarray
-    if (buf1.byteLength != buf2.byteLength) return false;
-    var dv1 = new Int8Array(buf1);
-    var dv2 = new Int8Array(buf2);
-    for (var i = 0 ; i != buf1.byteLength ; i++)
-    {
-        if (dv1[i] != dv2[i]) return false;
-    }
-    return true;
-}
+//function isArrEqual(buf1, buf2)
+//{
+//// From: https://stackoverflow.com/questions/21553528/how-to-test-for-equality-in-arraybuffer-dataview-and-typedarray
+//    if (buf1.byteLength != buf2.byteLength) return false;
+//    var dv1 = new Int8Array(buf1);
+//    var dv2 = new Int8Array(buf2);
+//    for (var i = 0 ; i != buf1.byteLength ; i++)
+//    {
+//        if (dv1[i] != dv2[i]) return false;
+//    }
+//    return true;
+//}
 
 async function saveStringToFileGzip(s: string, folder: string, fname: string) {
   var written = 0;
@@ -1748,7 +1877,7 @@ async function saveStringToFileGzip(s: string, folder: string, fname: string) {
     await app.vault.createBinary(fpath, s_gzipped);
     written = 1;
   } else {
-    if (!isArrEqual(await app.vault.adapter.readBinary(fpath), s_gzipped)) {
+    if ((await decompress(await app.vault.adapter.readBinary(fpath), 'gzip')) !== s) {
       await app.vault.adapter.writeBinary(fpath, s_gzipped);
       written = 1;
     }
@@ -1774,29 +1903,63 @@ async function saveStringToFile(s: string, folder: string, fname: string) {
   return written;
 }
 
-async function saveStringSplitted(s: string, folder: string, fname_base: string, nCharPerFile: number, iPostfix: number) {
+async function saveStringSplitted(s: string, folder: string, fname_base: string, nCharPerFile: number) {
+  const nLen = s.length;
+  var iEnd = nLen;
+  var iBg = nLen - nCharPerFile;
+  var i = 0, nSaved = 0;
+  for (i=0;;i++) {
+    if (iBg < 0) {
+      iBg = 0;
+    }
+    if (iBg >= iEnd) {
+      break;
+    }
+    var fname = makeFilename(fname_base, i);
+    nSaved += (await saveStringToFileGzip(s.substring(iBg, iEnd), folder, fname));
+    iEnd = iEnd - nCharPerFile;
+    iBg = iBg - nCharPerFile;
+  }
   try {
-    var lenTotal = s.length;
-    if (lenTotal === 0) {
-      // Remove redundant files with higher serial number.
-      for (var i=0;;i++) {
-        var fpath_unneeded = folder + '/' + makeFilename(fname_base, iPostfix+i) + '.gzip';
-        if (await app.vault.exists(fpath_unneeded)) {
-          await app.vault.adapter.remove(fpath_unneeded);
-          new Notice('Redundant file ' + fpath_unneeded + ' removed.', 2000);
-        } else {
-          break;
-        }
+    // Remove redundant files with higher serial number.
+    for (;;i++) {
+      var fpath_unneeded = folder + '/' + makeFilename(fname_base, i) + '.gzip';
+      if (await app.vault.exists(fpath_unneeded)) {
+        await app.vault.adapter.remove(fpath_unneeded);
+        new Notice('Redundant file ' + fpath_unneeded + ' removed.', 2000);
+      } else {
+        break;
       }
-      return 0;
     }
   } catch (e) {
-    return 0;
+    console.log(e);
   }
-  var fname = makeFilename(fname_base, iPostfix);
-  return ((await saveStringToFileGzip(s.substring(lenTotal-nCharPerFile), folder, fname)) +
-          + (await saveStringSplitted(s.substring(0, lenTotal-nCharPerFile), folder, fname_base, nCharPerFile, iPostfix+1)));
+  return nSaved;
 }
+
+// async function saveStringSplitted(s: string, folder: string, fname_base: string, nCharPerFile: number, iPostfix: number) {
+//   try {
+//     var lenTotal = s.length;
+//     if (lenTotal === 0) {
+//       // Remove redundant files with higher serial number.
+//       for (var i=0;;i++) {
+//         var fpath_unneeded = folder + '/' + makeFilename(fname_base, iPostfix+i) + '.gzip';
+//         if (await app.vault.exists(fpath_unneeded)) {
+//           await app.vault.adapter.remove(fpath_unneeded);
+//           new Notice('Redundant file ' + fpath_unneeded + ' removed.', 2000);
+//         } else {
+//           break;
+//         }
+//       }
+//       return 0;
+//     }
+//   } catch (e) {
+//     return 0;
+//   }
+//   var fname = makeFilename(fname_base, iPostfix);
+//   return ((await saveStringToFileGzip(s.substring(lenTotal-nCharPerFile), folder, fname)) +
+//           + (await saveStringSplitted(s.substring(0, lenTotal-nCharPerFile), folder, fname_base, nCharPerFile, iPostfix+1)));
+// }
 
 async function loadStringSplitted_Gzip(folder: string, fname_base: string) {
   var res = '';

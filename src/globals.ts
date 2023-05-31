@@ -25,4 +25,5 @@ export namespace GLB {
   var displayIndices: number [];
   var maxTotalnumDisplayed: number;
   var nThanksSep: number;
+  var settings;
 }
