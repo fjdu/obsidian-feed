@@ -44,7 +44,6 @@ export default class FeedsReader extends Plugin {
 		const ribbonIconEl = this.addRibbonIcon('circle', 'Feeds reader', async (evt: MouseEvent) => {
 			// Called when the user clicks the icon.
       this.activateView();
-
 		});
 
     this.addSettingTab(new FeedReaderSettingTab(this.app, this));
@@ -1878,7 +1877,8 @@ async function saveStringToFileGzip(s: string, folder: string, fname: string) {
     written = 1;
   } else {
     if ((await decompress(await app.vault.adapter.readBinary(fpath), 'gzip')) !== s) {
-      await app.vault.adapter.writeBinary(fpath, s_gzipped);
+      await app.vault.adapter.remove(fpath);
+      await app.vault.createBinary(fpath, s_gzipped);
       written = 1;
     }
   }
@@ -2042,18 +2042,18 @@ function remedyLatex(s: string) {
           .replace(/\*/g, '\\*');
 }
 
-async function compress(string, encoding) {
+async function compress(string, format) {
   // From: https://gist.github.com/Explosion-Scratch/357c2eebd8254f8ea5548b0e6ac7a61b
   const byteArray = new TextEncoder().encode(string);
-  const cs = new CompressionStream(encoding);
+  const cs = new CompressionStream(format);
   const writer = cs.writable.getWriter();
   writer.write(byteArray);
   writer.close();
   return new Response(cs.readable).arrayBuffer();
 }
 
-async function decompress(byteArray, encoding) {
-  const cs = new DecompressionStream(encoding);
+async function decompress(byteArray, format) {
+  const cs = new DecompressionStream(format);
   const writer = cs.writable.getWriter();
   writer.write(byteArray);
   writer.close();
