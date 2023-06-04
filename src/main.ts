@@ -53,7 +53,7 @@ export default class FeedsReader extends Plugin {
 		this.registerDomEvent(document, 'click', async (evt: MouseEvent) => {
       if (evt.target.id === 'updateAll') {
         GLB.feedList.forEach(async (f) => {
-          var [nNew, nTotal] = await updateOneFeed(f.feedUrl);
+          const [nNew, nTotal] = await updateOneFeed(f.feedUrl);
           if (nNew > 0) {
             new Notice(f.name + ': ' + nTotal.toString() + ' retrieved, '
                        + nNew.toString() + " new.", 3000);
@@ -61,20 +61,20 @@ export default class FeedsReader extends Plugin {
         });
       }
       if (evt.target.className === 'elUnreadTotalAndRefresh') {
-        var fdUrl = evt.target.getAttribute('fdUrl');
-        var [nNew, nTotal] = await updateOneFeed(fdUrl);
+        const fdUrl = evt.target.getAttribute('fdUrl');
+        const [nNew, nTotal] = await updateOneFeed(fdUrl);
         new Notice(evt.target.getAttribute('fdName') + ': '
                    + nTotal.toString() + " retrieved, "
                    + nNew.toString() + ' new.', 3000);
       }
       if (evt.target.className.includes('showFeed')) {
-        var previousFeed = GLB.currentFeed;
+        const previousFeed = GLB.currentFeed;
         GLB.currentFeed = evt.target.id;
         if (GLB.currentFeed === '') {
           return;
         }
         GLB.currentFeedName = '';
-        for (var i=0; i<GLB.feedList.length; i++) {
+        for (let i=0; i<GLB.feedList.length; i++) {
           if (GLB.feedList[i].feedUrl === GLB.currentFeed) {
             GLB.currentFeedName = GLB.feedList[i].name;
             break;
@@ -112,10 +112,10 @@ export default class FeedsReader extends Plugin {
         }
       }
       if (evt.target.className === 'showItemContent') {
-        var idx = evt.target.getAttribute('_idx');
+        const idx = evt.target.getAttribute('_idx');
         if (evt.target.getAttribute('showContent') === '0') {
-          var elID = evt.target.getAttribute('_link');
-          var elContent = document.getElementById('itemContent' + idx);
+          const elID = evt.target.getAttribute('_link');
+          let elContent = document.getElementById('itemContent' + idx);
           if (elContent !== null) {
             elContent.empty();
           } else {
@@ -123,32 +123,32 @@ export default class FeedsReader extends Plugin {
             elContent.className = 'itemContent';
             elContent.id = 'itemContent' + idx;
           }
-          var item = GLB.feedsStore[GLB.currentFeed].items[idx];
-          var itemLink = sanitizeHTMLToDom(item.link).textContent;
+          const item = GLB.feedsStore[GLB.currentFeed].items[idx];
+          const itemLink = sanitizeHTMLToDom(item.link).textContent;
 
           if (item.content) {
             elContent.appendChild(sanitizeHTMLToDom(item.content.replace(/<img src="\/\//g,"<img src=\"https://")));
           }
           evt.target.setAttribute('showContent', '1');
         } else {
-          var elContent = document.getElementById('itemContent' + idx);
+          const elContent = document.getElementById('itemContent' + idx);
           if (elContent !== null) {
             elContent.remove();
           }
           evt.target.setAttribute('showContent', '0');
-          var embeddedIframe = document.getElementById('embeddedIframe' + idx);
+          const embeddedIframe = document.getElementById('embeddedIframe' + idx);
           if (embeddedIframe !== null) {
             embeddedIframe.remove();
           }
         }
       }
       if (evt.target.className === 'elEmbedButton') {
-        var idx = evt.target.getAttribute('_idx');
-        var elID = evt.target.getAttribute('_link');
+        const idx = evt.target.getAttribute('_idx');
+        const elID = evt.target.getAttribute('_link');
         if (document.getElementById('embeddedIframe' + idx) !== null) {
           return;
         }
-        var elContent = document.getElementById('itemContent' + idx);
+        let elContent = document.getElementById('itemContent' + idx);
         if (elContent !== null) {
           elContent.empty();
         } else {
@@ -168,8 +168,8 @@ export default class FeedsReader extends Plugin {
         // embeddedIframe.data = url;
       }
       if (evt.target.className === 'elFetch') {
-        var idx = evt.target.getAttribute('_idx');
-        var elID = evt.target.getAttribute('_link');
+        const idx = evt.target.getAttribute('_idx');
+        const elID = evt.target.getAttribute('_link');
         const url = evt.target.getAttribute('url');
         if (document.getElementById('fetchContainer' + idx) !== null) {
           return;
@@ -181,7 +181,7 @@ export default class FeedsReader extends Plugin {
           new Notice('Fail to fetch ' + url, 1000);
           return;
         }
-        var elContent = document.getElementById('itemContent' + idx);
+        let elContent = document.getElementById('itemContent' + idx);
         if (elContent !== null) {
           elContent.empty();
         } else {
@@ -196,8 +196,8 @@ export default class FeedsReader extends Plugin {
         fetchContainer.appendChild(sanitizeHTMLToDom(pageSrc));
       }
       if (evt.target.className === 'renderMath') {
-          var idx = this.getNumFromId(evt.target.id, 'renderMath');
-          var elContent = document.getElementById('itemContent' + idx);
+          const idx = this.getNumFromId(evt.target.id, 'renderMath');
+          let elContent = document.getElementById('itemContent' + idx);
           const item = GLB.feedsStore[GLB.currentFeed].items[idx];
         if (item.content) {
             const elID = item.link;
@@ -213,7 +213,7 @@ export default class FeedsReader extends Plugin {
           }
       }
       if (evt.target.className === 'askChatGPT') {
-        var idx = this.getNumFromId(evt.target.id, 'askChatGPT');
+        const idx = this.getNumFromId(evt.target.id, 'askChatGPT');
         const item = GLB.feedsStore[GLB.currentFeed].items[idx];
         if (!item.content) {
           return;
@@ -233,10 +233,10 @@ export default class FeedsReader extends Plugin {
           shortNote.rows = 2;
           shortNote.placeholder = 'Waiting for ChatGPT to reply...';
         }
-        var apiKey = this.settings.chatGPTAPIKey;
-        var promptText = this.settings.chatGPTPrompt;
+        const apiKey = this.settings.chatGPTAPIKey;
+        const promptText = this.settings.chatGPTPrompt;
         try {
-          var replyByGPT = await fetchChatGPT(apiKey, 0.0,
+          let replyByGPT = await fetchChatGPT(apiKey, 0.0,
             promptText + '\n' + item.content);
           replyByGPT = replyByGPT.trim();
           if (replyByGPT !== '') {
@@ -256,7 +256,7 @@ export default class FeedsReader extends Plugin {
           await this.app.vault.createFolder(GLB.feeds_reader_dir);
         }
 
-        var idx = this.getNumFromId(evt.target.id, 'noteThis');
+        const idx = this.getNumFromId(evt.target.id, 'noteThis');
         const the_item = GLB.feedsStore[GLB.currentFeed].items[idx];
         var dt_str: string = '';
         if (the_item.pubDate != '') {
@@ -316,7 +316,7 @@ export default class FeedsReader extends Plugin {
           await this.app.vault.createFolder(GLB.feeds_reader_dir);
         }
 
-        var idx = this.getNumFromId(evt.target.id, 'saveSnippet');
+        const idx = this.getNumFromId(evt.target.id, 'saveSnippet');
         const the_item = GLB.feedsStore[GLB.currentFeed].items[idx];
         const fpath: string = GLB.feeds_reader_dir + '/' + GLB.saved_snippets_fname;
         const link_text = sanitizeHTMLToDom(the_item.link).textContent;
@@ -2043,13 +2043,29 @@ function remedyLatex(s: string) {
 }
 
 async function compress(string, format) {
-  // From: https://gist.github.com/Explosion-Scratch/357c2eebd8254f8ea5548b0e6ac7a61b
+  // From: https://wicg.github.io/compression/
   const byteArray = new TextEncoder().encode(string);
   const cs = new CompressionStream(format);
   const writer = cs.writable.getWriter();
   writer.write(byteArray);
   writer.close();
-  return new Response(cs.readable).arrayBuffer();
+  const output = [];
+  const reader = cs.readable.getReader();
+  let totalSize = 0;
+  while (true) {
+    const { value, done } = await reader.read();
+    if (done)
+      break;
+    output.push(value);
+    totalSize += value.byteLength;
+  }
+  const concatenated = new Uint8Array(totalSize);
+  let offset = 0;
+  for (const array of output) {
+    concatenated.set(array, offset);
+    offset += array.byteLength;
+  }
+  return concatenated;
 }
 
 async function decompress(byteArray, format) {
@@ -2057,7 +2073,7 @@ async function decompress(byteArray, format) {
   const writer = cs.writable.getWriter();
   writer.write(byteArray);
   writer.close();
-  return new Response(cs.readable).arrayBuffer().then(function (arrayBuffer) {
-    return new TextDecoder().decode(arrayBuffer);
-  });
+  const r = new Response(cs.readable);
+  const a = await r.arrayBuffer();
+  return new TextDecoder().decode(a);
 }
