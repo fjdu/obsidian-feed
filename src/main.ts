@@ -1555,9 +1555,11 @@ async function removeFeed(feedUrl: string) {
   for (var i=0; i<GLB.feedList.length; i++) {
     if (GLB.feedList[i].feedUrl === feedUrl) {
       if (GLB.feedsStore.hasOwnProperty(feedUrl)) {
+        const slen = JSON.stringify(GLB.feedsStore[feedUrl], null, 0).length;
+        const nfile = Math.ceil(slen/GLB.lenStrPerFile);
         delete GLB.feedsStore[feedUrl];
-        await removeFileFragments(GLB.feeds_reader_dir + '/' + GLB.feeds_store_base, GLB.feedList[i].name);
-        await removeFileFragments_gzipped(GLB.feeds_reader_dir + '/' + GLB.feeds_store_base, GLB.feedList[i].name);
+        await removeFileFragments(GLB.feeds_reader_dir + '/' + GLB.feeds_store_base, GLB.feedList[i].name, nfile);
+        await removeFileFragments_gzipped(GLB.feeds_reader_dir + '/' + GLB.feeds_store_base, GLB.feedList[i].name, nfile);
       }
       GLB.feedList.splice(i, 1);
       GLB.feedsStoreChange = true;
@@ -1866,12 +1868,12 @@ async function saveSubscriptions() {
 //}
 
 async function saveStringToFileGzip(s: string, folder: string, fname: string) {
-  var written = 0;
+  let written = 0, success = true;
   if (! await app.vault.exists(folder)) {
     await app.vault.createFolder(folder);
   }
   const s_gzipped = await compress(s, 'gzip');
-  var fpath = folder + "/" + fname + '.gzip';
+  const fpath = folder + "/" + fname + '.gzip';
   if (! await app.vault.exists(fpath)) {
     await app.vault.createBinary(fpath, s_gzipped);
     written = 1;
@@ -1882,15 +1884,36 @@ async function saveStringToFileGzip(s: string, folder: string, fname: string) {
       written = 1;
     }
   }
+  try {
+    const readBack = await decompress(await app.vault.adapter.readBinary(fpath), 'gzip');
+    if (readBack !== s) {
+      success = false;
+      new Notice('Readback content mismatch while saving: ' + fpath, 3000);
+    }
+  } catch (e) {
+    success = false;
+    new Notice('Problem encountered while saving: ' + fpath, 3000);
+  }
+  if (!success) {
+    if (await app.vault.exists(fpath)) {
+      await app.vault.adapter.remove(fpath);
+    }
+    written = saveStringToFile(s, folder, fname);
+    new Notice('Failed to save as gzip; save as plain text instead: ' + folder + "/" + fname, 1000);
+  } else {
+    if (await app.vault.exists(folder + "/" + fname)) {
+      await app.vault.adapter.remove(folder + "/" + fname);
+    }
+  }
   return written;
 }
 
 async function saveStringToFile(s: string, folder: string, fname: string) {
-  var written = 0;
+  let written = 0;
   if (! await app.vault.exists(folder)) {
     await app.vault.createFolder(folder);
   }
-  var fpath = folder + "/" + fname;
+  const fpath = folder + "/" + fname;
   if (! await app.vault.exists(fpath)) {
     await app.vault.create(fpath, s);
     written = 1;
@@ -1937,39 +1960,29 @@ async function saveStringSplitted(s: string, folder: string, fname_base: string,
   return nSaved;
 }
 
-// async function saveStringSplitted(s: string, folder: string, fname_base: string, nCharPerFile: number, iPostfix: number) {
-//   try {
-//     var lenTotal = s.length;
-//     if (lenTotal === 0) {
-//       // Remove redundant files with higher serial number.
-//       for (var i=0;;i++) {
-//         var fpath_unneeded = folder + '/' + makeFilename(fname_base, iPostfix+i) + '.gzip';
-//         if (await app.vault.exists(fpath_unneeded)) {
-//           await app.vault.adapter.remove(fpath_unneeded);
-//           new Notice('Redundant file ' + fpath_unneeded + ' removed.', 2000);
-//         } else {
-//           break;
-//         }
-//       }
-//       return 0;
-//     }
-//   } catch (e) {
-//     return 0;
-//   }
-//   var fname = makeFilename(fname_base, iPostfix);
-//   return ((await saveStringToFileGzip(s.substring(lenTotal-nCharPerFile), folder, fname)) +
-//           + (await saveStringSplitted(s.substring(0, lenTotal-nCharPerFile), folder, fname_base, nCharPerFile, iPostfix+1)));
-// }
-
 async function loadStringSplitted_Gzip(folder: string, fname_base: string) {
-  var res = '';
+  let res = '';
   if (await app.vault.exists(folder)) {
-    for (var i=0;;i++) {
-      var fpath = folder + '/' + makeFilename(fname_base, i) + '.gzip';
-      if (! await app.vault.exists(fpath)) {
+    for (let i=0;;i++) {
+      const fpath_plain = folder + '/' + makeFilename(fname_base, i);
+      const fpath = fpath_plain + '.gzip';
+      const gzip_exist = await app.vault.exists(fpath);
+      const plain_exist = await app.vault.exists(fpath_plain);
+      if ((! plain_exist) && (! gzip_exist)) {
         break;
       }
-      res = (await decompress(await app.vault.adapter.readBinary(fpath), 'gzip')).concat('', res);
+      let s_partial;
+      if (gzip_exist) {
+        try {
+          s_partial = await decompress(await app.vault.adapter.readBinary(fpath), 'gzip');
+        } catch (e) {
+          new Notice('Error reading: ' + fpath + '\nTry with: ' + fpath_plain, 1000);
+          s_partial = await app.vault.adapter.read(fpath_plain);
+        }
+      } else {
+        s_partial = await app.vault.adapter.read(fpath_plain);
+      }
+      res = s_partial.concat('', res);
     }
   }
   return res;
@@ -1993,22 +2006,22 @@ function makeFilename (fname_base: string, iPostfix: number) {
   return fname_base + '-' + iPostfix.toString() + '.json.frag';
 }
 
-async function removeFileFragments(folder: string, fname_base: string) {
-  for (var i=0;;i++) {
+async function removeFileFragments(folder: string, fname_base: string, nfile: number) {
+  for (var i=0;i<nfile;i++) {
     var fpath = folder + '/' + makeFilename(fname_base, i);
     if (! await app.vault.exists(fpath)) {
-      break;
+      continue;
     }
     await app.vault.adapter.remove(fpath);
     new Notice(fpath + ' removed.', 2000);
   }
 }
 
-async function removeFileFragments_gzipped(folder: string, fname_base: string) {
-  for (var i=0;;i++) {
+async function removeFileFragments_gzipped(folder: string, fname_base: string, nfile: number) {
+  for (var i=0;i<nfile;i++) {
     var fpath = folder + '/' + makeFilename(fname_base, i) + '.gzip';
     if (! await app.vault.exists(fpath)) {
-      break;
+      continue;
     }
     await app.vault.adapter.remove(fpath);
     new Notice(fpath + ' removed.', 2000);
