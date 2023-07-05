@@ -18,13 +18,13 @@ export class FRView extends ItemView {
   }
 
   async onOpen() {
-    var startTime = performance.now();
+    const startTime = performance.now();
     await loadSubscriptions();
     await loadFeedsStoredData();
-    var endTime = performance.now();
-    var timeSpent = (endTime-startTime)/1e3;
+    const endTime = performance.now();
+    const timeSpent = (endTime-startTime)/1e3;
     if (timeSpent > 0.02) {
-      var tStr = timeSpent.toFixed(2);
+      const tStr = timeSpent.toFixed(2);
       new Notice(`Data loaded in ${tStr} seconds.`, 2000);
     }
 
@@ -85,8 +85,8 @@ export class FRView extends ItemView {
 
     if (GLB.feedList.length > 2) {
       if (GLB.feedList.length < GLB.nThanksSep) {
-        var nVertSep = GLB.nThanksSep-GLB.feedList.length;
-        for (var i=0; i<nVertSep; i++) {
+        const nVertSep = GLB.nThanksSep-GLB.feedList.length;
+        for (let i=0; i<nVertSep; i++) {
           feedTableDiv.createEl('br');
         }
       }
@@ -111,9 +111,9 @@ export class FRView extends ItemView {
 }
 
 export async function createFeedBar() {
-  var feedTable = document.getElementById('feedTable');
+  const feedTable = document.getElementById('feedTable');
   await feedTable.empty();
-  var thisFolder = "";
+  let thisFolder = "";
   GLB.feedList.forEach(async (item, idx) => {
     if (item.folder != thisFolder) {
       thisFolder = item.folder;
@@ -126,7 +126,7 @@ export async function createFeedBar() {
     showFeed.className = 'showFeed';
     showFeed.id = item.feedUrl;
 
-    var stats = getFeedStats(item.feedUrl);
+    const stats = getFeedStats(item.feedUrl);
 
     const elUnreadTotal = tr.createEl('td');
     elUnreadTotal.setAttribute('fdUrl', item.feedUrl);
@@ -135,7 +135,7 @@ export async function createFeedBar() {
     const unreadCount = elUnreadTotal.createEl('span', {text: stats.unread.toString()});
     unreadCount.className = 'unreadCount';
     unreadCount.id = 'unreadCount' + item.feedUrl;
-    var elSep = elUnreadTotal.createEl('span', {text: '/'});
+    const elSep = elUnreadTotal.createEl('span', {text: '/'});
     elSep.className = 'unreadCount';
     elSep.id = 'sepUnreadTotal'+item.feedUrl;
     const totalCount = elUnreadTotal.createEl('span', {text: stats.total.toString()});

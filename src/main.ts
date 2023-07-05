@@ -174,7 +174,7 @@ export default class FeedsReader extends Plugin {
         if (document.getElementById('fetchContainer' + idx) !== null) {
           return;
         }
-        var pageSrc = '';
+        let pageSrc = '';
         try {
           pageSrc = await request({url: url, method: "GET"});
         } catch (e) {
@@ -227,7 +227,7 @@ export default class FeedsReader extends Plugin {
           }
           const shortNoteContainer = elActionContainer.createEl('div');
           shortNoteContainer.id = 'shortNoteContainer' + idx;
-          var shortNote = shortNoteContainer.createEl('textarea');
+          const shortNote = shortNoteContainer.createEl('textarea');
           shortNote.className = 'shortNote';
           shortNote.id = 'shortNote' + idx;
           shortNote.rows = 2;
@@ -240,8 +240,8 @@ export default class FeedsReader extends Plugin {
             promptText + '\n' + item.content);
           replyByGPT = replyByGPT.trim();
           if (replyByGPT !== '') {
-            var shortNote = document.getElementById('shortNote' + idx);
-            var existingNote = shortNote.value;
+            const shortNote = document.getElementById('shortNote' + idx);
+            let existingNote = shortNote.value;
             if (existingNote !== '') {
               existingNote = existingNote + '\n\n';
             }
@@ -258,7 +258,7 @@ export default class FeedsReader extends Plugin {
 
         const idx = this.getNumFromId(evt.target.id, 'noteThis');
         const the_item = GLB.feedsStore[GLB.currentFeed].items[idx];
-        var dt_str: string = '';
+        let dt_str: string = '';
         if (the_item.pubDate != '') {
           dt_str = the_item.pubDate;
         } else if (GLB.feedsStore[GLB.currentFeed].pubDate != '') {
@@ -275,19 +275,19 @@ export default class FeedsReader extends Plugin {
                               .replace(/(<([^>]+)>)/g, " ")
                               .replace(/[:!?@#\*\^\$]+/g, '')) + '.md';
         const fpath: string = GLB.feeds_reader_dir + '/' + fname;
-        var shortNoteContent = '';
+        let shortNoteContent = '';
         const elShortNote = document.getElementById('shortNote' + idx);
         if (elShortNote !== null) {
           shortNoteContent = elShortNote.value;
         }
-        var abstractOpen = '-';
-        var theContent = '';
+        let abstractOpen = '-';
+        let theContent = '';
         if (GLB.saveContent) {
-          var author_text = the_item.creator.trim();
+          let author_text = the_item.creator.trim();
           if (author_text !== '') {
             author_text = '\n> ' + htmlToMarkdown(author_text);
           }
-          var ctt = '';
+          let ctt = '';
           if (the_item.content) {
             ctt = the_item.content;
           }
@@ -320,16 +320,16 @@ export default class FeedsReader extends Plugin {
         const the_item = GLB.feedsStore[GLB.currentFeed].items[idx];
         const fpath: string = GLB.feeds_reader_dir + '/' + GLB.saved_snippets_fname;
         const link_text = sanitizeHTMLToDom(the_item.link).textContent;
-        var shortNoteContent = '';
+        let shortNoteContent = '';
         const elShortNote = document.getElementById('shortNote' + idx);
         if (elShortNote !== null) {
           shortNoteContent = elShortNote.value;
         }
-        var abstractOpen = '-';
+        let abstractOpen = '-';
         // if (shortNoteContent !== '') {
         //   abstractOpen = '-';
         // }
-        var dt_str: string = nowdatetime();
+        let dt_str: string = nowdatetime();
         if (the_item.pubDate != '') {
           dt_str = the_item.pubDate;
         } else if (GLB.feedsStore[GLB.currentFeed].pubDate != '') {
@@ -338,17 +338,17 @@ export default class FeedsReader extends Plugin {
         if (dt_str !== '') {
           dt_str = '\n> <small>' + dt_str + '</small>';
         }
-        var feedNameStr = GLB.currentFeedName;
+        let feedNameStr = GLB.currentFeedName;
         if (feedNameStr !== '') {
           feedNameStr = '\n> <small>' + feedNameStr + '</small>';
         }
-        var theContent = '';
+        let theContent = '';
         if (GLB.saveContent) {
-          var author_text = the_item.creator.trim();
+          let author_text = the_item.creator.trim();
           if (author_text !== '') {
             author_text = '\n> ' + htmlToMarkdown(author_text);
           }
-          var ctt = '';
+          let ctt = '';
           if (the_item.content) {
             ctt = the_item.content;
           }
@@ -384,12 +384,12 @@ export default class FeedsReader extends Plugin {
         if (!GLB.feedsStore.hasOwnProperty(GLB.currentFeed)) {
           return;
         }
-        var fd = GLB.feedsStore[GLB.currentFeed];
+        const fd = GLB.feedsStore[GLB.currentFeed];
         const nowStr = nowdatetime();
-        var changed = false;
-        var nMarked = 0;
+        let changed = false;
+        let nMarked = 0;
 
-        for (var i=GLB.idxItemStart;
+        for (let i=GLB.idxItemStart;
              i<Math.min(GLB.displayIndices.length, GLB.idxItemStart+GLB.nItemPerPage);
              i++) {
           const idx = GLB.displayIndices[i];
@@ -443,11 +443,11 @@ export default class FeedsReader extends Plugin {
         if (!GLB.feedsStore.hasOwnProperty(GLB.currentFeed)) {
           return;
         }
-        var fd = GLB.feedsStore[GLB.currentFeed];
-        var changed = false;
-        var nMarked = 0;
+        const fd = GLB.feedsStore[GLB.currentFeed];
+        let changed = false;
+        let nMarked = 0;
 
-        for (var i=GLB.idxItemStart;
+        for (let i=GLB.idxItemStart;
              i<Math.min(GLB.displayIndices.length, GLB.idxItemStart+GLB.nItemPerPage);
              i++) {
           const idx = GLB.displayIndices[i];
@@ -472,10 +472,10 @@ export default class FeedsReader extends Plugin {
       }
 
       if (evt.target.className === 'toggleRead') {
-        var idx = this.getNumFromId(evt.target.id, 'toggleRead');
+        const idx = this.getNumFromId(evt.target.id, 'toggleRead');
         GLB.feedsStoreChange = true;
         GLB.feedsStoreChangeList.add(GLB.currentFeed);
-        var el = document.getElementById(evt.target.id);
+        const el = document.getElementById(evt.target.id);
         if (el.innerText === 'Read') {
           GLB.feedsStore[GLB.currentFeed].items[idx].read = nowdatetime();
           el.innerText = 'Unread';
@@ -502,10 +502,10 @@ export default class FeedsReader extends Plugin {
         }
       }
       if (evt.target.className === 'toggleDelete') {
-        var idx = this.getNumFromId(evt.target.id, 'toggleDelete');
+        const idx = this.getNumFromId(evt.target.id, 'toggleDelete');
         GLB.feedsStoreChange = true;
         GLB.feedsStoreChangeList.add(GLB.currentFeed);
-        var el = document.getElementById(evt.target.id);
+        const el = document.getElementById(evt.target.id);
         if (el.innerText === 'Delete') {
           GLB.feedsStore[GLB.currentFeed].items[idx].deleted = nowdatetime();
           el.innerText = 'Undelete';
@@ -533,7 +533,7 @@ export default class FeedsReader extends Plugin {
       }
 
       if (evt.target.className === 'jotNotes') {
-        var idx = this.getNumFromId(evt.target.id, 'jotNotes');
+        const idx = this.getNumFromId(evt.target.id, 'jotNotes');
         const el = document.getElementById('shortNoteContainer' + idx);
         if (el !== null) {
           el.remove();
@@ -584,7 +584,7 @@ export default class FeedsReader extends Plugin {
         GLB.itemOrder = toggle.innerText;
       }
       if ((evt.target.id === 'saveFeedsData') || (evt.target.id === 'save_data_toggling')) {
-        var nSaved = await saveFeedsData();
+        const nSaved = await saveFeedsData();
         if (nSaved > 0) {
           new Notice("Data saved: " + nSaved.toString() + 'file(s) updated.', 1000);
         } else {
@@ -592,14 +592,14 @@ export default class FeedsReader extends Plugin {
         }
       }
       if ((evt.target.id === 'toggleNavi') && (GLB.currentFeed != '')) {
-        let toggle = document.getElementById('toggleNavi');
+        const toggle = document.getElementById('toggleNavi');
         if (toggle.innerText === '>') {
           toggle.innerText = '<';
-          var toggleNaviAux = document.getElementById('toggleNaviAux');
+          const toggleNaviAux = document.getElementById('toggleNaviAux');
           const elUnreadcountWhileToggling = toggleNaviAux.createEl('span', {text: GLB.elUnreadCount.innerText});
           elUnreadcountWhileToggling.className = 'unreadcountWhileToggling';
           GLB.elUnreadCount = elUnreadcountWhileToggling;
-          var save_data_toggling = toggleNaviAux.createEl('span', {text: 'Save progress'});
+          const save_data_toggling = toggleNaviAux.createEl('span', {text: 'Save progress'});
           save_data_toggling.id = 'save_data_toggling';
           save_data_toggling.className = 'save_data_toggling';
           document.getElementById('naviBar').className = 'navigation naviBarHidden';
@@ -607,7 +607,7 @@ export default class FeedsReader extends Plugin {
           document.getElementById('toggleNaviContainer').className = 'toggleNaviContainer';
         } else {
           toggle.innerText = '>';
-          var s = GLB.elUnreadCount.innerText;
+          const s = GLB.elUnreadCount.innerText;
           GLB.elUnreadCount = document.getElementById('unreadCount' + GLB.currentFeed);
           GLB.elUnreadCount.innerText = s;
           document.getElementById('toggleNaviAux').empty();
@@ -699,7 +699,7 @@ export default class FeedsReader extends Plugin {
 	}
 
   getNumFromId(idstr, pref) {
-    var n = pref.length;
+    const n = pref.length;
     return parseInt(idstr.substring(n));
   }
 }
@@ -715,10 +715,10 @@ function mergeStoreWithNewData(newdata: RssFeedContent, key: string) {
   GLB.feedsStore[key].subtitle = newdata.subtitle;
   GLB.feedsStore[key].description = newdata.description;
   GLB.feedsStore[key].pubDate = newdata.pubDate;
-  var nNew = 0;
-  var nLookback = Math.min(GLB.nMergeLookback, GLB.feedsStore[key].items.length);
-  for (var j=newdata.items.length-1; j>=0; j--) {
-    var found = false;
+  let nNew = 0;
+  const nLookback = Math.min(GLB.nMergeLookback, GLB.feedsStore[key].items.length);
+  for (let j=newdata.items.length-1; j>=0; j--) {
+    let found = false;
     for (let i=0; i<nLookback; i++) {
       if (GLB.feedsStore[key].items[i].link === newdata.items[j].link) {
         found = true;
@@ -736,12 +736,12 @@ function mergeStoreWithNewData(newdata: RssFeedContent, key: string) {
 }
 
 async function updateOneFeed(fdUrl: string) {
-  var nNew = 0;
-  var res = await getFeedItems(fdUrl);
+  let nNew = 0;
+  const res = await getFeedItems(fdUrl);
   if ((res != undefined) && (res.items != undefined)) {
     nNew = mergeStoreWithNewData(res, fdUrl);
     if (nNew > 0) {
-      var stats = getFeedStats(fdUrl);
+      const stats = getFeedStats(fdUrl);
       document.getElementById('unreadCount' + fdUrl).innerText = stats.unread.toString();
       if (fdUrl === GLB.currentFeed) {
         GLB.elUnreadCount.innerText = stats.unread.toString();
@@ -783,25 +783,25 @@ class SearchModal extends Modal {
     inputBox.className = 'searchTerms';
     const trWordwise = form.createEl('tr');
     trWordwise.createEl('td', {text: "Wordwise"});
-    var checkBoxWordwise = trWordwise.createEl('td').createEl('input');
+    const checkBoxWordwise = trWordwise.createEl('td').createEl('input');
     checkBoxWordwise.id = 'checkBoxWordwise';
     checkBoxWordwise.type = 'checkBox';
-    var searchButton = form.createEl('tr').createEl('td').createEl('button', {text: "Search"});
+    const searchButton = form.createEl('tr').createEl('td').createEl('button', {text: "Search"});
     searchButton.addEventListener("click", async () => {
-      var wordWise = document.getElementById('checkBoxWordwise').checked;
-      var searchTerms = ([...new Set(document.getElementById('searchTerms').value.toLowerCase().split(/[ ,;\t\n]+/))]
+      const wordWise = document.getElementById('checkBoxWordwise').checked;
+      const searchTerms = ([...new Set(document.getElementById('searchTerms').value.toLowerCase().split(/[ ,;\t\n]+/))]
                          .filter(i => i)
                          .sort((a,b) => {return b.length-a.length;}));
       if (searchTerms.length === 0) {
         return;
       }
-      let fd = GLB.feedsStore[GLB.currentFeed].items;
-      var sep = /\s+/;
+      const fd = GLB.feedsStore[GLB.currentFeed].items;
+      const sep = /\s+/;
       GLB.displayIndices = [];
       for (let i=0; i<fd.length; i++) {
         let item = fd[i];
-        var sItems;
-        var sCreator='', sContent='';
+        let sItems;
+        let sCreator='', sContent='';
         if (item.creator) {
           sCreator = item.creator;
         }
@@ -851,32 +851,32 @@ class AddFeedModal extends Modal {
     const colgroup = form.createEl('colgroup');
     colgroup.createEl('col').className = 'addFeedCol1';
     colgroup.createEl('col').className = 'addFeedCol2';
-    var tr = form.createEl('tr');
+    let tr = form.createEl('tr');
     tr.createEl('td', {text: "Name"});
-    var tdnewFeedName = tr.createEl('td').createEl('input');
+    const tdnewFeedName = tr.createEl('td').createEl('input');
     tdnewFeedName.className = 'addFeedInput';
     tdnewFeedName.id = 'newFeedName';
     tr = form.createEl('tr');
     tr.createEl('td', {text: "URL"});
-    var tdnewFeedUrl = tr.createEl('td').createEl('input');
+    const tdnewFeedUrl = tr.createEl('td').createEl('input');
     tdnewFeedUrl.className = 'addFeedInput';
     tdnewFeedUrl.id = 'newFeedUrl';
     tr = form.createEl('tr');
     tr.createEl('td', {text: "Folder"});
-    var tdnewFeedFolder = tr.createEl('td').createEl('input');
+    const tdnewFeedFolder = tr.createEl('td').createEl('input');
     tdnewFeedFolder.id = 'newFeedFolder';
     tdnewFeedFolder.className = 'addFeedInput';
     tr = form.createEl('tr');
-    var saveButton = tr.createEl('td').createEl('button', {text: "Save"});
+    const saveButton = tr.createEl('td').createEl('button', {text: "Save"});
     saveButton.addEventListener("click", async () => {
-      var newFeedName = document.getElementById('newFeedName').value;
-      var newFeedUrl = document.getElementById('newFeedUrl').value;
-      var newFeedFolder = document.getElementById('newFeedFolder').value;
+      const newFeedName = document.getElementById('newFeedName').value;
+      const newFeedUrl = document.getElementById('newFeedUrl').value;
+      const newFeedFolder = document.getElementById('newFeedFolder').value;
       if ((newFeedName == "") || (newFeedUrl == "")) {
         new Notice("Feed name and url must not be empty.", 1000);
         return;
       }
-      for (var i=0; i<GLB.feedList.length; i++) {
+      for (let i=0; i<GLB.feedList.length; i++) {
         if (GLB.feedList[i].feedUrl == newFeedUrl) {
           new Notice("Not added: url already included.", 1000);
           return;
@@ -930,12 +930,12 @@ class ManageFeedsModal extends Modal {
     const btRemoveFeed = actions.createEl('button', {text: 'Remove feed'});
 
     btApplyChanges.addEventListener('click', async () => {
-      var changed = false;
-      for (var i=0; i<GLB.feedList.length; i++) {
-        var newName = document.getElementById('manageFdName' + i.toString()).value;
-        var newUrl = document.getElementById('manageFdUrl' + i.toString()).value;
-        var newFolder = document.getElementById('manageFdFolder' + i.toString()).value;
-        var sMsg = '';
+      let changed = false;
+      for (let i=0; i<GLB.feedList.length; i++) {
+        const newName = document.getElementById('manageFdName' + i.toString()).value;
+        const newUrl = document.getElementById('manageFdUrl' + i.toString()).value;
+        const newFolder = document.getElementById('manageFdFolder' + i.toString()).value;
+        let sMsg = '';
         if (GLB.feedList[i].name != newName) {
           sMsg += 'Name: ' + GLB.feedList[i].name + ' -> ' + newName;
         }
@@ -949,8 +949,8 @@ class ManageFeedsModal extends Modal {
           if (window.confirm("Apply changes for " + GLB.feedList[i].name + '?\n' + sMsg)) {
             changed = true;
             if (GLB.feedList[i].name != newName) {
-              var alreadyIncluded = false;
-              for (var j=0; j<GLB.feedList.length; j++) {
+              let alreadyIncluded = false;
+              for (let j=0; j<GLB.feedList.length; j++) {
                 if ((j != i) && (GLB.feedList[j].name === newName)) {
                   new Notice("Not changed: name already included.", 1000);
                   alreadyIncluded = True;
@@ -958,10 +958,10 @@ class ManageFeedsModal extends Modal {
                 }
               }
               if (!alreadyIncluded) {
-                for (var j=0;;j++) {
-                  var fpath_old = [GLB.feeds_reader_dir, GLB.feeds_store_base,
+                for (let j=0;;j++) {
+                  const fpath_old = [GLB.feeds_reader_dir, GLB.feeds_store_base,
                                    makeFilename(GLB.feedList[i].name, j)+'.gzip'].join('/');
-                  var fpath_new = [GLB.feeds_reader_dir, GLB.feeds_store_base,
+                  const fpath_new = [GLB.feeds_reader_dir, GLB.feeds_store_base,
                                    makeFilename(newName, j)+'.gzip'].join('/');
                   if (await app.vault.exists(fpath_old)) {
                     await app.vault.adapter.rename(fpath_old, fpath_new);
@@ -976,8 +976,8 @@ class ManageFeedsModal extends Modal {
               }
             }
             if (GLB.feedList[i].feedUrl != newUrl) {
-              var alreadyIncluded = false;
-              for (var j=0; j<GLB.feedList.length; j++) {
+              let alreadyIncluded = false;
+              for (let j=0; j<GLB.feedList.length; j++) {
                 if ((j != i) && (GLB.feedList[j].feedUrl === newUrl)) {
                   new Notice("Not changed: url already included.", 1000);
                   alreadyIncluded = True;
@@ -1045,7 +1045,7 @@ class ManageFeedsModal extends Modal {
       if (window.confirm('Sure?')) {
       [...document.getElementsByClassName('checkThis')]
       .filter(el => el.checked)
-      .forEach(el => {var nRemoved = deduplicate(el.getAttribute('val'));
+      .forEach(el => {const nRemoved = deduplicate(el.getAttribute('val'));
                       if (nRemoved>0) {
                         new Notice(nRemoved + " removed for "
                         + el.getAttribute('fdName'), 2000);
@@ -1061,7 +1061,8 @@ class ManageFeedsModal extends Modal {
     const formContainer = contentEl.createEl('div');
     const form = formContainer.createEl('table');
     form.className = 'manageFeedsForm';
-    var tr = form.createEl('thead').createEl('tr');
+    let tr;
+    tr = form.createEl('thead').createEl('tr');
     tr.createEl('th', {text: "N/U"});
     tr.createEl('th', {text: "F"});
     tr.createEl('th', {text: "T"});
@@ -1080,11 +1081,11 @@ class ManageFeedsModal extends Modal {
       }
     });
 
-    var tbody = form.createEl('tbody');
-    var nTotal=0, nRead=0, nDeleted=0, nLength=0, nStoreSize=0;
-    for (var i=0; i<GLB.feedList.length; i++) {
-      var tr = tbody.createEl('tr');
-      var cellNameContainer = tr.createEl('td');
+    const tbody = form.createEl('tbody');
+    let nTotal=0, nRead=0, nDeleted=0, nLength=0, nStoreSize=0;
+    for (let i=0; i<GLB.feedList.length; i++) {
+      tr = tbody.createEl('tr');
+      const cellNameContainer = tr.createEl('td');
       cellNameContainer.className = 'cellNameContainer';
       const elName = cellNameContainer.createEl('input', {value: GLB.feedList[i].name});
       elName.readOnly = false;
@@ -1098,8 +1099,8 @@ class ManageFeedsModal extends Modal {
       elFolder.readOnly = false;
       elFolder.id = 'manageFdFolder' + i.toString();
 
-      var stats = getFeedStats(GLB.feedList[i].feedUrl);
-      var storeSizeInfo = getFeedStorageInfo(GLB.feedList[i].feedUrl);
+      const stats = getFeedStats(GLB.feedList[i].feedUrl);
+      const storeSizeInfo = getFeedStorageInfo(GLB.feedList[i].feedUrl);
       tr.createEl('td', {text: stats.total.toString()}).setAttribute('sortBy', stats.total);
       tr.createEl('td', {text: stats.read.toString()}).setAttribute('sortBy', stats.read);
       tr.createEl('td', {text: stats.deleted.toString()}).setAttribute('sortBy', stats.deleted);
@@ -1117,7 +1118,7 @@ class ManageFeedsModal extends Modal {
       nLength += storeSizeInfo[2];
       nStoreSize += storeSizeInfo[3];
     }
-    var tr = tbody.createEl('tr');
+    tr = tbody.createEl('tr');
     tr.createEl('td', {text: 'Total: ' + GLB.feedList.length.toString()});
     tr.createEl('td');
     tr.createEl('td', {text: nTotal.toString()});
@@ -1322,11 +1323,11 @@ class FeedReaderSettingTab extends PluginSettingTab {
 }
 
 export async function saveFeedsData () {
-  var nSaved = 0;
+  let nSaved = 0;
   if (!GLB.feedsStoreChange) {
     return nSaved;
   }
-  for (var i=0; i<GLB.feedList.length; i++) {
+  for (let i=0; i<GLB.feedList.length; i++) {
     key = GLB.feedList[i].feedUrl;
     if (!GLB.feedsStoreChangeList.has(key)) {
       continue;
@@ -1340,28 +1341,18 @@ export async function saveFeedsData () {
                 GLB.lenStrPerFile));
   }
 
-  // if (! await this.app.vault.exists(GLB.feeds_reader_dir)) {
-  //   await this.app.vault.createFolder(GLB.feeds_reader_dir);
-  // }
-  // var fpath: string = GLB.feeds_reader_dir + '/' + GLB.feeds_data_fname;
-  // if (! await this.app.vault.exists(fpath)) {
-  //   await this.app.vault.create(fpath, JSON.stringify(GLB.feedsStore, null, 1));
-  // } else {
-  //   await this.app.vault.adapter.write(fpath, JSON.stringify(GLB.feedsStore, null, 1));
-  // }
-
   GLB.feedsStoreChange = false;
   GLB.feedsStoreChangeList.clear();
   return nSaved;
 }
 
 export async function loadFeedsStoredData() {
-  var noSplitFile = true;
+  let noSplitFile = true;
   GLB.feedsStore = {};
-  for (var i=0; i<GLB.feedList.length; i++) {
-    var res = await loadStringSplitted_Gzip(GLB.feeds_reader_dir + '/' + GLB.feeds_store_base, GLB.feedList[i].name);
+  for (let i=0; i<GLB.feedList.length; i++) {
+    let res = await loadStringSplitted_Gzip(GLB.feeds_reader_dir + '/' + GLB.feeds_store_base, GLB.feedList[i].name);
     if (res === '') {
-      var res = await loadStringSplitted(GLB.feeds_reader_dir + '/' + GLB.feeds_store_base, GLB.feedList[i].name);
+      res = await loadStringSplitted(GLB.feeds_reader_dir + '/' + GLB.feeds_store_base, GLB.feedList[i].name);
       // Convert non-gzip files to gzip files.
       if (res !== '') {
         GLB.feedsStoreChange = true;
@@ -1382,7 +1373,7 @@ export async function loadFeedsStoredData() {
     if (! await this.app.vault.exists(GLB.feeds_reader_dir)) {
       await this.app.vault.createFolder(GLB.feeds_reader_dir);
     }
-    var fpath = GLB.feeds_reader_dir+'/'+GLB.feeds_data_fname;
+    const fpath = GLB.feeds_reader_dir+'/'+GLB.feeds_data_fname;
     if (await this.app.vault.exists(fpath)) {
       GLB.feedsStore = JSON.parse(await this.app.vault.adapter.read(fpath));
     }
@@ -1390,12 +1381,12 @@ export async function loadFeedsStoredData() {
 }
 
 function str2filename(s: string) {
-  var illegalRe = /[\/\?<>\\:\*\|"]/g;
-  var controlRe = /[\x00-\x1f\x80-\x9f]/g;
-  var reservedRe = /^\.+$/;
-  var windowsReservedRe = /^(con|prn|aux|nul|com[0-9]|lpt[0-9])(\..*)?$/i;
-  var windowsTrailingRe = /[\. ]+$/;
-  var replacement = ' ';
+  const illegalRe = /[\/\?<>\\:\*\|"]/g;
+  const controlRe = /[\x00-\x1f\x80-\x9f]/g;
+  const reservedRe = /^\.+$/;
+  const windowsReservedRe = /^(con|prn|aux|nul|com[0-9]|lpt[0-9])(\..*)?$/i;
+  const windowsTrailingRe = /[\. ]+$/;
+  const replacement = ' ';
   s = unEscape(s);
   return s.replace(illegalRe, replacement)
           .replace(controlRe, replacement)
@@ -1421,9 +1412,9 @@ export function getFeedStats(feedUrl: string) {
   if (!GLB.feedsStore.hasOwnProperty(feedUrl)) {
     return {total: 0, read: 0, deleted: 0, unread: 0};
   }
-  var fd = GLB.feedsStore[feedUrl];
-  var nRead = 0, nDeleted = 0, nUnread = 0, nTotal = fd.items.length;
-  for (var i=0; i<nTotal; i++) {
+  const fd = GLB.feedsStore[feedUrl];
+  let nRead = 0, nDeleted = 0, nUnread = 0, nTotal = fd.items.length;
+  for (let i=0; i<nTotal; i++) {
     if (fd.items[i].read) {
       nRead += 1;
     }
@@ -1469,8 +1460,8 @@ function getStoreSizeStr(sz: number) {
 
 
 function markAllRead(feedUrl: string) {
-  var nowStr = nowdatetime();
-  for (var i=0; i<GLB.feedsStore[feedUrl].items.length; i++) {
+  const nowStr = nowdatetime();
+  for (let i=0; i<GLB.feedsStore[feedUrl].items.length; i++) {
     if (!GLB.feedsStore[feedUrl].items[i].read) {
       GLB.feedsStore[feedUrl].items[i].read = nowStr;
     }
@@ -1487,7 +1478,7 @@ function purgeDeleted(feedUrl: string) {
 }
 
 function removeContent(feedUrl: string) {
-  for (var i=0; i<GLB.feedsStore[feedUrl].items.length; i++) {
+  for (let i=0; i<GLB.feedsStore[feedUrl].items.length; i++) {
     delete GLB.feedsStore[feedUrl].items[i].content;
     delete GLB.feedsStore[feedUrl].items[i].creator;
   }
@@ -1496,7 +1487,7 @@ function removeContent(feedUrl: string) {
 }
 
 function removeEmptyFields(feedUrl: string) {
-  for (var i=0; i<GLB.feedsStore[feedUrl].items.length; i++) {
+  for (let i=0; i<GLB.feedsStore[feedUrl].items.length; i++) {
     for (const [key, value] of Object.entries(GLB.feedsStore[feedUrl].items[i])) {
       if (value === '') {
         delete GLB.feedsStore[feedUrl].items[i][key];
@@ -1508,9 +1499,9 @@ function removeEmptyFields(feedUrl: string) {
 }
 
 function removeContentOld(feedUrl: string) {
-  var iDel = Math.floor(GLB.feedsStore[feedUrl].items.length / 3);
+  let iDel = Math.floor(GLB.feedsStore[feedUrl].items.length / 3);
   iDel = Math.min(iDel, 200);
-  for (var i=iDel; i<GLB.feedsStore[feedUrl].items.length; i++) {
+  for (let i=iDel; i<GLB.feedsStore[feedUrl].items.length; i++) {
     GLB.feedsStore[feedUrl].items[i].content = '';
     GLB.feedsStore[feedUrl].items[i].creator = '';
   }
@@ -1525,17 +1516,17 @@ function purgeAll(feedUrl: string) {
 }
 
 function purgeOldHalf(feedUrl: string) {
-  var iDel = Math.floor(GLB.feedsStore[feedUrl].items.length / 2);
+  const iDel = Math.floor(GLB.feedsStore[feedUrl].items.length / 2);
   GLB.feedsStore[feedUrl].items.splice(iDel);
   GLB.feedsStoreChange = true;
   GLB.feedsStoreChangeList.add(feedUrl);
 }
 
 function deduplicate(feedUrl: string) {
-  var n = GLB.feedsStore[feedUrl].items.length;
+  const n = GLB.feedsStore[feedUrl].items.length;
   const delete_mark = 'DELETE-NOW';
-  for (var i=0; i<n; i++) {
-    for (var j=i+1; j<n; j++) {
+  for (let i=0; i<n; i++) {
+    for (let j=i+1; j<n; j++) {
       if (GLB.feedsStore[feedUrl].items[i].link === GLB.feedsStore[feedUrl].items[j].link) {
         GLB.feedsStore[feedUrl].items[j].deleted = delete_mark;
       }
@@ -1552,7 +1543,7 @@ function deduplicate(feedUrl: string) {
 }
 
 async function removeFeed(feedUrl: string) {
-  for (var i=0; i<GLB.feedList.length; i++) {
+  for (let i=0; i<GLB.feedList.length; i++) {
     if (GLB.feedList[i].feedUrl === feedUrl) {
       if (GLB.feedsStore.hasOwnProperty(feedUrl)) {
         const slen = JSON.stringify(GLB.feedsStore[feedUrl], null, 0).length;
@@ -1598,11 +1589,11 @@ function sort_feed_list() {
 
 function makeDisplayList() {
   GLB.displayIndices = [];
-  var fd = GLB.feedsStore[GLB.currentFeed];
+  const fd = GLB.feedsStore[GLB.currentFeed];
   if (fd === undefined) {
     return;
   }
-  for (var i=0; i<fd.items.length; i++) {
+  for (let i=0; i<fd.items.length; i++) {
     if (GLB.showAll) {
       GLB.displayIndices.push(i);
     } else if (!(fd.items[i].read || fd.items[i].deleted)) {
@@ -1639,7 +1630,7 @@ async function show_feed() {
    if (!GLB.feedsStore.hasOwnProperty(GLB.currentFeed)) {
      return;
    }
-   var fd = GLB.feedsStore[GLB.currentFeed];
+   const fd = GLB.feedsStore[GLB.currentFeed];
    feedTitle.createEl('a', {href: sanitizeHTMLToDom(fd.link).textContent}).appendChild(sanitizeHTMLToDom(fd.title));
    if (fd.pubDate != '') {
      feed_content.createEl('div', {text: fd.pubDate});
@@ -1655,8 +1646,8 @@ async function show_feed() {
    const removePageContent = elPageAction.createEl('span', {text: 'Remove all content'});
    removePageContent.className = 'removePageContent';
 
-   var nDisplayed = 0;
-   for (var i=GLB.idxItemStart;
+   let nDisplayed = 0;
+   for (let i=GLB.idxItemStart;
         i<Math.min(GLB.displayIndices.length, GLB.idxItemStart+GLB.nItemPerPage);
         i++) {
      const idx = GLB.displayIndices[i];
@@ -1682,7 +1673,7 @@ async function show_feed() {
        elCreator.className = 'itemCreator';
        elCreator.appendChild(sanitizeHTMLToDom(item.creator));
      }
-     var elPubDate;
+     let elPubDate;
      if (item.pubDate) {
        elPubDate = itemEl.createEl('div', {text: item.pubDate});
      } else {
@@ -1709,7 +1700,7 @@ async function show_feed() {
      }
 
      if (GLB.settings.showRead) {
-       var t_read = "Read";
+       let t_read = "Read";
        if (item.read && (item.read !== '')) {
          t_read = 'Unread';
        }
@@ -1762,7 +1753,7 @@ async function show_feed() {
      }
 
      if (GLB.settings.showDelete) {
-       var t_delete = "Delete";
+       let t_delete = "Delete";
        if (item.deleted && (item.deleted !== '')) {
          t_delete = 'Undelete';
        }
@@ -1797,7 +1788,7 @@ async function show_feed() {
      const nextPage = next_prev.createEl('span', {text: "Next"});
      nextPage.id = "nextPage";
    }
-   var stats = getFeedStats(GLB.currentFeed);
+   const stats = getFeedStats(GLB.currentFeed);
    //  GLB.elUnreadCount = document.getElementById('unreadCount' + GLB.currentFeed);
    GLB.elTotalCount = document.getElementById('totalCount' + GLB.currentFeed);
    GLB.elSepUnreadTotal = document.getElementById('sepUnreadTotal' + GLB.currentFeed);
@@ -1814,12 +1805,11 @@ async function show_feed() {
 
 function sanitize(s: string) {
   // https://stackoverflow.com/questions/6659351/removing-all-script-tags-from-html-with-js-regular-expression
-  // var SCRIPT_REGEX = /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi;
-  var SCRIPT_REGEX = /<script(?:(?!\/\/)(?!\/\*)[^'"]|"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\/\/.*(?:\n)|\/\*(?:(?:.|\s))*?\*\/)*?<\/script\s*>/gi;
-  var onerror_regex = /onerror\s*=\s*/gi;
-  var onclick_regex = /onclick\s*=\s*/gi;
-  var onmouseover_regex = /onmouseover\s*=\s*/gi;
-  var onload_regex = /onload\s*=\s*/gi;
+  const SCRIPT_REGEX = /<script(?:(?!\/\/)(?!\/\*)[^'"]|"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\/\/.*(?:\n)|\/\*(?:(?:.|\s))*?\*\/)*?<\/script\s*>/gi;
+  const onerror_regex = /onerror\s*=\s*/gi;
+  const onclick_regex = /onclick\s*=\s*/gi;
+  const onmouseover_regex = /onmouseover\s*=\s*/gi;
+  const onload_regex = /onload\s*=\s*/gi;
   [SCRIPT_REGEX, onerror_regex, onclick_regex, onmouseover_regex, onload_regex].forEach(r => {
     while (r.test(s)) {
       s = s.replace(r, " ");
@@ -1829,7 +1819,7 @@ function sanitize(s: string) {
 }
 
 export async function loadSubscriptions() {
-  var fpath_feedList = GLB.feeds_reader_dir+'/'+GLB.subscriptions_fname;
+  const fpath_feedList = GLB.feeds_reader_dir+'/'+GLB.subscriptions_fname;
   GLB.feedList = [];
   if (await this.app.vault.exists(fpath_feedList)) {
     GLB.feedList = await JSON.parse(await
@@ -1846,26 +1836,13 @@ async function saveSubscriptions() {
   if (! await this.app.vault.exists(GLB.feeds_reader_dir)) {
     await this.app.vault.createFolder(GLB.feeds_reader_dir);
   }
-  var fpath_feedList = GLB.feeds_reader_dir+'/'+GLB.subscriptions_fname;
+  const fpath_feedList = GLB.feeds_reader_dir+'/'+GLB.subscriptions_fname;
   if (! await this.app.vault.exists(fpath_feedList)) {
       await this.app.vault.create(fpath_feedList, JSON.stringify(GLB.feedList, null, 1));
   } else {
       await this.app.vault.adapter.write(fpath_feedList, JSON.stringify(GLB.feedList, null, 1));
   }
 }
-
-//function isArrEqual(buf1, buf2)
-//{
-//// From: https://stackoverflow.com/questions/21553528/how-to-test-for-equality-in-arraybuffer-dataview-and-typedarray
-//    if (buf1.byteLength != buf2.byteLength) return false;
-//    var dv1 = new Int8Array(buf1);
-//    var dv2 = new Int8Array(buf2);
-//    for (var i = 0 ; i != buf1.byteLength ; i++)
-//    {
-//        if (dv1[i] != dv2[i]) return false;
-//    }
-//    return true;
-//}
 
 async function saveStringToFileGzip(s: string, folder: string, fname: string) {
   let written = 0, success = true;
@@ -1928,9 +1905,9 @@ async function saveStringToFile(s: string, folder: string, fname: string) {
 
 async function saveStringSplitted(s: string, folder: string, fname_base: string, nCharPerFile: number) {
   const nLen = s.length;
-  var iEnd = nLen;
-  var iBg = nLen - nCharPerFile;
-  var i = 0, nSaved = 0;
+  let iEnd = nLen;
+  let iBg = nLen - nCharPerFile;
+  let i = 0, nSaved = 0;
   for (i=0;;i++) {
     if (iBg < 0) {
       iBg = 0;
@@ -1938,7 +1915,7 @@ async function saveStringSplitted(s: string, folder: string, fname_base: string,
     if (iBg >= iEnd) {
       break;
     }
-    var fname = makeFilename(fname_base, i);
+    const fname = makeFilename(fname_base, i);
     nSaved += (await saveStringToFileGzip(s.substring(iBg, iEnd), folder, fname));
     iEnd = iEnd - nCharPerFile;
     iBg = iBg - nCharPerFile;
@@ -1946,7 +1923,7 @@ async function saveStringSplitted(s: string, folder: string, fname_base: string,
   try {
     // Remove redundant files with higher serial number.
     for (;;i++) {
-      var fpath_unneeded = folder + '/' + makeFilename(fname_base, i) + '.gzip';
+      const fpath_unneeded = folder + '/' + makeFilename(fname_base, i) + '.gzip';
       if (await app.vault.exists(fpath_unneeded)) {
         await app.vault.adapter.remove(fpath_unneeded);
         new Notice('Redundant file ' + fpath_unneeded + ' removed.', 2000);
@@ -1989,10 +1966,10 @@ async function loadStringSplitted_Gzip(folder: string, fname_base: string) {
 }
 
 async function loadStringSplitted(folder: string, fname_base: string) {
-  var res = '';
+  let res = '';
   if (await app.vault.exists(folder)) {
-    for (var i=0;;i++) {
-      var fpath = folder + '/' + makeFilename(fname_base, i);
+    for (let i=0;;i++) {
+      const fpath = folder + '/' + makeFilename(fname_base, i);
       if (! await app.vault.exists(fpath)) {
         break;
       }
@@ -2007,8 +1984,8 @@ function makeFilename (fname_base: string, iPostfix: number) {
 }
 
 async function removeFileFragments(folder: string, fname_base: string, nfile: number) {
-  for (var i=0;i<nfile;i++) {
-    var fpath = folder + '/' + makeFilename(fname_base, i);
+  for (let i=0;i<nfile;i++) {
+    const fpath = folder + '/' + makeFilename(fname_base, i);
     if (! await app.vault.exists(fpath)) {
       continue;
     }
@@ -2018,8 +1995,8 @@ async function removeFileFragments(folder: string, fname_base: string, nfile: nu
 }
 
 async function removeFileFragments_gzipped(folder: string, fname_base: string, nfile: number) {
-  for (var i=0;i<nfile;i++) {
-    var fpath = folder + '/' + makeFilename(fname_base, i) + '.gzip';
+  for (let i=0;i<nfile;i++) {
+    const fpath = folder + '/' + makeFilename(fname_base, i) + '.gzip';
     if (! await app.vault.exists(fpath)) {
       continue;
     }
@@ -2029,7 +2006,7 @@ async function removeFileFragments_gzipped(folder: string, fname_base: string, n
 }
 
 async function fetchChatGPT(apiKey, temperature, text) {
-  var res = await
+  const res = await
     fetch('https://api.openai.com/v1/chat/completions',
           {method: 'POST',
            mode: 'cors',
@@ -2041,7 +2018,7 @@ async function fetchChatGPT(apiKey, temperature, text) {
               temperature: temperature,
               messages: [{role: "user",
                           content: text}]})});
-  var msg = (await res.json())['choices'][0].message;
+  const msg = (await res.json())['choices'][0].message;
   return msg.content;
 }
 

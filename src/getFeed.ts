@@ -77,9 +77,9 @@ function getElementByName(element: Element | Document, name: string): ChildNode 
         }
 
     } else {
-        var els = element.getElementsByTagName(name);
+        const els = element.getElementsByTagName(name);
         if (els.length > 0) {
-          var el = els[0];
+          const el = els[0];
           if (el.childNodes.length === 0) {
             value = el;
           } else {
@@ -93,9 +93,9 @@ function getElementByName(element: Element | Document, name: string): ChildNode 
 }
 
 function getElLen(el) {
-  var possibleTextTags = ['innerHTML', 'wholeText', 'innerText', 'nodeValue', 'textContent', 'data'];
-  var len_s = [0];
-  for (var t of possibleTextTags) {
+  const possibleTextTags = ['innerHTML', 'wholeText', 'innerText', 'nodeValue', 'textContent', 'data'];
+  const len_s = [0];
+  for (const t of possibleTextTags) {
     if ((typeof el[t]) === 'string') {
       len_s.push(el[t].length);
     }
@@ -104,9 +104,9 @@ function getElLen(el) {
 }
 
 function getElPossibleText(el) {
-  var possibleTextTags = ['innerHTML', 'wholeText', 'innerText', 'nodeValue', 'textContent', 'data'];
-  var possibleTexts = [''];
-  for (var t of possibleTextTags) {
+  const possibleTextTags = ['innerHTML', 'wholeText', 'innerText', 'nodeValue', 'textContent', 'data'];
+  const possibleTexts = [''];
+  for (const t of possibleTextTags) {
     if ((typeof el[t]) === 'string') {
       possibleTexts.push(el[t]);
     }
@@ -168,7 +168,7 @@ function buildItem(element: Element): RssFeedItem {
 function getAllItems(doc: Document): Element[] {
     const items: Element[] = [];
 
-    var elItems = doc.getElementsByTagName("item");
+    let elItems = doc.getElementsByTagName("item");
     if ((elItems === null) || (elItems.length ===0)) {
       elItems = doc.getElementsByTagName("entry");
     }
@@ -193,7 +193,7 @@ async function requestFeed(feedUrl: string) : Promise<string> {
 }
 
 export function nowdatetime(): string {
-  var a = new Date();
+  const a = new Date();
   return a.toISOString();
 }
 
@@ -211,7 +211,7 @@ export async function getFeedItems(feedUrl: string): Promise<RssFeedContent> {
     const items: RssFeedItem[] = [];
     const rawItems = getAllItems(data);
 
-    var now_str = nowdatetime();
+    const now_str = nowdatetime();
 
     rawItems.forEach((rawItem) => {
         const item = buildItem(rawItem);
