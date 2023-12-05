@@ -20,6 +20,7 @@ export namespace GLB {
   var undoList: number [];
   var nItemPerPage: number;
   var saveContent: boolean;
+  var saveSnippetNewToOld: boolean;
   var nPage: number;
   var idxItemStart: number;
   var displayIndices: number [];

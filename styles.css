@@ -20,7 +20,7 @@
   width: 160px;
   position: fixed;
   z-index: 1;
-  top: 4.6em;
+  top: 6.2em;
   left: 0;
   text-align: left;
   padding-left: 1mm;
@@ -76,7 +76,7 @@ td.showFeed {
 
 .toggleNaviContainer {
   position:absolute;
-  top: 2.5em;
+  top: 2.9em;
   left: 1.5mm;
   z-index: 2;
   font-size: medium;

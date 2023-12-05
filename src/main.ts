@@ -15,6 +15,7 @@ interface FeedsReaderSettings {
 const DEFAULT_SETTINGS: FeedsReaderSettings = {
   nItemPerPage: 20,
   saveContent: false,
+  saveSnippetNewToOld: true,
   showJot: true,
   showSnippet: true,
   showRead: true,
@@ -374,7 +375,13 @@ export default class FeedsReader extends Plugin {
           if (prevContent.includes(link_text)) {
             new Notice("Snippet url already exists.", 1000);
           } else {
-            await this.app.vault.adapter.append(fpath, '\n\n<hr>\n\n' + snippet_content);
+            if (GLB.saveSnippetNewToOld) {
+              await app.vault.process(app.vault.getAbstractFileByPath(fpath),
+                (data) => {return snippet_content + '\n\n<hr>\n\n' + data;});
+            } else {
+              await this.app.vault.adapter.append(fpath,
+                '\n\n<hr>\n\n' + snippet_content);
+            }
             new Notice("Snippet saved to " + fpath + ".", 1000);
           }
         }
@@ -672,6 +679,7 @@ export default class FeedsReader extends Plugin {
 
     GLB.nItemPerPage = this.settings.nItemPerPage;
     GLB.saveContent = this.settings.saveContent;
+    GLB.saveSnippetNewToOld = this.settings.saveSnippetNewToOld;
 
     GLB.feeds_reader_dir = 'feeds-reader';
     GLB.feeds_data_fname = 'feeds-data.json';
@@ -1317,6 +1325,16 @@ class FeedReaderSettingTab extends PluginSettingTab {
 				.onChange(async (value) => {
           GLB.saveContent = value;
 					this.plugin.settings.saveContent = GLB.saveContent;
+					await this.plugin.saveSettings();
+				}));
+		new Setting(containerEl)
+			.setName('Snippets saved from new to old')
+			.setDesc('New to old / old to new')
+			.addToggle(text => text
+				.setValue(this.plugin.settings.saveSnippetNewToOld)
+				.onChange(async (value) => {
+          GLB.saveSnippetNewToOld = value;
+					this.plugin.settings.saveSnippetNewToOld = GLB.saveSnippetNewToOld;
 					await this.plugin.saveSettings();
 				}));
 	}
