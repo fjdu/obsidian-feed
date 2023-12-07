@@ -543,7 +543,7 @@ export default class FeedsReader extends Plugin {
         const idx = this.getNumFromId(evt.target.id, 'jotNotes');
         const el = document.getElementById('shortNoteContainer' + idx);
         if (el !== null) {
-          el.remove();
+          //el.remove();
           return;
         }
         const elActionContainer = document.getElementById('actionContainer' + idx);
